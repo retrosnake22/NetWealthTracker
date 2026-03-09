@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Building2, Home } from 'lucide-react'
+import { Plus, Trash2, Building2, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,7 @@ import { formatCurrency, formatPercent } from '@/lib/format'
 import type { PropertyType } from '@/types/models'
 
 export function PropertiesPage() {
-  const { properties, liabilities, addProperty, addLiability, updateProperty, removeProperty, removeLiability } = useFinanceStore()
+  const { properties, liabilities, addProperty, addLiability, removeProperty, removeLiability } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({
     name: '', type: 'primary_residence' as PropertyType, address: '',
