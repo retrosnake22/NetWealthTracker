@@ -9,14 +9,14 @@ export function calculateEffectiveMortgageBalance(
   mortgage: Liability,
   offsetAccounts: CashAsset[]
 ): number {
-  const totalOffset = offsetAccounts.reduce((sum, acc) => sum + acc.currentValue, 0)
+  const totalOffset = offsetAccounts.reduce((sum: number, acc: CashAsset) => sum + acc.currentValue, 0)
   return Math.max(0, mortgage.currentBalance - totalOffset)
 }
 
 export function calculatePropertyNetYield(
   property: Property,
   mortgage?: Liability,
-  offsetAccounts: CashAsset[]
+  offsetAccounts?: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
@@ -45,7 +45,7 @@ export function calculatePropertyNetYield(
 export function calculatePropertyCashflow(
   property: Property,
   mortgage?: Liability,
-  offsetAccounts: CashAsset[]
+  _offsetAccounts?: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
@@ -131,7 +131,6 @@ export function projectNetWealth(
   const points: ProjectionPoint[] = []
   const months = years * 12
 
-  // Clone current values
   let assetValues = new Map<string, number>()
   assets.forEach(a => assetValues.set(a.id, a.currentValue))
   properties.forEach(p => assetValues.set(p.id, p.currentValue))
@@ -139,19 +138,16 @@ export function projectNetWealth(
   let liabilityValues = new Map<string, number>()
   liabilities.forEach(l => liabilityValues.set(l.id, l.currentBalance))
 
-  // Growth rates map
   const growthRates = new Map<string, number>()
   assets.forEach(a => growthRates.set(a.id, a.growthRatePA))
   properties.forEach(p => growthRates.set(p.id, p.growthRatePA))
 
-  // Interest rates
   const interestRates = new Map<string, number>()
   liabilities.forEach(l => interestRates.set(l.id, l.interestRatePA))
 
   const monthlySurplus = calculateMonthlyCashflow(incomes, budgets)
 
   for (let m = 0; m <= months; m++) {
-    // Record point every 12 months or at start
     if (m % 12 === 0) {
       const totalA = Array.from(assetValues.values()).reduce((s, v) => s + v, 0)
       const totalL = Array.from(liabilityValues.values()).reduce((s, v) => s + v, 0)
@@ -166,14 +162,12 @@ export function projectNetWealth(
 
     if (m === months) break
 
-    // Apply monthly growth to assets
     for (const [id, value] of assetValues) {
       const annualRate = growthRates.get(id) ?? 0
       const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1
       assetValues.set(id, value * (1 + monthlyRate))
     }
 
-    // Apply interest to liabilities (simplified - interest accrues, min repayments reduce)
     for (const [id, balance] of liabilityValues) {
       const annualRate = interestRates.get(id) ?? 0
       const monthlyInterest = balance * (annualRate / 12)
@@ -187,7 +181,6 @@ export function projectNetWealth(
       liabilityValues.set(id, newBalance)
     }
 
-    // Allocate surplus
     if (monthlySurplus > 0) {
       for (const alloc of allocations) {
         const amount = monthlySurplus * alloc.percentage
