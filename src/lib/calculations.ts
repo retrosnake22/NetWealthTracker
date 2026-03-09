@@ -9,14 +9,14 @@ export function calculateEffectiveMortgageBalance(
   mortgage: Liability,
   offsetAccounts: CashAsset[]
 ): number {
-  const totalOffset = _offsetAccounts.reduce((sum, acc) => sum + acc.currentValue, 0)
+  const totalOffset = offsetAccounts.reduce((sum, acc) => sum + acc.currentValue, 0)
   return Math.max(0, mortgage.currentBalance - totalOffset)
 }
 
 export function calculatePropertyNetYield(
   property: Property,
   mortgage?: Liability,
-  _offsetAccounts?: CashAsset[]
+  offsetAccounts: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
@@ -45,7 +45,7 @@ export function calculatePropertyNetYield(
 export function calculatePropertyCashflow(
   property: Property,
   mortgage?: Liability,
-  _offsetAccounts?: CashAsset[]
+  offsetAccounts: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
