@@ -9,7 +9,7 @@ export function calculateEffectiveMortgageBalance(
   mortgage: Liability,
   offsetAccounts: CashAsset[]
 ): number {
-  const totalOffset = offsetAccounts.reduce((sum, acc) => sum + acc.currentValue, 0)
+  const totalOffset = _offsetAccounts.reduce((sum, acc) => sum + acc.currentValue, 0)
   return Math.max(0, mortgage.currentBalance - totalOffset)
 }
 
