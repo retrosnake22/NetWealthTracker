@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, SurplusAllocation, MonthlySnapshot } from '@/types/models'
+import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, SurplusAllocation } from '@/types/models'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
   if (!mortgage) return property.currentValue
@@ -16,7 +16,7 @@ export function calculateEffectiveMortgageBalance(
 export function calculatePropertyNetYield(
   property: Property,
   mortgage?: Liability,
-  offsetAccounts?: CashAsset[]
+  _offsetAccounts?: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
@@ -45,7 +45,7 @@ export function calculatePropertyNetYield(
 export function calculatePropertyCashflow(
   property: Property,
   mortgage?: Liability,
-  offsetAccounts?: CashAsset[]
+  _offsetAccounts?: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 

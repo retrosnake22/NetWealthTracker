@@ -41,7 +41,7 @@ export function WealthChart({ data }: WealthChartProps) {
               <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
               <YAxis tickFormatter={formatCompact} className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
               <Tooltip
-                formatter={(value) => [formatCompact(value), '']}
+                formatter={(value) => [formatCompact(Number(value)), '']}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
