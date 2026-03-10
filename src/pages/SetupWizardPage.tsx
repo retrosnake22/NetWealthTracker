@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import {
   ArrowRight, ArrowLeft, Check, Plus, Trash2, X,
   Sparkles, Briefcase, Wallet, Building2, CreditCard,
@@ -76,7 +76,6 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SetupWizardPage() {
-  const navigate = useNavigate()
   const store = useFinanceStore()
   const [currentStep, setCurrentStep] = useState(0)
 
@@ -99,7 +98,7 @@ export function SetupWizardPage() {
 
   const finishWizard = () => {
     localStorage.setItem('nwt-wizard-complete', 'true')
-    navigate('/')
+    window.location.href = '/'
   }
 
   return (
