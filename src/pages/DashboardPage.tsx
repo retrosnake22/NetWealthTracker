@@ -8,7 +8,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
-  calculateMonthlyIncome, calculateMonthlyExpenses, calculateMonthlyCashflow,
+  calculateMonthlyIncome, calculateMonthlyExpenses,
   calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth
 } from '@/lib/calculations'
 
@@ -90,6 +90,7 @@ export function DashboardPage() {
   const netWealth        = calculateNetWealth(assets, properties, liabilities)
   const totalAssets      = calculateTotalAssets(assets, properties)
   const totalLiabilities = calculateTotalLiabilities(liabilities)
+
   // Base income + rental income from investment properties
   const baseIncome = calculateMonthlyIncome(incomes)
   const rentalIncome = properties
@@ -100,7 +101,7 @@ export function DashboardPage() {
   // Base expenses + mortgage repayments + property running costs
   const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
   const mortgageExpenses = liabilities.reduce((sum, l) => {
-    const repayment = l.monthlyRepayment ?? 0
+    const repayment = l.minimumRepayment ?? 0
     if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
     if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
     return sum + repayment
@@ -111,8 +112,8 @@ export function DashboardPage() {
       + (p.waterRatesPA ?? 0) / 12
       + (p.insurancePA ?? 0) / 12
       + (p.strataPA ?? 0) / 12
-      + (p.maintenancePA ?? 0) / 12
-      + (p.propertyMgmtPA ?? 0) / 12
+      + (p.maintenanceReservePA ?? 0) / 12
+      + (p.propertyManagementPA ?? 0) / 12
       + (p.landTaxPA ?? 0) / 12
   }, 0)
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
