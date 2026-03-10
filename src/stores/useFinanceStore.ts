@@ -7,7 +7,7 @@ import type {
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
-interface FinanceState {
+export interface FinanceState {
   // Data
   assets: Asset[]
   properties: Property[]

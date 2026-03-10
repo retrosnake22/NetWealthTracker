@@ -13,7 +13,7 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useFinanceStore } from '@/stores/useFinanceStore'
+import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
   AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory,
@@ -250,7 +250,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
 // ── Step 2: Income ────────────────────────────────────────────────────────────
 
-function IncomeStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function IncomeStep({ store }: { store: FinanceState }) {
   const { incomes, addIncome, removeIncome } = store
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -378,7 +378,7 @@ function IncomeStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
 
 // ── Step 3: Assets ────────────────────────────────────────────────────────────
 
-function AssetsStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function AssetsStep({ store }: { store: FinanceState }) {
   const { assets, addAsset, removeAsset } = store
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -556,7 +556,7 @@ function AssetsStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
 
 // ── Step 4: Properties ────────────────────────────────────────────────────────
 
-function PropertiesStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function PropertiesStep({ store }: { store: FinanceState }) {
   const { properties, addProperty, removeProperty, addLiability } = store
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -779,7 +779,7 @@ function PropertiesStep({ store }: { store: ReturnType<typeof useFinanceStore> }
 
 // ── Step 5: Liabilities ───────────────────────────────────────────────────────
 
-function LiabilitiesStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function LiabilitiesStep({ store }: { store: FinanceState }) {
   const { liabilities, addLiability, removeLiability } = store
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -1001,7 +1001,7 @@ function LiabilitiesStep({ store }: { store: ReturnType<typeof useFinanceStore> 
 
 // ── Step 6: Expenses ──────────────────────────────────────────────────────────
 
-function ExpensesStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function ExpensesStep({ store }: { store: FinanceState }) {
   const { expenseBudgets, addExpenseBudget, removeExpenseBudget } = store
   const [expandedGroup, setExpandedGroup] = useState<string | null>('🛒 Living')
   const [addingCategory, setAddingCategory] = useState<ExpenseCategory | null>(null)
@@ -1134,7 +1134,7 @@ function ExpensesStep({ store }: { store: ReturnType<typeof useFinanceStore> }) 
 
 // ── Step 7: Projections ───────────────────────────────────────────────────────
 
-function ProjectionsStep({ store }: { store: ReturnType<typeof useFinanceStore> }) {
+function ProjectionsStep({ store }: { store: FinanceState }) {
   const { projectionSettings, updateProjectionSettings, assets, properties, liabilities } = store
   const [years, setYears] = useState(String(projectionSettings.projectionYears))
 
@@ -1217,7 +1217,7 @@ function ProjectionsStep({ store }: { store: ReturnType<typeof useFinanceStore> 
 
 // ── Step 8: Summary ───────────────────────────────────────────────────────────
 
-function SummaryStep({ store, onFinish }: { store: ReturnType<typeof useFinanceStore>; onFinish: () => void }) {
+function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () => void }) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = store
   const [revealed, setRevealed] = useState(false)
 
