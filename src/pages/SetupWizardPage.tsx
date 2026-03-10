@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 import {
-  ArrowRight, ArrowLeft, Check, Plus, Trash2, X,
+  ArrowRight, ArrowLeft, Check, Plus, Trash2, X, Pencil,
   Sparkles, Briefcase, Wallet, Building2, CreditCard,
   Receipt, Target, TrendingUp, DollarSign, PiggyBank,
   Home, Car
@@ -242,22 +242,42 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 // ── Step 2: Income ────────────────────────────────────────────────────────────
 
 function IncomeStep({ store }: { store: FinanceState }) {
-  const { incomes, addIncome, removeIncome } = store
+  const { incomes, addIncome, removeIncome, updateIncome } = store
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '',
   })
 
-  const handleAdd = () => {
-    if (!form.name || !form.monthlyAmount) return
-    addIncome({
-      name: form.name,
-      category: form.category,
-      monthlyAmount: parseFloat(form.monthlyAmount) || 0,
-      isActive: true,
-    })
+  const resetForm = () => {
     setForm({ name: '', category: 'salary', monthlyAmount: '' })
     setShowForm(false)
+    setEditingId(null)
+  }
+
+  const startEdit = (inc: typeof incomes[0]) => {
+    setForm({ name: inc.name, category: inc.category, monthlyAmount: String(inc.monthlyAmount) })
+    setEditingId(inc.id)
+    setShowForm(true)
+  }
+
+  const handleAdd = () => {
+    if (!form.name || !form.monthlyAmount) return
+    if (editingId) {
+      updateIncome(editingId, {
+        name: form.name,
+        category: form.category,
+        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
+      })
+    } else {
+      addIncome({
+        name: form.name,
+        category: form.category,
+        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
+        isActive: true,
+      })
+    }
+    resetForm()
   }
 
   const totalMonthly = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
@@ -292,6 +312,13 @@ function IncomeStep({ store }: { store: FinanceState }) {
                   </div>
                   <Button
                     variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(inc)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
                     onClick={() => removeIncome(inc.id)}
                   >
@@ -310,13 +337,13 @@ function IncomeStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Add form */}
+      {/* Add/Edit form */}
       {showForm ? (
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Add Income Source</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
+              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Income Source'}</h3>
+              <Button variant="ghost" size="icon" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -350,13 +377,13 @@ function IncomeStep({ store }: { store: FinanceState }) {
               </div>
             </div>
             <Button onClick={handleAdd} disabled={!form.name || !form.monthlyAmount} className="w-full gap-2">
-              <Plus className="w-4 h-4" /> Add Income
+              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Income</>}
             </Button>
           </CardContent>
         </Card>
       ) : (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { resetForm(); setShowForm(true) }}
           className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
         >
           <Plus className="w-5 h-5" />
@@ -370,26 +397,52 @@ function IncomeStep({ store }: { store: FinanceState }) {
 // ── Step 3: Assets ────────────────────────────────────────────────────────────
 
 function AssetsStep({ store }: { store: FinanceState }) {
-  const { assets, addAsset, removeAsset } = store
+  const { assets, addAsset, removeAsset, updateAsset } = store
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'cash' as AssetCategory, currentValue: '', growthRatePA: '4.5',
   })
+
+  const resetForm = () => {
+    setForm({ name: '', category: 'cash', currentValue: '', growthRatePA: '4.5' })
+    setShowForm(false)
+    setEditingId(null)
+  }
 
   const handleCategoryChange = (cat: AssetCategory) => {
     setForm({ ...form, category: cat, growthRatePA: String(DEFAULT_GROWTH[cat] * 100) })
   }
 
+  const startEdit = (asset: typeof assets[0]) => {
+    setForm({
+      name: asset.name,
+      category: asset.category,
+      currentValue: String(asset.currentValue),
+      growthRatePA: String(asset.growthRatePA * 100),
+    })
+    setEditingId(asset.id)
+    setShowForm(true)
+  }
+
   const handleAdd = () => {
     if (!form.name || !form.currentValue) return
-    addAsset({
-      name: form.name,
-      category: form.category,
-      currentValue: parseFloat(form.currentValue) || 0,
-      growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
-    })
-    setForm({ name: '', category: 'cash', currentValue: '', growthRatePA: '4.5' })
-    setShowForm(false)
+    if (editingId) {
+      updateAsset(editingId, {
+        name: form.name,
+        category: form.category,
+        currentValue: parseFloat(form.currentValue) || 0,
+        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+      })
+    } else {
+      addAsset({
+        name: form.name,
+        category: form.category,
+        currentValue: parseFloat(form.currentValue) || 0,
+        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+      })
+    }
+    resetForm()
   }
 
   const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
@@ -460,6 +513,13 @@ function AssetsStep({ store }: { store: FinanceState }) {
                     <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
                     <Button
                       variant="ghost" size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => startEdit(asset)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
                       onClick={() => removeAsset(asset.id)}
                     >
@@ -478,13 +538,13 @@ function AssetsStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Add form */}
+      {/* Add/Edit form */}
       {showForm ? (
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Add Asset</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
+              <h3 className="font-medium">{editingId ? 'Edit Asset' : 'Add Asset'}</h3>
+              <Button variant="ghost" size="icon" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -528,13 +588,13 @@ function AssetsStep({ store }: { store: FinanceState }) {
               </div>
             </div>
             <Button onClick={handleAdd} disabled={!form.name || !form.currentValue} className="w-full gap-2">
-              <Plus className="w-4 h-4" /> Add Asset
+              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Asset</>}
             </Button>
           </CardContent>
         </Card>
       ) : assets.length > 0 ? (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { resetForm(); setShowForm(true) }}
           className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
         >
           <Plus className="w-5 h-5" />
@@ -548,8 +608,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
 // ── Step 4: Properties ────────────────────────────────────────────────────────
 
 function PropertiesStep({ store }: { store: FinanceState }) {
-  const { properties, addProperty, removeProperty, addLiability } = store
+  const { properties, addProperty, removeProperty, addLiability, updateProperty } = store
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
     address: '', currentValue: '', growthRatePA: '7',
@@ -557,8 +618,48 @@ function PropertiesStep({ store }: { store: FinanceState }) {
     weeklyRent: '',
   })
 
+  const defaultForm = {
+    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
+    address: '', currentValue: '', growthRatePA: '7',
+    hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+    weeklyRent: '',
+  }
+
+  const resetForm = () => {
+    setForm(defaultForm)
+    setShowForm(false)
+    setEditingId(null)
+  }
+
+  const startEdit = (prop: typeof properties[0]) => {
+    setForm({
+      name: prop.name,
+      type: prop.type,
+      address: prop.address || '',
+      currentValue: String(prop.currentValue),
+      growthRatePA: String(prop.growthRatePA * 100),
+      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+      weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
+    })
+    setEditingId(prop.id)
+    setShowForm(true)
+  }
+
   const handleAdd = () => {
     if (!form.name || !form.currentValue) return
+
+    if (editingId) {
+      updateProperty(editingId, {
+        name: form.name,
+        type: form.type,
+        address: form.address || undefined,
+        currentValue: parseFloat(form.currentValue) || 0,
+        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+        weeklyRent: form.type === 'investment' ? (parseFloat(form.weeklyRent) || 0) : undefined,
+      })
+      resetForm()
+      return
+    }
 
     let mortgageId: string | undefined
     if (form.hasMortgage && form.mortgageBalance) {
@@ -586,11 +687,7 @@ function PropertiesStep({ store }: { store: FinanceState }) {
       weeklyRent: form.type === 'investment' ? (parseFloat(form.weeklyRent) || 0) : undefined,
     })
 
-    setForm({
-      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7',
-      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '', weeklyRent: '',
-    })
-    setShowForm(false)
+    resetForm()
   }
 
   const totalValue = properties.reduce((s, p) => s + p.currentValue, 0)
@@ -627,6 +724,13 @@ function PropertiesStep({ store }: { store: FinanceState }) {
                   <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
                   <Button
                     variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(prop)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
                     onClick={() => removeProperty(prop.id)}
                   >
@@ -648,8 +752,8 @@ function PropertiesStep({ store }: { store: FinanceState }) {
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Add Property</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
+              <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
+              <Button variant="ghost" size="icon" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -702,56 +806,58 @@ function PropertiesStep({ store }: { store: FinanceState }) {
               )}
             </div>
 
-            {/* Mortgage toggle */}
-            <div className="pt-2 border-t border-border/50">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.hasMortgage}
-                  onChange={e => setForm({ ...form, hasMortgage: e.target.checked })}
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <span className="text-sm font-medium">This property has a mortgage</span>
-              </label>
+            {/* Mortgage toggle — only show when adding new */}
+            {!editingId && (
+              <div className="pt-2 border-t border-border/50">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.hasMortgage}
+                    onChange={e => setForm({ ...form, hasMortgage: e.target.checked })}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium">This property has a mortgage</span>
+                </label>
 
-              {form.hasMortgage && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 ml-7">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Mortgage Balance</Label>
-                    <CurrencyInput
-                      value={form.mortgageBalance}
-                      onValueChange={v => setForm({ ...form, mortgageBalance: v })}
-                      placeholder="0"
-                    />
+                {form.hasMortgage && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 ml-7">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Mortgage Balance</Label>
+                      <CurrencyInput
+                        value={form.mortgageBalance}
+                        onValueChange={v => setForm({ ...form, mortgageBalance: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Interest Rate (%)</Label>
+                      <Input
+                        type="number" step="0.01"
+                        value={form.interestRate}
+                        onChange={e => setForm({ ...form, interestRate: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Monthly Repayment</Label>
+                      <CurrencyInput
+                        value={form.repayment}
+                        onValueChange={v => setForm({ ...form, repayment: v })}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Interest Rate (%)</Label>
-                    <Input
-                      type="number" step="0.01"
-                      value={form.interestRate}
-                      onChange={e => setForm({ ...form, interestRate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Monthly Repayment</Label>
-                    <CurrencyInput
-                      value={form.repayment}
-                      onValueChange={v => setForm({ ...form, repayment: v })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             <Button onClick={handleAdd} disabled={!form.name || !form.currentValue} className="w-full gap-2">
-              <Plus className="w-4 h-4" /> Add Property
+              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
             </Button>
           </CardContent>
         </Card>
       ) : (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { resetForm(); setShowForm(true) }}
           className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
         >
           <Plus className="w-5 h-5" />
@@ -771,26 +877,56 @@ function PropertiesStep({ store }: { store: FinanceState }) {
 // ── Step 5: Liabilities ───────────────────────────────────────────────────────
 
 function LiabilitiesStep({ store }: { store: FinanceState }) {
-  const { liabilities, addLiability, removeLiability } = store
+  const { liabilities, addLiability, removeLiability, updateLiability } = store
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'personal_loan' as LiabilityCategory,
     currentBalance: '', interestRatePA: '', minimumRepayment: '',
     repaymentFrequency: 'monthly' as 'weekly' | 'fortnightly' | 'monthly',
   })
 
-  const handleAdd = () => {
-    if (!form.name || !form.currentBalance) return
-    addLiability({
-      name: form.name,
-      category: form.category,
-      currentBalance: parseFloat(form.currentBalance) || 0,
-      interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
-      minimumRepayment: parseFloat(form.minimumRepayment) || 0,
-      repaymentFrequency: form.repaymentFrequency,
-    })
+  const resetForm = () => {
     setForm({ name: '', category: 'personal_loan', currentBalance: '', interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly' })
     setShowForm(false)
+    setEditingId(null)
+  }
+
+  const startEdit = (lia: typeof liabilities[0]) => {
+    setForm({
+      name: lia.name,
+      category: lia.category,
+      currentBalance: String(lia.currentBalance),
+      interestRatePA: String(lia.interestRatePA * 100),
+      minimumRepayment: String(lia.minimumRepayment),
+      repaymentFrequency: lia.repaymentFrequency,
+    })
+    setEditingId(lia.id)
+    setShowForm(true)
+  }
+
+  const handleAdd = () => {
+    if (!form.name || !form.currentBalance) return
+    if (editingId) {
+      updateLiability(editingId, {
+        name: form.name,
+        category: form.category,
+        currentBalance: parseFloat(form.currentBalance) || 0,
+        interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
+        minimumRepayment: parseFloat(form.minimumRepayment) || 0,
+        repaymentFrequency: form.repaymentFrequency,
+      })
+    } else {
+      addLiability({
+        name: form.name,
+        category: form.category,
+        currentBalance: parseFloat(form.currentBalance) || 0,
+        interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
+        minimumRepayment: parseFloat(form.minimumRepayment) || 0,
+        repaymentFrequency: form.repaymentFrequency,
+      })
+    }
+    resetForm()
   }
 
   const totalDebt = liabilities.reduce((s, l) => s + l.currentBalance, 0)
@@ -820,7 +956,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">From Properties</p>
           {mortgages.map(m => (
-            <Card key={m.id} className="bg-muted/30">
+            <Card key={m.id} className="bg-muted/30 group">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg ${LIA_ICONS.mortgage.color} flex items-center justify-center`}>
@@ -833,7 +969,16 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     </p>
                   </div>
                 </div>
-                <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
+                <div className="flex items-center gap-3">
+                  <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(m)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -860,6 +1005,13 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="font-semibold tabular-nums text-red-400">{formatCurrency(lia.currentBalance)}</p>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(lia)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
                   <Button
                     variant="ghost" size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
@@ -911,8 +1063,8 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Add Debt</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
+              <h3 className="font-medium">{editingId ? 'Edit Debt' : 'Add Debt'}</h3>
+              <Button variant="ghost" size="icon" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -975,7 +1127,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
               </div>
             </div>
             <Button onClick={handleAdd} disabled={!form.name || !form.currentBalance} className="w-full gap-2">
-              <Plus className="w-4 h-4" /> Add Debt
+              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Debt</>}
             </Button>
           </CardContent>
         </Card>
@@ -993,9 +1145,10 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 // ── Step 6: Expenses ──────────────────────────────────────────────────────────
 
 function ExpensesStep({ store }: { store: FinanceState }) {
-  const { expenseBudgets, addExpenseBudget, removeExpenseBudget } = store
+  const { expenseBudgets, addExpenseBudget, removeExpenseBudget, updateExpenseBudget } = store
   const [expandedGroup, setExpandedGroup] = useState<string | null>('🛒 Living')
   const [addingCategory, setAddingCategory] = useState<ExpenseCategory | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
 
   const existingCategories = new Set(expenseBudgets.map(b => b.category))
@@ -1003,13 +1156,26 @@ function ExpensesStep({ store }: { store: FinanceState }) {
 
   const handleAdd = (cat: ExpenseCategory) => {
     if (!amount) return
-    addExpenseBudget({
-      category: cat,
-      label: EXPENSE_LABELS[cat],
-      monthlyBudget: parseFloat(amount) || 0,
-    })
+    if (editingId) {
+      updateExpenseBudget(editingId, {
+        monthlyBudget: parseFloat(amount) || 0,
+      })
+    } else {
+      addExpenseBudget({
+        category: cat,
+        label: EXPENSE_LABELS[cat],
+        monthlyBudget: parseFloat(amount) || 0,
+      })
+    }
     setAmount('')
     setAddingCategory(null)
+    setEditingId(null)
+  }
+
+  const startEdit = (budget: typeof expenseBudgets[0]) => {
+    setAddingCategory(budget.category)
+    setEditingId(budget.id)
+    setAmount(String(budget.monthlyBudget))
   }
 
   return (
@@ -1065,23 +1231,6 @@ function ExpensesStep({ store }: { store: FinanceState }) {
                     const existing = expenseBudgets.find(b => b.category === cat)
                     const isAdding = addingCategory === cat
 
-                    if (existing) {
-                      return (
-                        <div key={cat} className="flex items-center justify-between py-1.5 group">
-                          <span className="text-sm">{EXPENSE_LABELS[cat]}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold tabular-nums">{formatCurrency(existing.monthlyBudget)}/mo</span>
-                            <Button
-                              variant="ghost" size="icon" className="w-7 h-7 opacity-0 group-hover:opacity-100 text-destructive"
-                              onClick={() => removeExpenseBudget(existing.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    }
-
                     if (isAdding) {
                       return (
                         <div key={cat} className="flex items-center gap-2 py-1">
@@ -1095,9 +1244,32 @@ function ExpensesStep({ store }: { store: FinanceState }) {
                           <Button size="sm" className="h-8 px-3" onClick={() => handleAdd(cat)}>
                             <Check className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setAddingCategory(null); setAmount('') }}>
+                          <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setAddingCategory(null); setEditingId(null); setAmount('') }}>
                             <X className="w-3 h-3" />
                           </Button>
+                        </div>
+                      )
+                    }
+
+                    if (existing) {
+                      return (
+                        <div key={cat} className="flex items-center justify-between py-1.5 group">
+                          <span className="text-sm">{EXPENSE_LABELS[cat]}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold tabular-nums">{formatCurrency(existing.monthlyBudget)}/mo</span>
+                            <Button
+                              variant="ghost" size="icon" className="w-7 h-7 opacity-0 group-hover:opacity-100"
+                              onClick={() => startEdit(existing)}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="w-7 h-7 opacity-0 group-hover:opacity-100 text-destructive"
+                              onClick={() => removeExpenseBudget(existing.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                       )
                     }
@@ -1105,7 +1277,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
                     return (
                       <button
                         key={cat}
-                        onClick={() => { setAddingCategory(cat); setAmount('') }}
+                        onClick={() => { setAddingCategory(cat); setEditingId(null); setAmount('') }}
                         className="flex items-center justify-between py-1.5 w-full text-left hover:bg-muted/30 rounded px-2 -mx-2 transition-colors"
                       >
                         <span className="text-sm text-muted-foreground">{EXPENSE_LABELS[cat]}</span>
