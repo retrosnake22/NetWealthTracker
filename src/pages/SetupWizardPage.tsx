@@ -36,6 +36,15 @@ function calcMortgageMonthly(balance: number, annualRate: number, type: Mortgage
   return calcPIMonthly(balance, annualRate, termYears)
 }
 
+// ── Rounding helpers ─────────────────────────────────────────────────────────
+
+/** Round a percentage string to N decimal places, return as fraction (e.g. "7.5" → 0.075) */
+function pctToFraction(pctStr: string, decimals: number): number {
+  const raw = parseFloat(pctStr) || 0
+  const rounded = parseFloat(raw.toFixed(decimals))
+  return rounded / 100
+}
+
 // ── Step definitions ──────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -61,8 +70,8 @@ const ASSET_LABELS: Record<AssetCategory, string> = {
 }
 
 const LIABILITY_LABELS: Record<LiabilityCategory, string> = {
-  mortgage: 'Mortgage', personal_loan: 'Personal Loan', car_loan: 'Car Loan',
-  credit_card: 'Credit Card', hecs: 'HECS-HELP', other: 'Other',
+  mortgage: 'Mortgage', home_loan: 'Home Loan', personal_loan: 'Personal Loan',
+  car_loan: 'Car Loan', credit_card: 'Credit Card', hecs: 'HECS-HELP', other: 'Other',
 }
 
 const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
@@ -284,10 +293,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
     name: '', currentValue: '', growthRatePA: '4.5',
   })
 
-  // Property form state
+  // Property form state — mortgageType defaults to P&I so auto-calc works immediately
   const [propForm, setPropForm] = useState({
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    address: '', currentValue: '', growthRatePA: '7',
+    address: '', currentValue: '', growthRatePA: '7.0',
     hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
     mortgageType: 'principal_and_interest' as MortgageType,
     loanTermYears: '30',
@@ -296,9 +305,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
   })
 
   const resetForm = () => {
-    setAssetForm({ name: '', currentValue: '', growthRatePA: String(DEFAULT_GROWTH[activeTab] * 100) })
+    setAssetForm({ name: '', currentValue: '', growthRatePA: String((DEFAULT_GROWTH[activeTab] * 100).toFixed(1)) })
     setPropForm({
-      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7',
+      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7.0',
       hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
       mortgageType: 'principal_and_interest', loanTermYears: '30',
       repaymentOverridden: false, weeklyRent: '',
@@ -310,7 +319,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
   const handleTabChange = (tab: AssetTab) => {
     resetForm()
     setActiveTab(tab)
-    setAssetForm(f => ({ ...f, growthRatePA: String(DEFAULT_GROWTH[tab] * 100) }))
+    setAssetForm(f => ({ ...f, growthRatePA: (DEFAULT_GROWTH[tab] * 100).toFixed(1) }))
   }
 
   // ── Auto-calc mortgage repayment ──
@@ -318,7 +327,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     const bal = parseFloat(balance) || 0
     const r = (parseFloat(rate) || 0) / 100
     const t = parseInt(term) || 30
-    if (bal <= 0 || r < 0) return ''
+    if (bal <= 0) return ''
     const monthly = calcMortgageMonthly(bal, r, type, t)
     return Math.round(monthly).toString()
   }
@@ -337,7 +346,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setAssetForm({
       name: asset.name,
       currentValue: String(asset.currentValue),
-      growthRatePA: String(asset.growthRatePA * 100),
+      growthRatePA: (asset.growthRatePA * 100).toFixed(1),
     })
     setEditingId(asset.id)
     setShowForm(true)
@@ -350,14 +359,14 @@ function AssetsStep({ store }: { store: FinanceState }) {
         name: assetForm.name,
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
-        growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
+        growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
       })
     } else {
       addAsset({
         name: assetForm.name,
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
-        growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
+        growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
       })
     }
     resetForm()
@@ -375,10 +384,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
       type: prop.type,
       address: prop.address || '',
       currentValue: String(prop.currentValue),
-      growthRatePA: String(prop.growthRatePA * 100),
+      growthRatePA: (prop.growthRatePA * 100).toFixed(1),
       hasMortgage: !!linkedMortgage,
       mortgageBalance: linkedMortgage ? String(linkedMortgage.currentBalance) : '',
-      interestRate: linkedMortgage ? String(linkedMortgage.interestRatePA * 100) : '',
+      interestRate: linkedMortgage ? (linkedMortgage.interestRatePA * 100).toFixed(2) : '',
       repayment: linkedMortgage ? String(linkedMortgage.minimumRepayment) : '',
       mortgageType: linkedMortgage?.mortgageType || 'principal_and_interest',
       loanTermYears: linkedMortgage?.loanTermYears ? String(linkedMortgage.loanTermYears) : '30',
@@ -400,7 +409,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
         type: propForm.type,
         address: propForm.address || undefined,
         currentValue: parseFloat(propForm.currentValue) || 0,
-        growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
+        growthRatePA: pctToFraction(propForm.growthRatePA, 1),
         weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
       })
 
@@ -410,7 +419,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
           name: `${propForm.name} Mortgage`,
           category: 'mortgage' as const,
           currentBalance: parseFloat(propForm.mortgageBalance) || 0,
-          interestRatePA: (parseFloat(propForm.interestRate) || 0) / 100,
+          interestRatePA: pctToFraction(propForm.interestRate, 2),
           minimumRepayment: parseFloat(propForm.repayment) || 0,
           repaymentFrequency: 'monthly' as const,
           mortgageType: propForm.mortgageType,
@@ -446,7 +455,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
         name: `${propForm.name} Mortgage`,
         category: 'mortgage' as const,
         currentBalance: parseFloat(propForm.mortgageBalance) || 0,
-        interestRatePA: (parseFloat(propForm.interestRate) || 0) / 100,
+        interestRatePA: pctToFraction(propForm.interestRate, 2),
         minimumRepayment: parseFloat(propForm.repayment) || 0,
         repaymentFrequency: 'monthly' as const,
         mortgageType: propForm.mortgageType,
@@ -462,7 +471,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
       type: propForm.type,
       address: propForm.address || undefined,
       currentValue: parseFloat(propForm.currentValue) || 0,
-      growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
+      growthRatePA: pctToFraction(propForm.growthRatePA, 1),
       mortgageId,
       weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
     })
@@ -635,9 +644,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   <div className="space-y-1.5">
                     <Label className="text-xs">Growth Rate (% p.a.)</Label>
                     <Input
-                      type="number" step="0.1"
+                      type="number" step="0.1" min="-50" max="50"
                       value={propForm.growthRatePA}
                       onChange={e => setPropForm({ ...propForm, growthRatePA: e.target.value })}
+                      onBlur={e => setPropForm({ ...propForm, growthRatePA: parseFloat(e.target.value || '0').toFixed(1) })}
                     />
                   </div>
 
@@ -671,25 +681,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
                   {propForm.hasMortgage && (
                     <div className="space-y-3 mt-3 ml-7">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Mortgage Balance</Label>
-                          <CurrencyInput
-                            value={propForm.mortgageBalance}
-                            onValueChange={v => updateMortgageField({ mortgageBalance: v })}
-                            placeholder="0"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Interest Rate (%)</Label>
-                          <Input
-                            type="number" step="0.01"
-                            value={propForm.interestRate}
-                            onChange={e => updateMortgageField({ interestRate: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Mortgage details will appear in the Debts section and repayments in your monthly expenses
+                      </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="text-xs">Loan Type</Label>
@@ -716,8 +711,34 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         )}
                       </div>
 
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Mortgage Balance</Label>
+                          <CurrencyInput
+                            value={propForm.mortgageBalance}
+                            onValueChange={v => updateMortgageField({ mortgageBalance: v })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Interest Rate (% p.a.)</Label>
+                          <Input
+                            type="number" step="0.01" min="0" max="30"
+                            value={propForm.interestRate}
+                            onChange={e => updateMortgageField({ interestRate: e.target.value })}
+                            onBlur={e => {
+                              const clamped = parseFloat(e.target.value || '0').toFixed(2)
+                              updateMortgageField({ interestRate: clamped })
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-1.5">
-                        <Label className="text-xs">Monthly Repayment {!propForm.repaymentOverridden && propForm.repayment ? '(auto-calculated)' : ''}</Label>
+                        <Label className="text-xs">
+                          Min. Monthly Repayment
+                          {!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
+                        </Label>
                         <CurrencyInput
                           value={propForm.repayment}
                           onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
@@ -734,10 +755,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
                             Reset to calculated amount
                           </button>
                         )}
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Info className="w-3 h-3" />
-                          This will be automatically added to your monthly expenses
-                        </p>
                       </div>
                     </div>
                   )}
@@ -842,9 +859,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   <div className="space-y-1.5">
                     <Label className="text-xs">Growth Rate (% p.a.)</Label>
                     <Input
-                      type="number" step="0.1"
+                      type="number" step="0.1" min="-50" max="50"
                       value={assetForm.growthRatePA}
                       onChange={e => setAssetForm({ ...assetForm, growthRatePA: e.target.value })}
+                      onBlur={e => setAssetForm({ ...assetForm, growthRatePA: parseFloat(e.target.value || '0').toFixed(1) })}
                     />
                   </div>
                 </div>
@@ -891,7 +909,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
       name: lia.name,
       category: lia.category,
       currentBalance: String(lia.currentBalance),
-      interestRatePA: String(lia.interestRatePA * 100),
+      interestRatePA: (lia.interestRatePA * 100).toFixed(2),
       minimumRepayment: String(lia.minimumRepayment),
       repaymentFrequency: lia.repaymentFrequency,
     })
@@ -906,7 +924,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         name: form.name,
         category: form.category,
         currentBalance: parseFloat(form.currentBalance) || 0,
-        interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
+        interestRatePA: pctToFraction(form.interestRatePA, 2),
         minimumRepayment: parseFloat(form.minimumRepayment) || 0,
         repaymentFrequency: form.repaymentFrequency,
       })
@@ -915,7 +933,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         name: form.name,
         category: form.category,
         currentBalance: parseFloat(form.currentBalance) || 0,
-        interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
+        interestRatePA: pctToFraction(form.interestRatePA, 2),
         minimumRepayment: parseFloat(form.minimumRepayment) || 0,
         repaymentFrequency: form.repaymentFrequency,
       })
@@ -930,6 +948,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 
   const LIA_ICONS: Record<LiabilityCategory, { color: string }> = {
     mortgage: { color: 'text-red-500 bg-red-500/10' },
+    home_loan: { color: 'text-red-500 bg-red-500/10' },
     personal_loan: { color: 'text-orange-500 bg-orange-500/10' },
     car_loan: { color: 'text-orange-500 bg-orange-500/10' },
     credit_card: { color: 'text-pink-500 bg-pink-500/10' },
@@ -941,7 +960,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you owe?"
-        description="Add any debts — personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
+        description="Add any debts — home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
         icon={CreditCard}
       />
 
@@ -961,6 +980,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     <p className="text-xs text-muted-foreground">
                       {formatPercent(m.interestRatePA)} interest · {formatCurrency(m.minimumRepayment)}/month
                       {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
+                      {m.loanTermYears ? ` · ${m.loanTermYears}yr term` : ''}
                     </p>
                   </div>
                 </div>
@@ -1030,6 +1050,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
       {!showForm && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
+            ['home_loan', 'Home Loan'],
             ['personal_loan', 'Personal Loan'],
             ['car_loan', 'Car Loan'],
             ['credit_card', 'Credit Card'],
@@ -1044,7 +1065,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
               className="p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-2"
             >
               <div className={`w-8 h-8 rounded-lg ${LIA_ICONS[cat].color} flex items-center justify-center`}>
-                <CreditCard className="w-4 h-4" />
+                {cat === 'home_loan' ? <Home className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
               </div>
               <span className="text-sm font-medium">{label}</span>
             </button>
@@ -1094,9 +1115,10 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
               <div className="space-y-1.5">
                 <Label className="text-xs">Interest Rate (% p.a.)</Label>
                 <Input
-                  type="number" step="0.01"
+                  type="number" step="0.01" min="0" max="50"
                   value={form.interestRatePA}
                   onChange={e => setForm({ ...form, interestRatePA: e.target.value })}
+                  onBlur={e => setForm({ ...form, interestRatePA: parseFloat(e.target.value || '0').toFixed(2) })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -1162,7 +1184,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
     setEditingId(null)
   }
 
-  const startEdit = (inc: typeof incomes[0]) => {
+  const startEdit = (inc: IncomeItem) => {
     setForm({ name: inc.name, category: inc.category, monthlyAmount: String(inc.monthlyAmount) })
     setEditingId(inc.id)
     setShowForm(true)

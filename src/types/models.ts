@@ -1,6 +1,6 @@
 export type AssetCategory = 'cash' | 'property' | 'stocks' | 'super' | 'vehicles' | 'other'
 export type PropertyType = 'primary_residence' | 'investment'
-export type LiabilityCategory = 'mortgage' | 'personal_loan' | 'car_loan' | 'credit_card' | 'hecs' | 'other'
+export type LiabilityCategory = 'mortgage' | 'home_loan' | 'personal_loan' | 'car_loan' | 'credit_card' | 'hecs' | 'other'
 export type IncomeCategory = 'salary' | 'rental' | 'dividends' | 'interest' | 'side_hustle' | 'other'
 export type ExpenseCategory =
   | 'mortgage_repayment' | 'rent' | 'council_rates' | 'water_rates' | 'strata'
