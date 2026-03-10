@@ -5,112 +5,126 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Emerald Finance Theme ─── */
+/* ─── Emerald Finance Theme — Refined Dark ─── */
 
 :root {
-    /* Surfaces */
-    --background: oklch(0.98 0.002 155);
-    --foreground: oklch(0.145 0.01 155);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0.01 155);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0.01 155);
+    /* 5 Surface Levels (light mode) */
+    --background: #f8faf9;
+    --foreground: #0f1a14;
+    --card: #ffffff;
+    --card-foreground: #0f1a14;
+    --popover: #ffffff;
+    --popover-foreground: #0f1a14;
 
     /* Emerald primary */
-    --primary: oklch(0.55 0.17 160);
-    --primary-foreground: oklch(0.99 0 0);
+    --primary: #059669;
+    --primary-foreground: #ffffff;
 
     /* Subtle surfaces */
-    --secondary: oklch(0.96 0.008 155);
-    --secondary-foreground: oklch(0.205 0.01 155);
-    --muted: oklch(0.96 0.005 155);
-    --muted-foreground: oklch(0.50 0.02 155);
-    --accent: oklch(0.94 0.03 160);
-    --accent-foreground: oklch(0.25 0.06 160);
+    --secondary: #f0fdf4;
+    --secondary-foreground: #14532d;
+    --muted: #f1f5f3;
+    --muted-foreground: #6b7280;
+    --accent: #ecfdf5;
+    --accent-foreground: #065f46;
 
     /* Status */
-    --destructive: oklch(0.58 0.22 27);
+    --destructive: #ef4444;
 
     /* Edges */
-    --border: oklch(0.90 0.01 155);
-    --input: oklch(0.90 0.01 155);
-    --ring: oklch(0.55 0.17 160);
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #059669;
 
-    /* Charts — emerald spectrum */
-    --chart-1: oklch(0.70 0.18 160);
-    --chart-2: oklch(0.60 0.16 165);
-    --chart-3: oklch(0.50 0.14 170);
-    --chart-4: oklch(0.65 0.12 200);
-    --chart-5: oklch(0.55 0.10 220);
+    /* Charts — multi-color palette */
+    --chart-1: #10b981;
+    --chart-2: #6366f1;
+    --chart-3: #f59e0b;
+    --chart-4: #3b82f6;
+    --chart-5: #8b5cf6;
 
     --radius: 0.625rem;
 
     /* Sidebar */
-    --sidebar: oklch(0.97 0.005 155);
-    --sidebar-foreground: oklch(0.145 0.01 155);
-    --sidebar-primary: oklch(0.55 0.17 160);
-    --sidebar-primary-foreground: oklch(0.99 0 0);
-    --sidebar-accent: oklch(0.94 0.03 160);
-    --sidebar-accent-foreground: oklch(0.25 0.06 160);
-    --sidebar-border: oklch(0.90 0.01 155);
-    --sidebar-ring: oklch(0.55 0.17 160);
+    --sidebar: #f0faf5;
+    --sidebar-foreground: #0f1a14;
+    --sidebar-primary: #059669;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #ecfdf5;
+    --sidebar-accent-foreground: #065f46;
+    --sidebar-border: #e5e7eb;
+    --sidebar-ring: #059669;
 
     /* Emerald brand tokens */
-    --emerald: oklch(0.55 0.17 160);
-    --emerald-glow: oklch(0.70 0.18 160 / 20%);
-    --emerald-subtle: oklch(0.94 0.03 160);
+    --emerald: #10b981;
+    --emerald-glow: rgba(16, 185, 129, 0.15);
+    --emerald-subtle: #ecfdf5;
+
+    /* Surface levels */
+    --surface-0: #f8faf9;
+    --surface-1: #ffffff;
+    --surface-2: #f0fdf4;
+    --surface-3: #ecfdf5;
+    --surface-4: #d1fae5;
 }
 
 .dark {
-    /* Deep navy-black surfaces */
-    --background: oklch(0.16 0.015 250);
-    --foreground: oklch(0.93 0.005 155);
-    --card: oklch(0.20 0.015 250);
-    --card-foreground: oklch(0.93 0.005 155);
-    --popover: oklch(0.20 0.015 250);
-    --popover-foreground: oklch(0.93 0.005 155);
+    /* 5 Surface Levels — deep with clear separation */
+    --background: #09090b;
+    --foreground: #f0f0f0;
+    --card: #111214;
+    --card-foreground: #f0f0f0;
+    --popover: #111214;
+    --popover-foreground: #f0f0f0;
 
     /* Emerald primary (brighter in dark) */
-    --primary: oklch(0.70 0.18 160);
-    --primary-foreground: oklch(0.15 0.02 160);
+    --primary: #34d399;
+    --primary-foreground: #022c22;
 
-    /* Dark surfaces */
-    --secondary: oklch(0.24 0.015 250);
-    --secondary-foreground: oklch(0.93 0.005 155);
-    --muted: oklch(0.24 0.015 250);
-    --muted-foreground: oklch(0.62 0.02 250);
-    --accent: oklch(0.28 0.03 200);
-    --accent-foreground: oklch(0.93 0.005 155);
+    /* Dark surfaces with clear depth */
+    --secondary: #18191c;
+    --secondary-foreground: #f0f0f0;
+    --muted: #18191c;
+    --muted-foreground: #71717a;
+    --accent: #1e2024;
+    --accent-foreground: #f0f0f0;
 
     /* Status */
-    --destructive: oklch(0.704 0.191 22.216);
+    --destructive: #f87171;
 
     /* Edges */
-    --border: oklch(1 0 0 / 8%);
-    --input: oklch(1 0 0 / 12%);
-    --ring: oklch(0.70 0.18 160);
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.10);
+    --ring: #34d399;
 
     /* Charts */
-    --chart-1: oklch(0.70 0.18 160);
-    --chart-2: oklch(0.60 0.16 165);
-    --chart-3: oklch(0.50 0.14 170);
-    --chart-4: oklch(0.65 0.12 200);
-    --chart-5: oklch(0.55 0.10 220);
+    --chart-1: #34d399;
+    --chart-2: #818cf8;
+    --chart-3: #fbbf24;
+    --chart-4: #60a5fa;
+    --chart-5: #a78bfa;
 
-    /* Sidebar — slightly lighter than bg */
-    --sidebar: oklch(0.18 0.015 250);
-    --sidebar-foreground: oklch(0.93 0.005 155);
-    --sidebar-primary: oklch(0.70 0.18 160);
-    --sidebar-primary-foreground: oklch(0.15 0.02 160);
-    --sidebar-accent: oklch(0.28 0.03 200);
-    --sidebar-accent-foreground: oklch(0.93 0.005 155);
-    --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: oklch(0.70 0.18 160);
+    /* Sidebar */
+    --sidebar: #0e0f11;
+    --sidebar-foreground: #f0f0f0;
+    --sidebar-primary: #34d399;
+    --sidebar-primary-foreground: #022c22;
+    --sidebar-accent: #1a1b1e;
+    --sidebar-accent-foreground: #f0f0f0;
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+    --sidebar-ring: #34d399;
 
     /* Emerald brand tokens */
-    --emerald: oklch(0.70 0.18 160);
-    --emerald-glow: oklch(0.70 0.18 160 / 15%);
-    --emerald-subtle: oklch(0.28 0.04 160);
+    --emerald: #34d399;
+    --emerald-glow: rgba(52, 211, 153, 0.12);
+    --emerald-subtle: rgba(52, 211, 153, 0.08);
+
+    /* Surface levels */
+    --surface-0: #09090b;
+    --surface-1: #111214;
+    --surface-2: #18191c;
+    --surface-3: #1e2024;
+    --surface-4: #252730;
 }
 
 @theme inline {
@@ -149,6 +163,11 @@
     --color-emerald: var(--emerald);
     --color-emerald-glow: var(--emerald-glow);
     --color-emerald-subtle: var(--emerald-subtle);
+    --color-surface-0: var(--surface-0);
+    --color-surface-1: var(--surface-1);
+    --color-surface-2: var(--surface-2);
+    --color-surface-3: var(--surface-3);
+    --color-surface-4: var(--surface-4);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -173,16 +192,60 @@
 /* ─── Custom utility classes ─── */
 
 @layer utilities {
+  /* Glow effects */
   .glow-emerald {
-    box-shadow: 0 0 20px oklch(0.70 0.18 160 / 15%), 0 0 60px oklch(0.70 0.18 160 / 5%);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.12), 0 0 60px rgba(16, 185, 129, 0.04);
   }
   .dark .glow-emerald {
-    box-shadow: 0 0 20px oklch(0.70 0.18 160 / 20%), 0 0 60px oklch(0.70 0.18 160 / 8%);
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.15), 0 0 80px rgba(52, 211, 153, 0.06);
   }
+
+  /* Emerald gradient */
   .gradient-emerald {
-    background: linear-gradient(135deg, oklch(0.55 0.17 160), oklch(0.65 0.18 155));
+    background: linear-gradient(135deg, #059669, #10b981);
   }
   .dark .gradient-emerald {
-    background: linear-gradient(135deg, oklch(0.45 0.15 160), oklch(0.55 0.16 155));
+    background: linear-gradient(135deg, #059669, #34d399);
+  }
+
+  /* Card hover lift */
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  }
+  .dark .card-hover:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Pulse dot animation */
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  /* Subtle shimmer for hero */
+  @keyframes shimmer {
+    0% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+    100% { opacity: 0.4; }
+  }
+  .shimmer {
+    animation: shimmer 4s ease-in-out infinite;
+  }
+
+  /* Tabular numbers everywhere for financial data */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Progress bar fill */
+  .progress-fill {
+    transition: width 0.6s ease-out;
   }
 }

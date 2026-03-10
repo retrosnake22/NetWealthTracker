@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { TrendingDown } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -50,7 +50,7 @@ export default function LoginPage() {
           {/* Brand logo */}
           <div className="flex flex-col items-center mb-6">
             <div className="h-14 w-14 rounded-2xl gradient-emerald glow-emerald flex items-center justify-center mb-4">
-              <TrendingDown className="h-7 w-7 text-white rotate-180" />
+              <ArrowUpRight className="h-7 w-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold">Net Wealth Tracker</h1>
             <p className="text-muted-foreground mt-1">

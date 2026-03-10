@@ -176,7 +176,7 @@ export function ExpensesPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Monthly Expenses</span>
@@ -219,17 +219,17 @@ export function ExpensesPage() {
                 {!isCollapsed && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
                     {group.items.map(item => (
-                      <Card key={item.id}>
-                        <CardContent className="p-4">
+                      <Card key={item.id} className="card-hover group">
+                        <CardContent className="p-5">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="font-semibold">{item.label}</p>
                               <Badge variant="outline" className={`mt-1 ${EXPENSE_GROUP_COLORS[item.category] ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
                                 {CATEGORY_LABELS[item.category]}
                               </Badge>
-                              <p className="text-xl font-bold mt-2 text-red-500">{formatCurrency(item.monthlyBudget)}/mo</p>
+                              <p className="text-2xl font-extrabold tabular-nums tracking-tight mt-2 text-red-500">{formatCurrency(item.monthlyBudget)}/mo</p>
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>

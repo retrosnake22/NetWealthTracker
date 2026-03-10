@@ -213,19 +213,19 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-bold text-emerald-500">{formatCurrency(totalValue)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(totalValue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Debt</p>
-            <p className="text-2xl font-bold text-red-500">{formatCurrency(totalDebt)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(totalDebt)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Equity</p>
-            <p className="text-2xl font-bold text-emerald-500">{formatCurrency(totalValue - totalDebt)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(totalValue - totalDebt)}</p>
           </CardContent>
         </Card>
       </div>
@@ -244,8 +244,8 @@ export function PropertiesPage() {
             const mortgage = getMortgage(prop.mortgageId)
             const equity = prop.currentValue - (mortgage?.currentBalance ?? 0)
             return (
-              <Card key={prop.id}>
-                <CardContent className="p-6">
+              <Card key={prop.id} className="card-hover group">
+                <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
@@ -262,43 +262,43 @@ export function PropertiesPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div>
                           <p className="text-xs text-muted-foreground">Value</p>
-                          <p className="font-semibold">{formatCurrency(prop.currentValue)}</p>
+                          <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(prop.currentValue)}</p>
                         </div>
                         {mortgage && (
                           <div>
                             <p className="text-xs text-muted-foreground">Mortgage</p>
-                            <p className="font-semibold text-red-500">{formatCurrency(mortgage.currentBalance)}</p>
+                            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(mortgage.currentBalance)}</p>
                           </div>
                         )}
                         <div>
                           <p className="text-xs text-muted-foreground">Equity</p>
-                          <p className="font-semibold text-emerald-500">{formatCurrency(equity)}</p>
+                          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(equity)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Growth</p>
-                          <p className="font-semibold">{formatPercent(prop.growthRatePA)} p.a.</p>
+                          <p className="text-lg font-semibold tabular-nums">{formatPercent(prop.growthRatePA)} p.a.</p>
                         </div>
                         {prop.type === 'investment' && prop.weeklyRent && (
                           <div>
                             <p className="text-xs text-muted-foreground">Rent</p>
-                            <p className="font-semibold">{formatCurrency(prop.weeklyRent)}/wk</p>
+                            <p className="text-lg font-semibold tabular-nums">{formatCurrency(prop.weeklyRent)}/wk</p>
                           </div>
                         )}
                         {mortgage && (
                           <div>
                             <p className="text-xs text-muted-foreground">Interest Rate</p>
-                            <p className="font-semibold">{formatPercent(mortgage.interestRatePA)} p.a.</p>
+                            <p className="text-lg font-semibold tabular-nums">{formatPercent(mortgage.interestRatePA)} p.a.</p>
                           </div>
                         )}
                         {mortgage && (
                           <div>
                             <p className="text-xs text-muted-foreground">Repayment</p>
-                            <p className="font-semibold">{formatCurrency(mortgage.minimumRepayment)}/{mortgage.repaymentFrequency === 'monthly' ? 'mo' : mortgage.repaymentFrequency === 'fortnightly' ? 'fn' : 'wk'}</p>
+                            <p className="text-lg font-semibold tabular-nums">{formatCurrency(mortgage.minimumRepayment)}/{mortgage.repaymentFrequency === 'monthly' ? 'mo' : mortgage.repaymentFrequency === 'fortnightly' ? 'fn' : 'wk'}</p>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-1 ml-2">
+                    <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => openEdit(prop)}>
                         <Pencil className="h-4 w-4" />
                       </Button>

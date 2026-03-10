@@ -13,7 +13,7 @@ import {
   LogOut,
   Moon,
   Sun,
-  TrendingDown,
+  ArrowUpRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -80,7 +80,7 @@ function BrandLogo() {
   return (
     <div className="flex items-center gap-3 px-2">
       <div className="h-9 w-9 rounded-xl gradient-emerald glow-emerald flex items-center justify-center">
-        <TrendingDown className="h-5 w-5 text-white rotate-180" />
+        <ArrowUpRight className="h-5 w-5 text-white" />
       </div>
       <div>
         <h1 className="text-base font-bold tracking-tight text-foreground">NWT</h1>
@@ -95,7 +95,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex-1 px-3 py-2 space-y-5 overflow-y-auto">
       {navSections.map((section) => (
         <div key={section.label}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 mb-1.5">
             {section.label}
           </p>
           <div className="space-y-0.5">
@@ -136,9 +136,11 @@ function NetWealthMini() {
   const netWealth = calculateNetWealth(assets, properties, liabilities)
 
   return (
-    <div className="mx-3 mb-2 p-3 rounded-lg bg-emerald-subtle">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Net Wealth</p>
-      <p className={`text-lg font-bold tabular-nums ${netWealth >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+    <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-emerald-subtle relative overflow-hidden">
+      {/* Subtle gradient accent on left edge */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-emerald" />
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 pl-2">Net Wealth</p>
+      <p className={`text-lg font-bold tabular-nums pl-2 ${netWealth >= 0 ? 'text-primary' : 'text-red-500'}`}>
         {formatCurrency(netWealth)}
       </p>
     </div>

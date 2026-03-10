@@ -11,6 +11,58 @@ import {
   calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth
 } from '@/lib/calculations'
 
+function KpiCard({
+  label,
+  value,
+  tag,
+  tagColor,
+  ratio,
+  icon: Icon,
+}: {
+  label: string
+  value: string
+  tag: string
+  tagColor: 'emerald' | 'amber' | 'red'
+  ratio: number // 0-1 for progress bar
+  icon: React.ComponentType<{ className?: string }>
+}) {
+  const barColor = {
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    red: 'bg-red-500',
+  }[tagColor]
+
+  const tagBg = {
+    emerald: 'bg-emerald-500/10 text-emerald-500',
+    amber: 'bg-amber-500/10 text-amber-500',
+    red: 'bg-red-500/10 text-red-500',
+  }[tagColor]
+
+  return (
+    <Card className="rounded-xl bg-card card-hover">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+          </div>
+          <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${tagBg}`}>
+            {tag}
+          </span>
+        </div>
+        <p className="text-2xl font-extrabold tabular-nums tracking-tight mb-3">{value}</p>
+        {/* Progress bar */}
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full progress-fill ${barColor}`}
+            style={{ width: `${Math.min(Math.max(ratio * 100, 0), 100)}%` }}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
 
@@ -30,14 +82,14 @@ export function DashboardPage() {
     projectionSettings.projectionYears
   )
 
-  // Asset breakdown for pie chart — colors match badge colors on Assets page
+  // Asset breakdown for pie chart
   const PIE_COLORS: Record<string, string> = {
-    cash: '#10b981',      // emerald-500
-    property: '#3b82f6',  // blue-500
-    stocks: '#6366f1',    // indigo-500
-    super: '#8b5cf6',     // violet-500
-    vehicles: '#f59e0b',  // amber-500
-    other: '#6b7280',     // gray-500
+    cash: '#10b981',
+    property: '#3b82f6',
+    stocks: '#6366f1',
+    super: '#8b5cf6',
+    vehicles: '#f59e0b',
+    other: '#6b7280',
   }
   const categoryTotals = new Map<string, { value: number; color: string }>()
   assets.forEach(a => {
@@ -59,6 +111,14 @@ export function DashboardPage() {
   }))
 
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0
+
+  // KPI tags
+  const savingsTag = savingsRate > 0.2 ? 'Excellent' : savingsRate > 0.1 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
+  const savingsColor = savingsRate > 0.2 ? 'emerald' as const : savingsRate > 0.1 ? 'emerald' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
+  const debtColor = debtRatio < 0.3 ? 'emerald' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
+  const surplusTag = monthlyCashflow > 500 ? 'Strong' : monthlyCashflow > 0 ? 'Positive' : 'Deficit'
+  const surplusColor = monthlyCashflow > 500 ? 'emerald' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
 
   return (
     <div className="space-y-6">
@@ -84,6 +144,34 @@ export function DashboardPage() {
         trend={netWealth >= 0 ? 'up' : 'down'}
       />
 
+      {/* ── KPI Cards with progress bars ─────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <KpiCard
+          label="Savings Rate"
+          value={formatPercent(savingsRate)}
+          tag={savingsTag}
+          tagColor={savingsColor}
+          ratio={savingsRate}
+          icon={PiggyBank}
+        />
+        <KpiCard
+          label="Debt Ratio"
+          value={formatPercent(debtRatio)}
+          tag={debtTag}
+          tagColor={debtColor}
+          ratio={debtRatio}
+          icon={BarChart3}
+        />
+        <KpiCard
+          label="Monthly Surplus"
+          value={formatCurrency(monthlyCashflow)}
+          tag={surplusTag}
+          tagColor={surplusColor}
+          ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0}
+          icon={TrendingUp}
+        />
+      </div>
+
       {/* ── 3-card row: Cashflow · Assets · Liabilities ─────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
@@ -106,59 +194,6 @@ export function DashboardPage() {
           trend={totalLiabilities > 0 ? 'down' : 'neutral'}
         />
       </div>
-
-      {/* ── Compare strip — always visible ──────────────────────────── */}
-      <Card className="rounded-xl bg-card">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-y-0 md:divide-x divide-border">
-
-            {/* Savings Rate */}
-            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                <PiggyBank className="h-3.5 w-3.5" />
-                Savings Rate
-              </div>
-              <p className={`text-xl font-bold tabular-nums ${
-                savingsRate > 0.2 ? 'text-emerald-500' : savingsRate > 0 ? 'text-foreground' : 'text-red-500'
-              }`}>
-                {formatPercent(savingsRate)}
-              </p>
-              <p className="text-xs text-muted-foreground">of monthly income</p>
-            </div>
-
-            {/* Debt Ratio */}
-            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                <BarChart3 className="h-3.5 w-3.5" />
-                Debt Ratio
-              </div>
-              <p className={`text-xl font-bold tabular-nums ${
-                debtRatio < 0.5 ? 'text-emerald-500' : 'text-red-500'
-              }`}>
-                {formatPercent(debtRatio)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {debtRatio < 0.5 ? 'Healthy leverage' : 'High leverage'}
-              </p>
-            </div>
-
-            {/* Monthly Surplus */}
-            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
-              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                <TrendingUp className="h-3.5 w-3.5" />
-                Monthly Surplus
-              </div>
-              <p className={`text-xl font-bold tabular-nums ${
-                monthlyCashflow > 0 ? 'text-emerald-500' : 'text-red-500'
-              }`}>
-                {formatCurrency(monthlyCashflow)}
-              </p>
-              <p className="text-xs text-muted-foreground">available to allocate</p>
-            </div>
-
-          </div>
-        </CardContent>
-      </Card>
 
       {/* ── Charts — 2/3 + 1/3 ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

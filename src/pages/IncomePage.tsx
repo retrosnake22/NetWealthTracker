@@ -105,7 +105,7 @@ export function IncomePage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Monthly Income</span>
@@ -124,18 +124,18 @@ export function IncomePage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {incomes.map(item => (
-            <Card key={item.id} className={!item.isActive ? 'opacity-50' : ''}>
-              <CardContent className="p-4">
+            <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
                       <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
                       {!item.isActive && <Badge variant="outline">Inactive</Badge>}
                     </div>
-                    <p className="text-xl font-bold mt-2 text-emerald-500">{formatCurrency(item.monthlyAmount)}/mo</p>
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(item.monthlyAmount)}/mo</p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>

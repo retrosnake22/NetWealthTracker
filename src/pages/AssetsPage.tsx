@@ -152,7 +152,7 @@ export function AssetsPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Assets</span>
@@ -171,24 +171,24 @@ export function AssetsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {assets.map(asset => (
-            <Card key={asset.id}>
-              <CardContent className="p-4">
+            <Card key={asset.id} className="card-hover group">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="space-y-1.5">
+                    <Badge className={CATEGORY_COLORS[asset.category]}>{CATEGORY_LABELS[asset.category]}</Badge>
                     <p className="font-semibold">{asset.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge className={CATEGORY_COLORS[asset.category]}>{CATEGORY_LABELS[asset.category]}</Badge>
-                      <span className="text-xs text-muted-foreground">{formatPercent(asset.growthRatePA)} p.a.</span>
-                    </div>
-                    <p className="text-xl font-bold mt-2">{formatCurrency(asset.currentValue)}</p>
+                    <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(asset.currentValue)}</p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(asset.id)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(asset)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(asset.id)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(asset)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(asset.growthRatePA)} p.a.</span>
                   </div>
                 </div>
               </CardContent>

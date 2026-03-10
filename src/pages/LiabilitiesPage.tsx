@@ -166,7 +166,7 @@ export function LiabilitiesPage() {
         </Dialog>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Liabilities</span>
@@ -187,12 +187,11 @@ export function LiabilitiesPage() {
           {liabilities.map(item => {
             const linkedProperty = getLinkedProperty(item.id)
             return (
-              <Card key={item.id}>
-                <CardContent className="p-4">
+              <Card key={item.id} className="card-hover group">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
                         <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatPercent(item.interestRatePA)} p.a.
@@ -201,12 +200,13 @@ export function LiabilitiesPage() {
                           <Badge variant="outline">🏠 {linkedProperty.name}</Badge>
                         )}
                       </div>
-                      <p className="text-xl font-bold mt-2 text-red-500">{formatCurrency(item.currentBalance)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="font-semibold">{item.name}</p>
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(item.currentBalance)}</p>
+                      <p className="text-xs text-muted-foreground">
                         Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
                       </p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
