@@ -6,6 +6,16 @@ interface WealthChartProps {
   data: Array<{ label: string; netWealth: number; totalAssets: number; totalLiabilities: number }>
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tooltipFormatter = (value: any, name: any) => {
+  const labels: Record<string, string> = {
+    totalAssets: 'Assets',
+    totalLiabilities: 'Liabilities',
+    netWealth: 'Net Wealth',
+  }
+  return [formatCurrency(Number(value)), labels[String(name)] || String(name)]
+}
+
 export function WealthChart({ data }: WealthChartProps) {
   const empty = data.length === 0
 
@@ -70,14 +80,7 @@ export function WealthChart({ data }: WealthChartProps) {
                 />
 
                 <Tooltip
-                  formatter={(value: unknown, name: string) => {
-                    const labels: Record<string, string> = {
-                      totalAssets: 'Assets',
-                      totalLiabilities: 'Liabilities',
-                      netWealth: 'Net Wealth',
-                    }
-                    return [formatCurrency(Number(value)), labels[name] || name]
-                  }}
+                  formatter={tooltipFormatter}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',
                     border: '1px solid var(--border)',
