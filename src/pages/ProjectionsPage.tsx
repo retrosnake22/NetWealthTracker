@@ -21,14 +21,10 @@ export function ProjectionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Projections</h1>
-        <p className="text-muted-foreground mt-1">See where your wealth is heading</p>
-      </div>
 
       {data.length <= 1 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <LineChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <LineChart className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">Not enough data</h3>
           <p className="text-muted-foreground">Add assets, income, and expenses to generate projections.</p>
         </div>

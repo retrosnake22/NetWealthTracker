@@ -20,6 +20,15 @@ const CATEGORY_LABELS: Record<LiabilityCategory, string> = {
   other: 'Other',
 }
 
+const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
+  mortgage: 'bg-red-500/10 text-red-500 border-red-500/20',
+  personal_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  car_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  credit_card: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  hecs: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
 export function LiabilitiesPage() {
   const { liabilities, addLiability, updateLiability, removeLiability, properties } = useFinanceStore()
   const [open, setOpen] = useState(false)
@@ -89,11 +98,7 @@ export function LiabilitiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Liabilities</h1>
-          <p className="text-muted-foreground mt-1">Manage your debts and loans</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Add Liability</Button>
@@ -163,7 +168,7 @@ export function LiabilitiesPage() {
 
       {liabilities.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <CreditCard className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No liabilities yet</h3>
           <p className="text-muted-foreground">Add your mortgages, loans, credit cards, and HECS debt.</p>
         </div>
@@ -178,7 +183,7 @@ export function LiabilitiesPage() {
                     <div>
                       <p className="font-semibold">{item.name}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary">{CATEGORY_LABELS[item.category]}</Badge>
+                        <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatPercent(item.interestRatePA)} p.a.
                         </span>

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { TrendingDown } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -45,9 +46,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold">💰 Net Wealth Tracker</h1>
+        <CardContent className="pt-8 pb-6">
+          {/* Brand logo */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="h-14 w-14 rounded-2xl gradient-emerald glow-emerald flex items-center justify-center mb-4">
+              <TrendingDown className="h-7 w-7 text-white rotate-180" />
+            </div>
+            <h1 className="text-2xl font-bold">Net Wealth Tracker</h1>
             <p className="text-muted-foreground mt-1">
               {isSignUp ? 'Create your account' : 'Sign in to your account'}
             </p>
@@ -99,7 +104,7 @@ export default function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            {message && <p className="text-sm text-green-500">{message}</p>}
+            {message && <p className="text-sm text-emerald-500">{message}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
             </Button>

@@ -20,6 +20,15 @@ const CATEGORY_LABELS: Record<AssetCategory, string> = {
   other: 'Other',
 }
 
+const CATEGORY_COLORS: Record<AssetCategory, string> = {
+  cash: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  property: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  stocks: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  super: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  vehicles: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
 const DEFAULT_GROWTH: Record<AssetCategory, number> = {
   cash: 0.045,
   property: 0.07,
@@ -86,11 +95,7 @@ export function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Assets</h1>
-          <p className="text-muted-foreground mt-1">Manage your cash, stocks, super & more</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Add Asset</Button>
@@ -149,7 +154,7 @@ export function AssetsPage() {
 
       {assets.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <Wallet className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No assets yet</h3>
           <p className="text-muted-foreground">Add your cash, stocks, super and other assets.</p>
         </div>
@@ -162,7 +167,7 @@ export function AssetsPage() {
                   <div>
                     <p className="font-semibold">{asset.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary">{CATEGORY_LABELS[asset.category]}</Badge>
+                      <Badge className={CATEGORY_COLORS[asset.category]}>{CATEGORY_LABELS[asset.category]}</Badge>
                       <span className="text-xs text-muted-foreground">{formatPercent(asset.growthRatePA)} p.a.</span>
                     </div>
                     <p className="text-xl font-bold mt-2">{formatCurrency(asset.currentValue)}</p>

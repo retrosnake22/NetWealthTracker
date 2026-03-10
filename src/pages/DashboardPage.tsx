@@ -1,6 +1,5 @@
-import { useState } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, PiggyBank, Building2, BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { DollarSign, TrendingUp, TrendingDown, PiggyBank, Building2, BarChart3 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
@@ -13,19 +12,18 @@ import {
 } from '@/lib/calculations'
 
 export function DashboardPage() {
-  const [showMore, setShowMore] = useState(false)
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
 
-  const netWealth = calculateNetWealth(assets, properties, liabilities)
-  const totalAssets = calculateTotalAssets(assets, properties)
+  const netWealth        = calculateNetWealth(assets, properties, liabilities)
+  const totalAssets      = calculateTotalAssets(assets, properties)
   const totalLiabilities = calculateTotalLiabilities(liabilities)
-  const monthlyIncome = calculateMonthlyIncome(incomes)
-  const monthlyExpenses = calculateMonthlyExpenses(expenseBudgets)
-  const monthlyCashflow = calculateMonthlyCashflow(incomes, expenseBudgets)
-  const savingsRate = calculateSavingsRate(incomes, expenseBudgets)
-  const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
+  const monthlyIncome    = calculateMonthlyIncome(incomes)
+  const monthlyExpenses  = calculateMonthlyExpenses(expenseBudgets)
+  const monthlyCashflow  = calculateMonthlyCashflow(incomes, expenseBudgets)
+  const savingsRate      = calculateSavingsRate(incomes, expenseBudgets)
+  const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
 
-  // Projection data
+  // Projection data for chart
   const projectionData = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
     projectionSettings.surplusAllocations,
@@ -42,18 +40,15 @@ export function DashboardPage() {
     categoryTotals.set('Property', properties.reduce((s, p) => s + p.currentValue, 0))
   }
   const breakdownData = Array.from(categoryTotals.entries()).map(([name, value]) => ({
-    name, value, color: ''
+    name, value, color: '',
   }))
 
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Your financial overview at a glance</p>
-      </div>
 
+      {/* ── Empty state ─────────────────────────────────────────────── */}
       {isEmpty && (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -64,14 +59,18 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Hero Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Net Wealth"
-          value={formatCurrency(netWealth)}
-          icon={DollarSign}
-          trend={netWealth >= 0 ? 'up' : 'down'}
-        />
+      {/* ── Hero card — Net Wealth ───────────────────────────────────── */}
+      <MetricCard
+        variant="hero"
+        title="Net Wealth"
+        value={formatCurrency(netWealth)}
+        subtitle={`Total Assets ${formatCurrency(totalAssets)} · Total Liabilities ${formatCurrency(totalLiabilities)}`}
+        icon={DollarSign}
+        trend={netWealth >= 0 ? 'up' : 'down'}
+      />
+
+      {/* ── 3-card row: Cashflow · Assets · Liabilities ─────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
           title="Monthly Cashflow"
           value={formatCurrency(monthlyCashflow)}
@@ -83,6 +82,7 @@ export function DashboardPage() {
           title="Total Assets"
           value={formatCurrency(totalAssets)}
           icon={PiggyBank}
+          trend="neutral"
         />
         <MetricCard
           title="Total Liabilities"
@@ -92,52 +92,67 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Show More Metrics */}
-      <Button
-        variant="ghost"
-        className="w-full"
-        onClick={() => setShowMore(!showMore)}
-      >
-        {showMore ? (
-          <>Hide Details <ChevronUp className="ml-2 h-4 w-4" /></>
-        ) : (
-          <>Show More Metrics <ChevronDown className="ml-2 h-4 w-4" /></>
-        )}
-      </Button>
+      {/* ── Compare strip — always visible ──────────────────────────── */}
+      <Card className="rounded-xl bg-card">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-3 divide-x divide-border">
 
-      {showMore && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MetricCard
-            title="Savings Rate"
-            value={formatPercent(savingsRate)}
-            subtitle="of monthly income saved"
-            icon={PiggyBank}
-            trend={savingsRate > 0.2 ? 'up' : savingsRate > 0 ? 'neutral' : 'down'}
-          />
-          <MetricCard
-            title="Debt-to-Asset Ratio"
-            value={formatPercent(debtRatio)}
-            subtitle={debtRatio < 0.5 ? 'Healthy' : 'High leverage'}
-            icon={BarChart3}
-            trend={debtRatio < 0.5 ? 'up' : 'down'}
-          />
-          <MetricCard
-            title="Monthly Surplus"
-            value={formatCurrency(monthlyCashflow)}
-            subtitle="available to allocate"
-            icon={TrendingUp}
-            trend={monthlyCashflow > 0 ? 'up' : 'down'}
-          />
-        </div>
-      )}
+            {/* Savings Rate */}
+            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                <PiggyBank className="h-3.5 w-3.5" />
+                Savings Rate
+              </div>
+              <p className={`text-xl font-bold tabular-nums ${
+                savingsRate > 0.2 ? 'text-emerald-500' : savingsRate > 0 ? 'text-foreground' : 'text-red-500'
+              }`}>
+                {formatPercent(savingsRate)}
+              </p>
+              <p className="text-xs text-muted-foreground">of monthly income</p>
+            </div>
 
-      {/* Charts */}
+            {/* Debt Ratio */}
+            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                <BarChart3 className="h-3.5 w-3.5" />
+                Debt Ratio
+              </div>
+              <p className={`text-xl font-bold tabular-nums ${
+                debtRatio < 0.5 ? 'text-emerald-500' : 'text-red-500'
+              }`}>
+                {formatPercent(debtRatio)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {debtRatio < 0.5 ? 'Healthy leverage' : 'High leverage'}
+              </p>
+            </div>
+
+            {/* Monthly Surplus */}
+            <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Monthly Surplus
+              </div>
+              <p className={`text-xl font-bold tabular-nums ${
+                monthlyCashflow > 0 ? 'text-emerald-500' : 'text-red-500'
+              }`}>
+                {formatCurrency(monthlyCashflow)}
+              </p>
+              <p className="text-xs text-muted-foreground">available to allocate</p>
+            </div>
+
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Charts — 2/3 + 1/3 ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <WealthChart data={projectionData} />
         </div>
         <AssetBreakdown data={breakdownData} />
       </div>
+
     </div>
   )
 }

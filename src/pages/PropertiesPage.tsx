@@ -201,11 +201,7 @@ export function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Properties</h1>
-          <p className="text-muted-foreground mt-1">Manage your property portfolio</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-2" /> Add Property
         </Button>
@@ -228,7 +224,7 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Equity</p>
-            <p className="text-2xl font-bold">{formatCurrency(totalValue - totalDebt)}</p>
+            <p className="text-2xl font-bold text-emerald-500">{formatCurrency(totalValue - totalDebt)}</p>
           </CardContent>
         </Card>
       </div>
@@ -236,7 +232,7 @@ export function PropertiesPage() {
       {/* Property list */}
       {properties.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <Building2 className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No properties yet</h3>
           <p className="text-muted-foreground">Add your home, investment properties, and more.</p>
         </div>
@@ -253,7 +249,10 @@ export function PropertiesPage() {
                       <div className="flex items-center gap-2">
                         {prop.type === 'investment' ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
                         <h3 className="text-lg font-semibold">{prop.name}</h3>
-                        <Badge variant={prop.type === 'investment' ? 'default' : 'secondary'}>
+                        <Badge className={prop.type === 'investment'
+                          ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                          : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        }>
                           {prop.type === 'investment' ? 'Investment' : 'Primary'}
                         </Badge>
                       </div>

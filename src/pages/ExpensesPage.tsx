@@ -24,6 +24,36 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   hecs_repayment: 'HECS Repayment', tax: 'Tax', other: 'Other',
 }
 
+const EXPENSE_GROUP_COLORS: Record<string, string> = {
+  mortgage_repayment: 'bg-red-500/10 text-red-500 border-red-500/20',
+  rent: 'bg-red-500/10 text-red-500 border-red-500/20',
+  council_rates: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  water_rates: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  strata: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  insurance_home: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  insurance_health: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  insurance_car: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  insurance_life: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  utilities: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  groceries: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  transport: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  fuel: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  subscriptions: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  entertainment: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  dining_out: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  clothing: 'bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20',
+  health_fitness: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  education: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+  childcare: 'bg-sky-500/10 text-sky-500 border-sky-500/20',
+  pet_expenses: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  phone_internet: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
+  personal_care: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  gifts_donations: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  hecs_repayment: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  tax: 'bg-red-500/10 text-red-500 border-red-500/20',
+  other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
 export function ExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
   const [open, setOpen] = useState(false)
@@ -56,11 +86,7 @@ export function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground mt-1">Set your monthly budget</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Add Expense</Button>
@@ -101,7 +127,7 @@ export function ExpensesPage() {
 
       {expenseBudgets.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <TrendingDown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <TrendingDown className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
           <p className="text-muted-foreground">Set your monthly budget for each category.</p>
         </div>
@@ -113,7 +139,9 @@ export function ExpensesPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold">{item.label}</p>
-                    <Badge variant="secondary" className="mt-1">{CATEGORY_LABELS[item.category]}</Badge>
+                    <Badge variant="outline" className={`mt-1 ${EXPENSE_GROUP_COLORS[item.category] ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
+                      {CATEGORY_LABELS[item.category]}
+                    </Badge>
                     <p className="text-xl font-bold mt-2 text-red-500">{formatCurrency(item.monthlyBudget)}/mo</p>
                   </div>
                   <div className="flex gap-1">

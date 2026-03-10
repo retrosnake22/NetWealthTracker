@@ -20,6 +20,15 @@ const CATEGORY_LABELS: Record<IncomeCategory, string> = {
   other: 'Other',
 }
 
+const CATEGORY_COLORS: Record<IncomeCategory, string> = {
+  salary: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  rental: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  dividends: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  interest: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  side_hustle: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
 export function IncomePage() {
   const { incomes, addIncome, updateIncome, removeIncome } = useFinanceStore()
   const [open, setOpen] = useState(false)
@@ -53,11 +62,7 @@ export function IncomePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Income</h1>
-          <p className="text-muted-foreground mt-1">Track your income sources</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Add Income</Button>
@@ -102,7 +107,7 @@ export function IncomePage() {
 
       {incomes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <TrendingUp className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No income sources yet</h3>
           <p className="text-muted-foreground">Add your salary, rental income, dividends, etc.</p>
         </div>
@@ -115,7 +120,7 @@ export function IncomePage() {
                   <div>
                     <p className="font-semibold">{item.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary">{CATEGORY_LABELS[item.category]}</Badge>
+                      <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
                       {!item.isActive && <Badge variant="outline">Inactive</Badge>}
                     </div>
                     <p className="text-xl font-bold mt-2 text-emerald-500">{formatCurrency(item.monthlyAmount)}/mo</p>
