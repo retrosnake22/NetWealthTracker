@@ -17,6 +17,9 @@ export interface FinanceState {
   expenseActuals: ExpenseActual[]
   projectionSettings: ProjectionSettings
 
+  // Cloud sync
+  hydrateFromCloud: (data: Record<string, unknown>) => void
+
   // Asset CRUD
   addAsset: (asset: Partial<Asset>) => void
   updateAsset: (id: string, updates: Partial<Asset>) => void
@@ -76,6 +79,18 @@ export const useFinanceStore = create<FinanceState>()(
         projectionYears: 20,
         defaultGrowthRates: DEFAULT_GROWTH_RATES,
       },
+
+      // Cloud sync — replaces store data with cloud data
+      hydrateFromCloud: (data) => set(() => {
+        const hydrated: Record<string, unknown> = {}
+        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings']
+        for (const key of keys) {
+          if (data[key] !== undefined) {
+            hydrated[key] = data[key]
+          }
+        }
+        return hydrated as Partial<FinanceState>
+      }),
 
       // Assets
       addAsset: (asset) => set((state) => ({
