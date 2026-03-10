@@ -78,6 +78,8 @@ export const useFinanceStore = create<FinanceState>()(
         surplusAllocations: [],
         projectionYears: 20,
         defaultGrowthRates: DEFAULT_GROWTH_RATES,
+          propertyGrowthOverride: 0.07,
+          stockGrowthOverride: 0.07,
       },
 
       // Cloud sync — replaces store data with cloud data

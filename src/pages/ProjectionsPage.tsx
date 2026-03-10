@@ -62,12 +62,16 @@ export function ProjectionsPage() {
     ))
   }
 
+  // Use growth overrides, defaulting to 7% if somehow undefined
+  const propertyGrowth = projectionSettings.propertyGrowthOverride ?? 0.07
+  const stockGrowth = projectionSettings.stockGrowthOverride ?? 0.07
+
   const data = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
     allocations,
     projectionSettings.projectionYears,
-    projectionSettings.propertyGrowthOverride,
-    projectionSettings.stockGrowthOverride
+    propertyGrowth,
+    stockGrowth
   )
 
   const finalPoint = data[data.length - 1]
@@ -132,18 +136,11 @@ export function ProjectionsPage() {
                     step="0.1"
                     min={0}
                     max={30}
-                    value={projectionSettings.propertyGrowthOverride !== undefined ? (projectionSettings.propertyGrowthOverride * 100).toFixed(1) : ''}
-                    placeholder="Per-asset default"
+                    value={(propertyGrowth * 100).toFixed(1)}
                     onChange={e => {
-                      const val = e.target.value
-                      if (val === '') {
-                        updateProjectionSettings({ propertyGrowthOverride: undefined })
-                      } else {
-                        updateProjectionSettings({ propertyGrowthOverride: parseFloat(val) / 100 })
-                      }
+                      updateProjectionSettings({ propertyGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
                     }}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave blank to use each property's own rate</p>
                 </div>
                 <div>
                   <Label>Stock / Super Growth (% p.a.)</Label>
@@ -152,18 +149,11 @@ export function ProjectionsPage() {
                     step="0.1"
                     min={0}
                     max={30}
-                    value={projectionSettings.stockGrowthOverride !== undefined ? (projectionSettings.stockGrowthOverride * 100).toFixed(1) : ''}
-                    placeholder="Per-asset default"
+                    value={(stockGrowth * 100).toFixed(1)}
                     onChange={e => {
-                      const val = e.target.value
-                      if (val === '') {
-                        updateProjectionSettings({ stockGrowthOverride: undefined })
-                      } else {
-                        updateProjectionSettings({ stockGrowthOverride: parseFloat(val) / 100 })
-                      }
+                      updateProjectionSettings({ stockGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
                     }}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave blank to use each asset's own rate</p>
                 </div>
                 <div>
                   <Label>Projection Period (years)</Label>

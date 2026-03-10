@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { formatCurrency, formatPercent } from '@/lib/format'
+import { formatCurrency } from '@/lib/format'
 import type { Property, PropertyType } from '@/types/models'
 
 interface PropertyForm {
@@ -20,7 +20,6 @@ interface PropertyForm {
   type: PropertyType
   address: string
   currentValue: string
-  growthRatePA: string
   hasMortgage: boolean
   mortgageBalance: string
   interestRate: string
@@ -38,7 +37,7 @@ interface PropertyForm {
 }
 
 const emptyForm: PropertyForm = {
-  name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7',
+  name: '', type: 'primary_residence', address: '', currentValue: '',
   hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
   repaymentFrequency: 'monthly',
   weeklyRent: '', vacancyRate: '3.8', councilRatesPA: '', waterRatesPA: '',
@@ -77,7 +76,6 @@ export function PropertiesPage() {
       type: prop.type,
       address: prop.address ?? '',
       currentValue: String(prop.currentValue),
-      growthRatePA: String((prop.growthRatePA * 100).toFixed(1)),
       hasMortgage: !!mortgage,
       mortgageBalance: mortgage ? String(mortgage.currentBalance) : '',
       interestRate: mortgage ? String((mortgage.interestRatePA * 100).toFixed(2)) : '',
@@ -97,12 +95,13 @@ export function PropertiesPage() {
   }
 
   const handleSave = () => {
+    const existingProp = editingId ? properties.find(p => p.id === editingId) : null
     const propertyData = {
       name: form.name,
       type: form.type,
       address: form.address || undefined,
       currentValue: parseFloat(form.currentValue) || 0,
-      growthRatePA: (parseFloat(form.growthRatePA) || 7) / 100,
+      growthRatePA: existingProp?.growthRatePA ?? 0.07,
       ...(form.type === 'investment' ? {
         weeklyRent: parseFloat(form.weeklyRent) || 0,
         vacancyRatePA: (parseFloat(form.vacancyRate) || 0) / 100,
@@ -144,24 +143,20 @@ export function PropertiesPage() {
         : null
 
       if (mortgageData && existingMortgage) {
-        // Update existing mortgage
         updateLiability(existingMortgage.id, {
           ...mortgageData,
           linkedPropertyId: editingId,
         })
         updateProperty(editingId, { ...propertyData, mortgageId: existingMortgage.id })
       } else if (mortgageData && !existingMortgage) {
-        // Add new mortgage
         addLiability({ ...mortgageData, linkedPropertyId: editingId })
         const store = useFinanceStore.getState()
         const newMortgageId = store.liabilities[store.liabilities.length - 1]?.id
         updateProperty(editingId, { ...propertyData, mortgageId: newMortgageId })
       } else if (!mortgageData && existingMortgage) {
-        // Remove mortgage
         removeLiability(existingMortgage.id)
         updateProperty(editingId, { ...propertyData, mortgageId: undefined })
       } else {
-        // No mortgage changes
         updateProperty(editingId, propertyData)
       }
     } else {
@@ -171,7 +166,6 @@ export function PropertiesPage() {
         const store = useFinanceStore.getState()
         const mortgageId = store.liabilities[store.liabilities.length - 1]?.id
         addProperty({ ...propertyData, mortgageId })
-        // Link the mortgage back to the property
         const propStore = useFinanceStore.getState()
         const newPropId = propStore.properties[propStore.properties.length - 1]?.id
         if (mortgageId && newPropId) {
@@ -213,7 +207,7 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(totalValue)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(totalValue)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -225,7 +219,7 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Equity</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(totalValue - totalDebt)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(totalValue - totalDebt)}</p>
           </CardContent>
         </Card>
       </div>
@@ -253,7 +247,7 @@ export function PropertiesPage() {
                         <h3 className="text-lg font-semibold">{prop.name}</h3>
                         <Badge className={prop.type === 'investment'
                           ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                          : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-blue-500/10 text-blue-400 border-blue-400/20'
                         }>
                           {prop.type === 'investment' ? 'Investment' : 'Primary'}
                         </Badge>
@@ -272,11 +266,7 @@ export function PropertiesPage() {
                         )}
                         <div>
                           <p className="text-xs text-muted-foreground">Equity</p>
-                          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(equity)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Growth</p>
-                          <p className="text-lg font-semibold tabular-nums">{formatPercent(prop.growthRatePA)} p.a.</p>
+                          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(equity)}</p>
                         </div>
                         {prop.type === 'investment' && prop.weeklyRent && (
                           <div>
@@ -287,7 +277,7 @@ export function PropertiesPage() {
                         {mortgage && (
                           <div>
                             <p className="text-xs text-muted-foreground">Interest Rate</p>
-                            <p className="text-lg font-semibold tabular-nums">{formatPercent(mortgage.interestRatePA)} p.a.</p>
+                            <p className="text-lg font-semibold tabular-nums">{((mortgage.interestRatePA ?? 0) * 100).toFixed(2)}% p.a.</p>
                           </div>
                         )}
                         {mortgage && (
@@ -340,15 +330,9 @@ export function PropertiesPage() {
                 <Label>Address</Label>
                 <Input placeholder="Optional" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Current Value (AUD)</Label>
-                  <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
-                </div>
-                <div>
-                  <Label>Growth Rate (% p.a.)</Label>
-                  <Input type="number" step="0.1" value={form.growthRatePA} onChange={e => setForm({...form, growthRatePA: e.target.value})} />
-                </div>
+              <div>
+                <Label>Current Value (AUD)</Label>
+                <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
               </div>
 
               <Separator />
