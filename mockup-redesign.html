@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NWT — Design Comparison</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --font: 'Inter', -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: #0a0a0a;
+    color: #e5e5e5;
+    min-height: 100vh;
+  }
+
+  /* ─── Toggle bar ─── */
+  .toggle-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .toggle-bar h2 { font-size: 13px; font-weight: 500; color: #888; letter-spacing: 0.5px; text-transform: uppercase; }
+  .toggle-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: #888;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+  }
+  .toggle-btn:hover { border-color: rgba(255,255,255,0.15); color: #ccc; }
+  .toggle-btn.active { background: #fff; color: #0a0a0a; border-color: #fff; }
+  .toggle-btn.active-new { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-color: transparent; }
+
+  /* ─── Page selector ─── */
+  .page-tabs {
+    display: flex;
+    gap: 8px;
+    margin-left: 32px;
+  }
+  .page-tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+  }
+  .page-tab:hover { color: #999; }
+  .page-tab.active { background: rgba(255,255,255,0.1); color: #ccc; }
+
+  /* ─── Sections ─── */
+  .mockup-section {
+    display: none;
+    padding-top: 70px;
+    min-height: 100vh;
+  }
+  .mockup-section.visible { display: block; }
+
+  /* ─── CURRENT DESIGN ─── */
+  .current {
+    --bg: #141825;
+    --card: #1a1f2e;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8ed;
+    --muted: #6b7280;
+    --emerald: #10b981;
+    --emerald-glow: rgba(16,185,129,0.15);
+  }
+  .current .app-shell {
+    display: flex;
+    min-height: calc(100vh - 70px);
+    background: var(--bg);
+  }
+
+  /* Current Sidebar */
+  .current .sidebar {
+    width: 240px;
+    background: #181d2c;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .current .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px 20px;
+  }
+  .current .sidebar-brand .icon-box {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #059669, #10b981);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(16,185,129,0.2);
+  }
+  .current .sidebar-brand .icon-box svg { width: 18px; height: 18px; color: white; }
+  .current .sidebar-brand h1 { font-size: 15px; font-weight: 700; color: var(--text); }
+  .current .sidebar-brand p { font-size: 10px; color: var(--muted); }
+
+  .current .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(107,114,128,0.6);
+    padding: 16px 20px 6px;
+  }
+  .current .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    margin: 1px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .current .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .current .nav-item.active {
+    background: rgba(16,185,129,0.08);
+    color: var(--emerald);
+  }
+  .current .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: var(--emerald);
+    border-radius: 0 4px 4px 0;
+  }
+  .current .nav-item svg { width: 16px; height: 16px; }
+
+  /* Current Content */
+  .current .content {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+  }
+  .current .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .current .top-bar h1 { font-size: 18px; font-weight: 600; color: var(--text); }
+  .current .top-bar span { font-size: 13px; color: var(--muted); }
+
+  /* Current Hero Card */
+  .current .hero-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 20px var(--emerald-glow), 0 0 60px rgba(16,185,129,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .current .hero-card .label { font-size: 15px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .current .hero-card .value { font-size: 36px; font-weight: 700; color: var(--emerald); }
+  .current .hero-card .subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .current .hero-card .icon-badge {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #059669, #10b981);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Current Metric Cards */
+  .current .card-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .current .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .current .metric-card .label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .current .metric-card .value { font-size: 24px; font-weight: 700; }
+  .current .metric-card .value.green { color: var(--emerald); }
+  .current .metric-card .value.neutral { color: var(--text); }
+  .current .metric-card .value.red { color: #ef4444; }
+  .current .metric-card .subtitle { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .current .metric-card .icon-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .current .metric-card .icon-badge.green { background: rgba(16,185,129,0.1); color: var(--emerald); }
+  .current .metric-card .icon-badge.neutral { background: rgba(16,185,129,0.1); color: var(--emerald); }
+  .current .metric-card .icon-badge.red { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+  /* Current Compare Strip */
+  .current .compare-strip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-bottom: 16px;
+  }
+  .current .compare-item {
+    text-align: center;
+    padding: 20px;
+    border-right: 1px solid var(--border);
+  }
+  .current .compare-item:last-child { border-right: none; }
+  .current .compare-item .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .current .compare-item .value { font-size: 20px; font-weight: 700; margin: 4px 0; }
+  .current .compare-item .desc { font-size: 11px; color: var(--muted); }
+
+  /* Current Chart Area */
+  .current .chart-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .current .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .current .chart-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .current .chart-placeholder {
+    height: 200px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(16,185,129,0.08) 0px,
+      rgba(16,185,129,0.08) 30px,
+      transparent 30px,
+      transparent 40px
+    );
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .current .chart-placeholder::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(to top, var(--card) 0%, transparent 100%);
+  }
+  .current .chart-line {
+    position: absolute;
+    bottom: 20%;
+    left: 5%;
+    width: 90%;
+    height: 2px;
+    background: var(--emerald);
+    border-radius: 2px;
+    z-index: 1;
+    clip-path: polygon(0% 80%, 15% 60%, 30% 65%, 50% 40%, 70% 25%, 85% 15%, 100% 0%, 100% 100%, 0% 100%);
+    height: 60%;
+    background: linear-gradient(to top, rgba(16,185,129,0.0), rgba(16,185,129,0.2));
+    border-top: 2px solid var(--emerald);
+  }
+  .current .pie-placeholder {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    margin: 20px auto;
+    background: conic-gradient(
+      var(--emerald) 0deg 120deg,
+      #6366f1 120deg 200deg,
+      #8b5cf6 200deg 260deg,
+      #f59e0b 260deg 300deg,
+      #6b7280 300deg 360deg
+    );
+    position: relative;
+  }
+  .current .pie-placeholder::after {
+    content: '';
+    position: absolute;
+    inset: 35%;
+    background: var(--card);
+    border-radius: 50%;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* ─── NEW DESIGN ─── */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  .new-design {
+    --bg: #09090b;
+    --surface-1: #111113;
+    --surface-2: #18181b;
+    --surface-3: #1f1f23;
+    --border: rgba(255,255,255,0.06);
+    --border-subtle: rgba(255,255,255,0.04);
+    --text: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #52525b;
+    --accent: #818cf8;
+    --accent-light: #a5b4fc;
+    --accent-dim: rgba(129,140,248,0.12);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --amber: #fbbf24;
+  }
+
+  .new-design .app-shell {
+    display: flex;
+    min-height: calc(100vh - 70px);
+    background: var(--bg);
+  }
+
+  /* ─── New Sidebar ─── */
+  .new-design .sidebar {
+    width: 220px;
+    background: var(--surface-1);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .new-design .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px 24px;
+  }
+  .new-design .sidebar-brand .logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+  }
+  .new-design .sidebar-brand h1 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .new-design .nav-group { margin-bottom: 8px; }
+  .new-design .nav-group-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 8px 16px 4px;
+    letter-spacing: 0;
+  }
+  .new-design .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    margin: 1px 8px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .new-design .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .new-design .nav-item.active {
+    background: var(--accent-dim);
+    color: var(--accent-light);
+  }
+  .new-design .nav-item svg { width: 15px; height: 15px; opacity: 0.7; }
+  .new-design .nav-item.active svg { opacity: 1; }
+
+  .new-design .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .new-design .net-badge {
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    margin-bottom: 12px;
+  }
+  .new-design .net-badge .label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .new-design .net-badge .value { font-size: 18px; font-weight: 700; color: var(--green); margin-top: 2px; letter-spacing: -0.5px; }
+
+  /* ─── New Content ─── */
+  .new-design .content {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .new-design .page-header {
+    padding: 24px 32px 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .new-design .page-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .new-design .page-header .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .new-design .page-header .actions { display: flex; gap: 8px; }
+  .new-design .btn-primary {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font);
+  }
+  .new-design .btn-ghost {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+
+  .new-design .page-content { padding: 24px 32px; }
+
+  /* ─── New Hero — Bento style ─── */
+  .new-design .hero-bento {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    background: var(--border-subtle);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .new-design .hero-main {
+    grid-column: 1 / -1;
+    background: var(--surface-1);
+    padding: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .new-design .hero-main .overline {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .new-design .hero-main .big-number {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .new-design .hero-main .big-number .cents { font-size: 28px; color: var(--text-secondary); font-weight: 600; }
+  .new-design .hero-main .change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+  .new-design .hero-main .change.up { background: var(--green-dim); color: var(--green); }
+  .new-design .hero-main .sparkline-mini {
+    width: 180px;
+    height: 60px;
+    opacity: 0.6;
+  }
+
+  .new-design .hero-stat {
+    background: var(--surface-1);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .new-design .hero-stat .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .new-design .hero-stat .label .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .new-design .hero-stat .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .new-design .hero-stat .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ─── Key Metrics Row ─── */
+  .new-design .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .new-design .metric-pill {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .new-design .metric-pill .left { display: flex; flex-direction: column; gap: 2px; }
+  .new-design .metric-pill .label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .new-design .metric-pill .value { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .new-design .metric-pill .value.green { color: var(--green); }
+  .new-design .metric-pill .value.red { color: var(--red); }
+  .new-design .metric-pill .tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .new-design .metric-pill .tag.good { background: var(--green-dim); color: var(--green); }
+  .new-design .metric-pill .tag.warn { background: var(--red-dim); color: var(--red); }
+
+  /* ─── Charts ─── */
+  .new-design .chart-section {
+    display: grid;
+    grid-template-columns: 5fr 2fr;
+    gap: 12px;
+  }
+  .new-design .chart-box {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .new-design .chart-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .new-design .chart-header h3 { font-size: 14px; font-weight: 600; color: var(--text); }
+  .new-design .chart-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-2);
+    padding: 2px;
+    border-radius: 6px;
+  }
+  .new-design .chart-tab {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  .new-design .chart-tab.active { background: var(--surface-3); color: var(--text); }
+  .new-design .chart-body { padding: 20px; }
+  .new-design .chart-area {
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Simulated chart with SVG */
+  .new-design .chart-area svg { width: 100%; height: 100%; }
+
+  /* ─── Breakdown (right side) ─── */
+  .new-design .breakdown-list { padding: 16px 20px; }
+  .new-design .breakdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .new-design .breakdown-item:last-child { border-bottom: none; }
+  .new-design .breakdown-item .left { display: flex; align-items: center; gap: 10px; }
+  .new-design .breakdown-item .color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .new-design .breakdown-item .name { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .new-design .breakdown-item .right { text-align: right; }
+  .new-design .breakdown-item .amount { font-size: 13px; font-weight: 600; color: var(--text); }
+  .new-design .breakdown-item .pct { font-size: 11px; color: var(--text-muted); }
+  .new-design .breakdown-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-3);
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .new-design .breakdown-bar .fill { height: 100%; border-radius: 2px; }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* ─── NEW DESIGN — ASSETS PAGE ─── */
+  /* ═══════════════════════════════════════════════════════════ */
+
+  .new-design .summary-strip {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .new-design .summary-stat .label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .new-design .summary-stat .val { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+
+  .new-design .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 16px;
+  }
+  .new-design .data-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .new-design .data-table td {
+    padding: 14px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .new-design .data-table tr:hover td {
+    background: rgba(255,255,255,0.02);
+  }
+  .new-design .data-table .name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .new-design .data-table .category-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .new-design .data-table .value-cell {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .new-design .data-table .growth-cell {
+    font-variant-numeric: tabular-nums;
+  }
+  .new-design .data-table .growth-cell.pos { color: var(--green); }
+  .new-design .data-table .growth-cell.neg { color: var(--red); }
+  .new-design .data-table .actions-cell {
+    text-align: right;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .new-design .icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+  }
+  .new-design .icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+  .new-design .icon-btn.danger:hover { background: var(--red-dim); color: var(--red); }
+
+  .new-design .tag {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .new-design .tag.cash { background: rgba(74,222,128,0.1); color: #4ade80; }
+  .new-design .tag.stocks { background: rgba(129,140,248,0.1); color: #818cf8; }
+  .new-design .tag.super { background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .new-design .tag.vehicles { background: rgba(251,191,36,0.1); color: #fbbf24; }
+
+  /* ─── Review callout ─── */
+  .review-notes {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 32px;
+    display: none;
+  }
+  .review-notes.visible { display: block; }
+  .review-notes h3 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+  .review-notes ul { list-style: none; padding: 0; }
+  .review-notes li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+    padding-left: 20px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .review-notes li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* Annotations */
+  .annotation {
+    position: absolute;
+    background: rgba(129,140,248,0.9);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- Toggle Bar -->
+<div class="toggle-bar">
+  <h2>Design Compare</h2>
+  <button class="toggle-btn active" onclick="showDesign('current')">Current (Emerald)</button>
+  <button class="toggle-btn" onclick="showDesign('new')">Proposed (Refined)</button>
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="page-tab" onclick="showPage('assets')">Assets</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CURRENT DESIGN — DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="mockup-section current visible" id="current-dashboard">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+        </div>
+        <div>
+          <h1>NWT</h1>
+          <p>Net Wealth Tracker</p>
+        </div>
+      </div>
+      <div class="nav-section-label">OVERVIEW</div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-section-label">MONEY FLOW</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 100 4 2 2 0 000-4z"/></svg>
+        Assets
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Properties
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+        Liabilities
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+        Income
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-4 4 4 4-4 4 4V2z"/></svg>
+        Expenses
+      </div>
+      <div class="nav-section-label">PLANNING</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 6-8"/></svg>
+        Projections
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="top-bar">
+        <h1>Dashboard</h1>
+        <span>— Your financial overview at a glance</span>
+      </div>
+
+      <div class="hero-card">
+        <div>
+          <div class="label">Net Wealth</div>
+          <div class="value">$487,250</div>
+          <div class="subtitle">Total Assets $837,250 · Total Liabilities $350,000</div>
+        </div>
+        <div class="icon-badge">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+      </div>
+
+      <div class="card-row">
+        <div class="metric-card">
+          <div>
+            <div class="label">Monthly Cashflow</div>
+            <div class="value green">$3,850</div>
+            <div class="subtitle">$12,500 in · $8,650 out</div>
+          </div>
+          <div class="icon-badge green">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div>
+            <div class="label">Total Assets</div>
+            <div class="value neutral">$837,250</div>
+          </div>
+          <div class="icon-badge neutral">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5L5 19M5 5l14 14"/></svg>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div>
+            <div class="label">Total Liabilities</div>
+            <div class="value red">$350,000</div>
+          </div>
+          <div class="icon-badge red">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17l-8.5-8.5-5 5L2 7"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-strip">
+        <div class="compare-item">
+          <div class="label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5L5 19M5 5l14 14"/></svg>
+            Savings Rate
+          </div>
+          <div class="value" style="color: var(--emerald);">30.8%</div>
+          <div class="desc">of monthly income</div>
+        </div>
+        <div class="compare-item">
+          <div class="label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/></svg>
+            Debt Ratio
+          </div>
+          <div class="value" style="color: var(--emerald);">41.8%</div>
+          <div class="desc">Healthy leverage</div>
+        </div>
+        <div class="compare-item">
+          <div class="label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+            Monthly Surplus
+          </div>
+          <div class="value" style="color: var(--emerald);">$3,850</div>
+          <div class="desc">available to allocate</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <h3>Net Wealth Projection</h3>
+          <div class="chart-placeholder">
+            <div class="chart-line"></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Asset Breakdown</h3>
+          <div class="pie-placeholder"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CURRENT DESIGN — ASSETS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="mockup-section current" id="current-assets">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+        </div>
+        <div>
+          <h1>NWT</h1>
+          <p>Net Wealth Tracker</p>
+        </div>
+      </div>
+      <div class="nav-section-label">OVERVIEW</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-section-label">MONEY FLOW</div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 100 4 2 2 0 000-4z"/></svg>
+        Assets
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Properties
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+        Liabilities
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="top-bar">
+        <h1>Assets</h1>
+        <span>— Manage your cash, stocks, super & more</span>
+      </div>
+
+      <!-- Total Assets summary card (same style as all other pages) -->
+      <div class="metric-card" style="margin-bottom: 16px;">
+        <div>
+          <div class="label">Total Assets</div>
+          <div class="value neutral">$487,250</div>
+          <div class="subtitle">4 assets tracked</div>
+        </div>
+        <div class="icon-badge neutral">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/></svg>
+        </div>
+      </div>
+
+      <!-- 2-column grid of cards (current pattern) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="metric-card" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: rgba(16,185,129,0.1); color: #10b981;">Cash / Savings</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">✏️</button>
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">🗑️</button>
+            </div>
+          </div>
+          <div class="label" style="font-size: 14px; font-weight: 600; color: #e8e8ed; margin-bottom: 8px;">Emergency Fund</div>
+          <div class="value neutral" style="font-size: 20px;">$45,000</div>
+          <div class="subtitle">Growth: 4.5% p.a.</div>
+        </div>
+        <div class="metric-card" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: rgba(99,102,241,0.1); color: #6366f1;">Stocks / ETFs</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">✏️</button>
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">🗑️</button>
+            </div>
+          </div>
+          <div class="label" style="font-size: 14px; font-weight: 600; color: #e8e8ed; margin-bottom: 8px;">Vanguard VAS</div>
+          <div class="value neutral" style="font-size: 20px;">$120,000</div>
+          <div class="subtitle">Growth: 8.0% p.a.</div>
+        </div>
+        <div class="metric-card" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: rgba(139,92,246,0.1); color: #8b5cf6;">Superannuation</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">✏️</button>
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">🗑️</button>
+            </div>
+          </div>
+          <div class="label" style="font-size: 14px; font-weight: 600; color: #e8e8ed; margin-bottom: 8px;">AustralianSuper</div>
+          <div class="value neutral" style="font-size: 20px;">$285,000</div>
+          <div class="subtitle">Growth: 7.0% p.a.</div>
+        </div>
+        <div class="metric-card" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; background: rgba(245,158,11,0.1); color: #f59e0b;">Vehicles</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">✏️</button>
+              <button style="all: unset; cursor: pointer; padding: 4px; color: #6b7280;">🗑️</button>
+            </div>
+          </div>
+          <div class="label" style="font-size: 14px; font-weight: 600; color: #e8e8ed; margin-bottom: 8px;">Toyota RAV4</div>
+          <div class="value neutral" style="font-size: 20px;">$37,250</div>
+          <div class="subtitle" style="color: #ef4444;">Growth: -10.0% p.a.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- NEW DESIGN — DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="mockup-section new-design" id="new-dashboard">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">N</div>
+        <h1>NWT</h1>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Money Flow</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/></svg>
+          Assets
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Properties
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+          Liabilities
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+          Income
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-4 4 4 4-4 4 4V2z"/></svg>
+          Expenses
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Planning</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 6-8"/></svg>
+          Projections
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="net-badge">
+          <div class="label">Net Wealth</div>
+          <div class="value">$487,250</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <div class="subtitle">Your financial snapshot</div>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost">Export</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Bento Hero -->
+        <div class="hero-bento">
+          <div class="hero-main">
+            <div>
+              <div class="overline">Net Wealth</div>
+              <div class="big-number">$487,250<span class="cents">.00</span></div>
+              <div class="change up">↑ $12,430 this month</div>
+            </div>
+            <div class="sparkline-mini">
+              <svg viewBox="0 0 180 60">
+                <defs>
+                  <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4ade80" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#4ade80" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,45 L20,42 L40,38 L60,40 L80,35 L100,28 L120,25 L140,18 L160,15 L180,8 L180,60 L0,60 Z" fill="url(#sparkGrad)"/>
+                <path d="M0,45 L20,42 L40,38 L60,40 L80,35 L100,28 L120,25 L140,18 L160,15 L180,8" fill="none" stroke="#4ade80" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="hero-stat">
+            <div class="label"><span class="dot" style="background: #4ade80"></span>Total Assets</div>
+            <div class="stat-value" style="color: var(--text);">$837,250</div>
+            <div class="stat-sub">5 positions</div>
+          </div>
+          <div class="hero-stat" style="border-left: 2px solid var(--border-subtle);">
+            <div class="label"><span class="dot" style="background: #f87171"></span>Total Liabilities</div>
+            <div class="stat-value" style="color: var(--text);">$350,000</div>
+            <div class="stat-sub">2 debts</div>
+          </div>
+          <div class="hero-stat" style="border-left: 2px solid var(--border-subtle);">
+            <div class="label"><span class="dot" style="background: #818cf8"></span>Monthly Cashflow</div>
+            <div class="stat-value" style="color: var(--green);">+$3,850</div>
+            <div class="stat-sub">$12.5K in · $8.6K out</div>
+          </div>
+        </div>
+
+        <!-- Metric Pills -->
+        <div class="metrics-row">
+          <div class="metric-pill">
+            <div class="left">
+              <div class="label">Savings Rate</div>
+              <div class="value green">30.8%</div>
+            </div>
+            <div class="tag good">Excellent</div>
+          </div>
+          <div class="metric-pill">
+            <div class="left">
+              <div class="label">Debt-to-Asset Ratio</div>
+              <div class="value" style="color: var(--amber);">41.8%</div>
+            </div>
+            <div class="tag" style="background: rgba(251,191,36,0.1); color: #fbbf24;">Moderate</div>
+          </div>
+          <div class="metric-pill">
+            <div class="left">
+              <div class="label">Monthly Surplus</div>
+              <div class="value green">$3,850</div>
+            </div>
+            <div class="tag good">↑ 5%</div>
+          </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+          <div class="chart-box">
+            <div class="chart-header">
+              <h3>Wealth Projection</h3>
+              <div class="chart-tabs">
+                <button class="chart-tab">5Y</button>
+                <button class="chart-tab active">10Y</button>
+                <button class="chart-tab">20Y</button>
+                <button class="chart-tab">30Y</button>
+              </div>
+            </div>
+            <div class="chart-body">
+              <div class="chart-area">
+                <svg viewBox="0 0 600 220" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Grid lines -->
+                  <line x1="0" y1="55" x2="600" y2="55" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                  <line x1="0" y1="110" x2="600" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                  <line x1="0" y1="165" x2="600" y2="165" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                  <!-- Area fill -->
+                  <path d="M0,185 C60,180 120,165 180,145 C240,125 300,100 360,75 C420,50 480,30 540,18 L600,10 L600,220 L0,220 Z" fill="url(#areaGrad)"/>
+                  <!-- Line -->
+                  <path d="M0,185 C60,180 120,165 180,145 C240,125 300,100 360,75 C420,50 480,30 540,18 L600,10" fill="none" stroke="#818cf8" stroke-width="2.5"/>
+                  <!-- Dot -->
+                  <circle cx="600" cy="10" r="4" fill="#818cf8"/>
+                  <!-- Labels -->
+                  <text x="0" y="215" fill="#52525b" font-size="11" font-family="Inter">2025</text>
+                  <text x="180" y="215" fill="#52525b" font-size="11" font-family="Inter">2028</text>
+                  <text x="360" y="215" fill="#52525b" font-size="11" font-family="Inter">2031</text>
+                  <text x="540" y="215" fill="#52525b" font-size="11" font-family="Inter">2034</text>
+                  <!-- Y-axis labels -->
+                  <text x="0" y="50" fill="#52525b" font-size="11" font-family="Inter">$2M</text>
+                  <text x="0" y="108" fill="#52525b" font-size="11" font-family="Inter">$1.2M</text>
+                  <text x="0" y="163" fill="#52525b" font-size="11" font-family="Inter">$500K</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-header">
+              <h3>Allocation</h3>
+            </div>
+            <div class="breakdown-list">
+              <div class="breakdown-item">
+                <div class="left"><span class="color-dot" style="background: #818cf8;"></span><span class="name">Super</span></div>
+                <div class="right"><div class="amount">$285,000</div><div class="pct">34%</div></div>
+              </div>
+              <div class="breakdown-item">
+                <div class="left"><span class="color-dot" style="background: #6366f1;"></span><span class="name">Stocks</span></div>
+                <div class="right"><div class="amount">$120,000</div><div class="pct">14%</div></div>
+              </div>
+              <div class="breakdown-item">
+                <div class="left"><span class="color-dot" style="background: #4ade80;"></span><span class="name">Cash</span></div>
+                <div class="right"><div class="amount">$45,000</div><div class="pct">5%</div></div>
+              </div>
+              <div class="breakdown-item">
+                <div class="left"><span class="color-dot" style="background: #fbbf24;"></span><span class="name">Vehicles</span></div>
+                <div class="right"><div class="amount">$37,250</div><div class="pct">4%</div></div>
+              </div>
+              <div class="breakdown-item">
+                <div class="left"><span class="color-dot" style="background: #3b82f6;"></span><span class="name">Property</span></div>
+                <div class="right"><div class="amount">$350,000</div><div class="pct">42%</div></div>
+              </div>
+              <!-- Stacked bar instead of pie -->
+              <div style="margin-top: 16px;">
+                <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px;">
+                  <div style="width: 42%; background: #3b82f6; border-radius: 4px;"></div>
+                  <div style="width: 34%; background: #818cf8; border-radius: 4px;"></div>
+                  <div style="width: 14%; background: #6366f1; border-radius: 4px;"></div>
+                  <div style="width: 5%; background: #4ade80; border-radius: 4px;"></div>
+                  <div style="width: 4%; background: #fbbf24; border-radius: 4px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- NEW DESIGN — ASSETS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="mockup-section new-design" id="new-assets">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark">N</div>
+        <h1>NWT</h1>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Money Flow</div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/></svg>
+          Assets
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Properties
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+          Liabilities
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7l-8.5 8.5-5-5L2 17"/></svg>
+          Income
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-4 4 4 4-4 4 4V2z"/></svg>
+          Expenses
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Planning</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 6-8"/></svg>
+          Projections
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="net-badge">
+          <div class="label">Net Wealth</div>
+          <div class="value">$487,250</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1>Assets</h1>
+          <div class="subtitle">4 positions · $487,250 total</div>
+        </div>
+        <div class="actions">
+          <button class="btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Asset
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="summary-strip">
+          <div class="summary-stat">
+            <div class="label">Total Value</div>
+            <div class="val">$487,250</div>
+          </div>
+          <div class="summary-stat">
+            <div class="label">Avg. Growth</div>
+            <div class="val" style="color: var(--green);">+5.8%</div>
+          </div>
+          <div class="summary-stat">
+            <div class="label">Positions</div>
+            <div class="val">4</div>
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Name</th>
+              <th>Category</th>
+              <th style="text-align: right;">Value</th>
+              <th style="text-align: right;">Growth</th>
+              <th style="text-align: right;">Weight</th>
+              <th style="width: 80px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="name-cell">
+                  <span class="category-dot" style="background: #4ade80;"></span>
+                  Emergency Fund
+                </div>
+              </td>
+              <td><span class="tag cash">Cash</span></td>
+              <td class="value-cell" style="text-align: right;">$45,000</td>
+              <td class="growth-cell pos" style="text-align: right;">+4.5%</td>
+              <td style="text-align: right; color: var(--text-muted);">9.2%</td>
+              <td class="actions-cell">
+                <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                <button class="icon-btn danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="name-cell">
+                  <span class="category-dot" style="background: #818cf8;"></span>
+                  Vanguard VAS
+                </div>
+              </td>
+              <td><span class="tag stocks">Stocks</span></td>
+              <td class="value-cell" style="text-align: right;">$120,000</td>
+              <td class="growth-cell pos" style="text-align: right;">+8.0%</td>
+              <td style="text-align: right; color: var(--text-muted);">24.6%</td>
+              <td class="actions-cell">
+                <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                <button class="icon-btn danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="name-cell">
+                  <span class="category-dot" style="background: #a78bfa;"></span>
+                  AustralianSuper
+                </div>
+              </td>
+              <td><span class="tag super">Super</span></td>
+              <td class="value-cell" style="text-align: right;">$285,000</td>
+              <td class="growth-cell pos" style="text-align: right;">+7.0%</td>
+              <td style="text-align: right; color: var(--text-muted);">58.5%</td>
+              <td class="actions-cell">
+                <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                <button class="icon-btn danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="name-cell">
+                  <span class="category-dot" style="background: #fbbf24;"></span>
+                  Toyota RAV4
+                </div>
+              </td>
+              <td><span class="tag vehicles">Vehicles</span></td>
+              <td class="value-cell" style="text-align: right;">$37,250</td>
+              <td class="growth-cell neg" style="text-align: right;">-10.0%</td>
+              <td style="text-align: right; color: var(--text-muted);">7.6%</td>
+              <td class="actions-cell">
+                <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                <button class="icon-btn danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  let currentDesign = 'current';
+  let currentPage = 'dashboard';
+
+  function showDesign(design) {
+    currentDesign = design;
+    updateView();
+    document.querySelectorAll('.toggle-btn').forEach(b => {
+      b.classList.remove('active', 'active-new');
+    });
+    if (design === 'current') {
+      document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+    } else {
+      document.querySelectorAll('.toggle-btn')[1].classList.add('active-new');
+    }
+  }
+
+  function showPage(page) {
+    currentPage = page;
+    updateView();
+    document.querySelectorAll('.page-tab').forEach(b => b.classList.remove('active'));
+    if (page === 'dashboard') document.querySelectorAll('.page-tab')[0].classList.add('active');
+    else document.querySelectorAll('.page-tab')[1].classList.add('active');
+  }
+
+  function updateView() {
+    document.querySelectorAll('.mockup-section').forEach(s => s.classList.remove('visible'));
+    const id = `${currentDesign === 'new' ? 'new' : 'current'}-${currentPage}`;
+    const el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+</script>
+
+</body>
+</html>

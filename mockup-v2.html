@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NWT v2 — Design Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #0b0e13;
+    --bg-raised: #111419;
+    --bg-surface: #171b22;
+    --bg-surface-hover: #1c2129;
+    --bg-elevated: #1f242c;
+    
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-medium: rgba(255,255,255,0.10);
+    
+    --text-primary: #f0f0f2;
+    --text-secondary: #8b8fa3;
+    --text-tertiary: #5c6070;
+    
+    --emerald-50: #ecfdf5;
+    --emerald-400: #34d399;
+    --emerald-500: #10b981;
+    --emerald-600: #059669;
+    --emerald-glow: rgba(16,185,129,0.15);
+    --emerald-glow-strong: rgba(16,185,129,0.25);
+    
+    --teal-400: #2dd4bf;
+    --blue-400: #60a5fa;
+    --violet-400: #a78bfa;
+    --amber-400: #fbbf24;
+    --rose-400: #fb7185;
+    --orange-400: #fb923c;
+    
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+  }
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  /* ─── Layout ─── */
+  .app { display: flex; min-height: 100vh; }
+  
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 240px;
+    background: var(--bg-raised);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+  
+  .sidebar-brand {
+    padding: 24px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px var(--emerald-glow), 0 2px 8px rgba(0,0,0,0.3);
+  }
+  
+  .brand-icon svg { width: 18px; height: 18px; color: white; }
+  
+  .brand-text h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+  .brand-text span {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  
+  .nav-section {
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-tertiary);
+    padding: 0 12px;
+    margin-bottom: 4px;
+  }
+  
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    text-decoration: none;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--text-primary);
+  }
+  .nav-item.active {
+    background: var(--emerald-glow);
+    color: var(--emerald-400);
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    border-radius: 0 4px 4px 0;
+    background: var(--emerald-500);
+  }
+  .nav-item svg { width: 16px; height: 16px; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  
+  /* ─── Net wealth in sidebar ─── */
+  .sidebar-wealth {
+    margin: auto 12px 8px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(45,212,191,0.04));
+    border: 1px solid rgba(16,185,129,0.12);
+  }
+  .sidebar-wealth-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+  .sidebar-wealth-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--emerald-400);
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .sidebar-footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+    border: none;
+    background: none;
+    text-align: left;
+  }
+  .sidebar-footer-btn:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+  }
+  .sidebar-footer-btn svg { width: 14px; height: 14px; }
+  
+  /* ─── Main content ─── */
+  .main {
+    flex: 1;
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+  
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    background: rgba(11,14,19,0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+  .topbar-subtitle { font-size: 13px; color: var(--text-tertiary); }
+  
+  .content {
+    padding: 28px 32px;
+    max-width: 1280px;
+  }
+  
+  /* ─── Cards ─── */
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    transition: all 0.2s;
+  }
+  .card:hover {
+    border-color: var(--border-medium);
+  }
+  
+  /* ─── HERO Card ─── */
+  .hero-card {
+    background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(16,185,129,0.06) 50%, var(--bg-surface) 100%);
+    border: 1px solid rgba(16,185,129,0.15);
+    border-radius: var(--radius);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; position: relative; z-index: 1; }
+  .hero-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--emerald-500);
+    box-shadow: 0 0 8px var(--emerald-glow-strong);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .hero-value {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .hero-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+  }
+  .hero-subtitle strong {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  
+  .hero-icon-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--emerald-500), var(--teal-400));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 24px var(--emerald-glow-strong), 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .hero-icon-badge svg { width: 26px; height: 26px; color: white; }
+  
+  /* ─── Metric Grid ─── */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  
+  .metric-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .metric-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .metric-card-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .metric-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .metric-icon svg { width: 18px; height: 18px; }
+  .metric-icon.emerald { background: rgba(16,185,129,0.1); color: var(--emerald-400); }
+  .metric-icon.emerald svg { color: var(--emerald-400); }
+  .metric-icon.blue { background: rgba(96,165,250,0.1); color: var(--blue-400); }
+  .metric-icon.blue svg { color: var(--blue-400); }
+  .metric-icon.rose { background: rgba(251,113,133,0.1); color: var(--rose-400); }
+  .metric-icon.rose svg { color: var(--rose-400); }
+  
+  .metric-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-value.positive { color: var(--emerald-400); }
+  .metric-value.neutral { color: var(--text-primary); }
+  .metric-value.negative { color: var(--rose-400); }
+  
+  .metric-subtitle {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  
+  /* ─── KPI Strip ─── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  
+  .kpi-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+  .kpi-value.good { color: var(--emerald-400); }
+  .kpi-value.warn { color: var(--amber-400); }
+  .kpi-value.bad { color: var(--rose-400); }
+  .kpi-context {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+  /* Progress bar under KPI */
+  .kpi-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.05);
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .kpi-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+  .kpi-bar-fill.good { background: linear-gradient(90deg, var(--emerald-600), var(--emerald-400)); }
+  .kpi-bar-fill.warn { background: linear-gradient(90deg, var(--orange-400), var(--amber-400)); }
+  
+  /* ─── Charts section ─── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  
+  .chart-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 0;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .chart-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-raised);
+    padding: 3px;
+    border-radius: 8px;
+  }
+  .chart-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.15s;
+  }
+  .chart-pill:hover { color: var(--text-secondary); }
+  .chart-pill.active {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  
+  .chart-area {
+    padding: 20px 22px;
+    height: 260px;
+    position: relative;
+  }
+  
+  /* Fake chart rendering */
+  .fake-chart {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  .chart-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70%;
+    background: linear-gradient(to top, rgba(16,185,129,0.08), transparent);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .chart-line {
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+  .chart-svg { width: 100%; height: 200px; }
+  
+  /* ─── Donut Chart ─── */
+  .donut-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .donut-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+  .donut-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .donut-svg { width: 160px; height: 160px; }
+  
+  .legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+  .legend-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .legend-label { color: var(--text-secondary); }
+  .legend-value { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  
+  /* ─── Tab Switcher at top ─── */
+  .mockup-tabs {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .mockup-tab {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 7px;
+    border: none;
+    background: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mockup-tab:hover { color: var(--text-secondary); }
+  .mockup-tab.active {
+    background: var(--emerald-500);
+    color: white;
+  }
+  
+  /* ─── Assets Page ─── */
+  .page-hidden { display: none; }
+  
+  .assets-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .assets-total-label {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+  .assets-total-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: var(--emerald-500);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 12px var(--emerald-glow);
+    transition: all 0.2s;
+  }
+  .add-btn:hover {
+    background: var(--emerald-400);
+    box-shadow: 0 4px 20px var(--emerald-glow-strong);
+    transform: translateY(-1px);
+  }
+  .add-btn svg { width: 14px; height: 14px; }
+  
+  .asset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  
+  .asset-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .asset-card:hover {
+    border-color: var(--border-medium);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .asset-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .asset-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .asset-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .asset-icon svg { width: 18px; height: 18px; }
+  .asset-icon.emerald { background: rgba(16,185,129,0.1); }
+  .asset-icon.emerald svg { color: var(--emerald-400); }
+  .asset-icon.violet { background: rgba(167,139,250,0.1); }
+  .asset-icon.violet svg { color: var(--violet-400); }
+  .asset-icon.blue { background: rgba(96,165,250,0.1); }
+  .asset-icon.blue svg { color: var(--blue-400); }
+  .asset-icon.amber { background: rgba(251,191,36,0.1); }
+  .asset-icon.amber svg { color: var(--amber-400); }
+  
+  .asset-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .asset-category {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(16,185,129,0.1);
+    color: var(--emerald-400);
+  }
+  .asset-category.violet { background: rgba(167,139,250,0.1); color: var(--violet-400); }
+  .asset-category.blue { background: rgba(96,165,250,0.1); color: var(--blue-400); }
+  .asset-category.amber { background: rgba(251,191,36,0.1); color: var(--amber-400); }
+  
+  .asset-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .asset-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .asset-growth {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--emerald-400);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .asset-growth svg { width: 12px; height: 12px; }
+  
+  .asset-card-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .asset-card:hover .asset-card-actions { opacity: 1; }
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
+  .action-btn svg { width: 13px; height: 13px; }
+  
+  /* ─── Top accent line on special cards ─── */
+  .card-accent-top {
+    position: relative;
+  }
+  .card-accent-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--emerald-500), transparent);
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<!-- Tab Switcher -->
+<div class="mockup-tabs">
+  <button class="mockup-tab active" onclick="showPage('dashboard')">Dashboard</button>
+  <button class="mockup-tab" onclick="showPage('assets')">Assets</button>
+</div>
+
+<div class="app">
+  
+  <!-- ═══ Sidebar ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>NWT</h1>
+        <span>Net Wealth Tracker</span>
+      </div>
+    </div>
+    
+    <div style="margin-top: 8px;">
+      <div class="nav-section">
+        <div class="nav-section-label">Overview</div>
+        <a class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-label">Money Flow</div>
+        <a class="nav-item" id="nav-assets" onclick="showPage('assets')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2.5"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+          Assets
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Properties
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Liabilities
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          Income
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
+          Expenses
+        </a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-label">Planning</div>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          Projections
+        </a>
+      </div>
+    </div>
+    
+    <div class="sidebar-wealth">
+      <div class="sidebar-wealth-label">Net Wealth</div>
+      <div class="sidebar-wealth-value">$487,250</div>
+    </div>
+    
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        Light Mode
+      </button>
+      <button class="sidebar-footer-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        Sign Out
+      </button>
+      <div style="padding: 6px 12px 0; font-size: 11px; color: var(--text-tertiary);">john@example.com</div>
+    </div>
+  </aside>
+
+  <!-- ═══ Main Content ═══ -->
+  <div class="main">
+    
+    <!-- ─── Dashboard ─── -->
+    <div id="page-dashboard">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2>Dashboard</h2>
+          <span class="topbar-subtitle">— Your financial overview at a glance</span>
+        </div>
+      </div>
+      
+      <div class="content">
+        <!-- Hero Card -->
+        <div class="hero-card">
+          <div class="hero-top">
+            <div>
+              <div class="hero-label">
+                <span class="dot"></span>
+                Net Wealth
+              </div>
+              <div class="hero-value">$487,250</div>
+              <div class="hero-subtitle">
+                Assets <strong>$832,000</strong> &nbsp;·&nbsp; Liabilities <strong>$344,750</strong>
+              </div>
+            </div>
+            <div class="hero-icon-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="2" y2="22"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 3 Metric Cards -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-card-top">
+              <span class="metric-card-label">Monthly Cashflow</span>
+              <div class="metric-icon emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              </div>
+            </div>
+            <div>
+              <div class="metric-value positive">+$3,420</div>
+              <div class="metric-subtitle">$8,500 in · $5,080 out</div>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-card-top">
+              <span class="metric-card-label">Total Assets</span>
+              <div class="metric-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2.5"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+              </div>
+            </div>
+            <div>
+              <div class="metric-value neutral">$832,000</div>
+              <div class="metric-subtitle">Across 6 assets + 1 property</div>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-card-top">
+              <span class="metric-card-label">Total Liabilities</span>
+              <div class="metric-icon rose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+              </div>
+            </div>
+            <div>
+              <div class="metric-value negative">$344,750</div>
+              <div class="metric-subtitle">3 debts across mortgage & loans</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- KPI Strip with progress bars -->
+        <div class="kpi-strip">
+          <div class="kpi-item">
+            <div class="kpi-label">Savings Rate</div>
+            <div class="kpi-value good">40.2%</div>
+            <div class="kpi-context">of monthly income</div>
+            <div class="kpi-bar"><div class="kpi-bar-fill good" style="width: 40.2%"></div></div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-label">Debt Ratio</div>
+            <div class="kpi-value warn">41.4%</div>
+            <div class="kpi-context">Moderate leverage</div>
+            <div class="kpi-bar"><div class="kpi-bar-fill warn" style="width: 41.4%"></div></div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-label">Monthly Surplus</div>
+            <div class="kpi-value good">$3,420</div>
+            <div class="kpi-context">available to allocate</div>
+            <div class="kpi-bar"><div class="kpi-bar-fill good" style="width: 67%"></div></div>
+          </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">Net Wealth Projection</span>
+              <div class="chart-pills">
+                <button class="chart-pill">10Y</button>
+                <button class="chart-pill active">20Y</button>
+                <button class="chart-pill">30Y</button>
+              </div>
+            </div>
+            <div class="chart-area">
+              <svg class="chart-svg" viewBox="0 0 600 200" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(16,185,129,0.25)"/>
+                    <stop offset="100%" stop-color="rgba(16,185,129,0)"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid lines -->
+                <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                <!-- Area fill -->
+                <path d="M0,170 C60,165 120,155 180,140 C240,125 300,100 360,75 C420,50 480,30 540,15 L600,8 L600,200 L0,200 Z" fill="url(#areaGrad)"/>
+                <!-- Line -->
+                <path d="M0,170 C60,165 120,155 180,140 C240,125 300,100 360,75 C420,50 480,30 540,15 L600,8" fill="none" stroke="var(--emerald-400)" stroke-width="2.5" stroke-linecap="round"/>
+                <!-- Dot -->
+                <circle cx="600" cy="8" r="4" fill="var(--emerald-400)"/>
+                <circle cx="600" cy="8" r="8" fill="rgba(16,185,129,0.2)"/>
+              </svg>
+              <!-- Y-axis labels -->
+              <div style="position: absolute; left: 8px; top: 20px; font-size: 10px; color: var(--text-tertiary);">$2M</div>
+              <div style="position: absolute; left: 8px; top: 70px; font-size: 10px; color: var(--text-tertiary);">$1.5M</div>
+              <div style="position: absolute; left: 8px; top: 120px; font-size: 10px; color: var(--text-tertiary);">$1M</div>
+              <div style="position: absolute; left: 8px; top: 170px; font-size: 10px; color: var(--text-tertiary);">$500K</div>
+              <!-- X-axis labels -->
+              <div style="position: absolute; bottom: 0; left: 10%; font-size: 10px; color: var(--text-tertiary);">2029</div>
+              <div style="position: absolute; bottom: 0; left: 30%; font-size: 10px; color: var(--text-tertiary);">2033</div>
+              <div style="position: absolute; bottom: 0; left: 50%; font-size: 10px; color: var(--text-tertiary);">2037</div>
+              <div style="position: absolute; bottom: 0; left: 70%; font-size: 10px; color: var(--text-tertiary);">2041</div>
+              <div style="position: absolute; bottom: 0; left: 90%; font-size: 10px; color: var(--text-tertiary);">2045</div>
+            </div>
+          </div>
+          
+          <div class="donut-card">
+            <div class="donut-title">Asset Breakdown</div>
+            <div class="donut-wrap">
+              <svg class="donut-svg" viewBox="0 0 160 160">
+                <!-- Donut slices -->
+                <circle cx="80" cy="80" r="60" fill="none" stroke="var(--emerald-500)" stroke-width="20" stroke-dasharray="135 377" stroke-dashoffset="0" transform="rotate(-90 80 80)" opacity="0.9"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="var(--blue-400)" stroke-width="20" stroke-dasharray="90 377" stroke-dashoffset="-135" transform="rotate(-90 80 80)" opacity="0.9"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="var(--violet-400)" stroke-width="20" stroke-dasharray="65 377" stroke-dashoffset="-225" transform="rotate(-90 80 80)" opacity="0.9"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="var(--amber-400)" stroke-width="20" stroke-dasharray="50 377" stroke-dashoffset="-290" transform="rotate(-90 80 80)" opacity="0.9"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="20" stroke-dasharray="37 377" stroke-dashoffset="-340" transform="rotate(-90 80 80)"/>
+                <!-- Center text -->
+                <text x="80" y="76" text-anchor="middle" fill="var(--text-primary)" font-size="18" font-weight="700" font-family="Inter">$832K</text>
+                <text x="80" y="92" text-anchor="middle" fill="var(--text-tertiary)" font-size="10" font-weight="500" font-family="Inter">Total Assets</text>
+              </svg>
+            </div>
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background: var(--emerald-500)"></div>
+                  <span class="legend-label">Property</span>
+                </div>
+                <span class="legend-value">$450K</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background: var(--blue-400)"></div>
+                  <span class="legend-label">Stocks</span>
+                </div>
+                <span class="legend-value">$185K</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background: var(--violet-400)"></div>
+                  <span class="legend-label">Super</span>
+                </div>
+                <span class="legend-value">$120K</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background: var(--amber-400)"></div>
+                  <span class="legend-label">Cash</span>
+                </div>
+                <span class="legend-value">$52K</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left">
+                  <div class="legend-dot" style="background: rgba(255,255,255,0.15)"></div>
+                  <span class="legend-label">Other</span>
+                </div>
+                <span class="legend-value">$25K</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ─── Assets Page ─── -->
+    <div id="page-assets" class="page-hidden">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2>Assets</h2>
+          <span class="topbar-subtitle">— Manage your cash, stocks, super & more</span>
+        </div>
+      </div>
+      
+      <div class="content">
+        <div class="assets-summary">
+          <div>
+            <div class="assets-total-label">Total Asset Value</div>
+            <div class="assets-total-value">$832,000</div>
+          </div>
+          <button class="add-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Add Asset
+          </button>
+        </div>
+        
+        <div class="asset-grid">
+          <!-- Cash -->
+          <div class="asset-card">
+            <div class="asset-card-top">
+              <div class="asset-card-left">
+                <div class="asset-icon emerald">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div>
+                  <div class="asset-name">High Interest Savings</div>
+                  <span class="asset-category">Cash</span>
+                </div>
+              </div>
+              <div class="asset-card-actions">
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+              </div>
+            </div>
+            <div class="asset-card-bottom">
+              <div class="asset-value">$52,000</div>
+              <div class="asset-growth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                4.5% pa
+              </div>
+            </div>
+          </div>
+          
+          <!-- Stocks -->
+          <div class="asset-card">
+            <div class="asset-card-top">
+              <div class="asset-card-left">
+                <div class="asset-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
+                </div>
+                <div>
+                  <div class="asset-name">ETF Portfolio</div>
+                  <span class="asset-category blue">Stocks</span>
+                </div>
+              </div>
+              <div class="asset-card-actions">
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+              </div>
+            </div>
+            <div class="asset-card-bottom">
+              <div class="asset-value">$185,000</div>
+              <div class="asset-growth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                8.0% pa
+              </div>
+            </div>
+          </div>
+          
+          <!-- Super -->
+          <div class="asset-card">
+            <div class="asset-card-top">
+              <div class="asset-card-left">
+                <div class="asset-icon violet">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+                </div>
+                <div>
+                  <div class="asset-name">AustralianSuper</div>
+                  <span class="asset-category violet">Superannuation</span>
+                </div>
+              </div>
+              <div class="asset-card-actions">
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+              </div>
+            </div>
+            <div class="asset-card-bottom">
+              <div class="asset-value">$120,000</div>
+              <div class="asset-growth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                7.0% pa
+              </div>
+            </div>
+          </div>
+          
+          <!-- Vehicle -->
+          <div class="asset-card">
+            <div class="asset-card-top">
+              <div class="asset-card-left">
+                <div class="asset-icon amber">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+                </div>
+                <div>
+                  <div class="asset-name">2022 Toyota RAV4</div>
+                  <span class="asset-category amber">Vehicle</span>
+                </div>
+              </div>
+              <div class="asset-card-actions">
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+              </div>
+            </div>
+            <div class="asset-card-bottom">
+              <div class="asset-value">$25,000</div>
+              <div class="asset-growth" style="color: var(--rose-400);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                -10.0% pa
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+function showPage(page) {
+  document.getElementById('page-dashboard').classList.toggle('page-hidden', page !== 'dashboard');
+  document.getElementById('page-assets').classList.toggle('page-hidden', page !== 'assets');
+  
+  document.querySelectorAll('.mockup-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  event.target.classList.add('active');
+  document.getElementById('nav-' + page)?.classList.add('active');
+}
+</script>
+
+</body>
+</html>

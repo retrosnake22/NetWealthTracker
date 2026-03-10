@@ -94,7 +94,6 @@ export function SetupWizardPage() {
     }
   }
   const goToStep = (idx: number) => {
-    setAnimDir(idx > currentStep ? 'forward' : 'back')
     setCurrentStep(idx)
   }
 
