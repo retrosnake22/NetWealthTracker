@@ -138,7 +138,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     <div className="flex items-center rounded-lg overflow-hidden">
                       <NavLink
                         to={item.to}
-                        end={'end' in item ? item.end : undefined}
+                        end={'end' in item ? (item as any).end : undefined}
                         onClick={onNavigate}
                         className={({ isActive }) =>
                           `group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
@@ -174,7 +174,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     /* Regular nav item */
                     <NavLink
                       to={item.to}
-                      end={'end' in item ? item.end : undefined}
+                      end={'end' in item ? (item as any).end : undefined}
                       onClick={onNavigate}
                       className={({ isActive }) =>
                         `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
