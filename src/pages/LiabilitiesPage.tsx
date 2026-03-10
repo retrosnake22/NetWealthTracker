@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -133,7 +134,7 @@ export function LiabilitiesPage() {
               </div>
               <div>
                 <Label>Current Balance (AUD)</Label>
-                <Input type="number" placeholder="0" value={form.currentBalance} onChange={e => setForm({...form, currentBalance: e.target.value})} />
+                <CurrencyInput value={form.currentBalance} onChange={v => setForm({...form, currentBalance: v})} />
               </div>
               <div>
                 <Label>Interest Rate (% p.a.)</Label>
@@ -142,7 +143,7 @@ export function LiabilitiesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Repayment Amount</Label>
-                  <Input type="number" value={form.minimumRepayment} onChange={e => setForm({...form, minimumRepayment: e.target.value})} />
+                  <CurrencyInput value={form.minimumRepayment} onChange={v => setForm({...form, minimumRepayment: v})} />
                 </div>
                 <div>
                   <Label>Frequency</Label>

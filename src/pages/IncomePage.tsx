@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -90,7 +91,7 @@ export function IncomePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Monthly Amount (AUD)</Label><Input type="number" placeholder="0" value={form.monthlyAmount} onChange={e => setForm({...form, monthlyAmount: e.target.value})} /></div>
+              <div><Label>Monthly Amount (AUD)</Label><CurrencyInput value={form.monthlyAmount} onChange={v => setForm({...form, monthlyAmount: v})} /></div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} className="rounded" />
                 <Label htmlFor="isActive">Currently active</Label>

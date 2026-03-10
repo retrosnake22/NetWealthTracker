@@ -3,6 +3,7 @@ import { Plus, Trash2, Pencil, Building2, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -342,7 +343,7 @@ export function PropertiesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Current Value (AUD)</Label>
-                  <Input type="number" placeholder="0" value={form.currentValue} onChange={e => setForm({...form, currentValue: e.target.value})} />
+                  <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
                 </div>
                 <div>
                   <Label>Growth Rate (% p.a.)</Label>
@@ -360,7 +361,7 @@ export function PropertiesPage() {
                 <div className="space-y-4 pl-4 border-l-2 border-border">
                   <div>
                     <Label>Mortgage Balance (AUD)</Label>
-                    <Input type="number" value={form.mortgageBalance} onChange={e => setForm({...form, mortgageBalance: e.target.value})} />
+                    <CurrencyInput value={form.mortgageBalance} onChange={v => setForm({...form, mortgageBalance: v})} />
                   </div>
                   <div>
                     <Label>Interest Rate (% p.a.)</Label>
@@ -369,7 +370,7 @@ export function PropertiesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Repayment Amount</Label>
-                      <Input type="number" value={form.repayment} onChange={e => setForm({...form, repayment: e.target.value})} />
+                      <CurrencyInput value={form.repayment} onChange={v => setForm({...form, repayment: v})} />
                     </div>
                     <div>
                       <Label>Frequency</Label>
@@ -393,7 +394,7 @@ export function PropertiesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Weekly Rent (AUD)</Label>
-                      <Input type="number" value={form.weeklyRent} onChange={e => setForm({...form, weeklyRent: e.target.value})} />
+                      <CurrencyInput value={form.weeklyRent} onChange={v => setForm({...form, weeklyRent: v})} />
                     </div>
                     <div>
                       <Label>Vacancy Rate (% p.a.)</Label>
@@ -401,19 +402,19 @@ export function PropertiesPage() {
                     </div>
                     <div>
                       <Label>Council Rates (p.a.)</Label>
-                      <Input type="number" value={form.councilRatesPA} onChange={e => setForm({...form, councilRatesPA: e.target.value})} />
+                      <CurrencyInput value={form.councilRatesPA} onChange={v => setForm({...form, councilRatesPA: v})} />
                     </div>
                     <div>
                       <Label>Water Rates (p.a.)</Label>
-                      <Input type="number" value={form.waterRatesPA} onChange={e => setForm({...form, waterRatesPA: e.target.value})} />
+                      <CurrencyInput value={form.waterRatesPA} onChange={v => setForm({...form, waterRatesPA: v})} />
                     </div>
                     <div>
                       <Label>Insurance (p.a.)</Label>
-                      <Input type="number" value={form.insurancePA} onChange={e => setForm({...form, insurancePA: e.target.value})} />
+                      <CurrencyInput value={form.insurancePA} onChange={v => setForm({...form, insurancePA: v})} />
                     </div>
                     <div>
                       <Label>Strata (p.a.)</Label>
-                      <Input type="number" value={form.strataPA} onChange={e => setForm({...form, strataPA: e.target.value})} />
+                      <CurrencyInput value={form.strataPA} onChange={v => setForm({...form, strataPA: v})} />
                     </div>
                     <div>
                       <Label>Management Fee (%)</Label>
@@ -421,11 +422,11 @@ export function PropertiesPage() {
                     </div>
                     <div>
                       <Label>Land Tax (p.a.)</Label>
-                      <Input type="number" value={form.landTaxPA} onChange={e => setForm({...form, landTaxPA: e.target.value})} />
+                      <CurrencyInput value={form.landTaxPA} onChange={v => setForm({...form, landTaxPA: v})} />
                     </div>
                     <div>
                       <Label>Maintenance (p.a.)</Label>
-                      <Input type="number" value={form.maintenanceBudgetPA} onChange={e => setForm({...form, maintenanceBudgetPA: e.target.value})} />
+                      <CurrencyInput value={form.maintenanceBudgetPA} onChange={v => setForm({...form, maintenanceBudgetPA: v})} />
                     </div>
                   </div>
                 </>

@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, TrendingDown, ChevronDown, ChevronRight } from 'l
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -165,7 +166,7 @@ export function ExpensesPage() {
                 </Select>
               </div>
               <div><Label>Label</Label><Input placeholder={CATEGORY_LABELS[form.category]} value={form.label} onChange={e => setForm({...form, label: e.target.value})} /></div>
-              <div><Label>Monthly Budget (AUD)</Label><Input type="number" placeholder="0" value={form.monthlyBudget} onChange={e => setForm({...form, monthlyBudget: e.target.value})} /></div>
+              <div><Label>Monthly Budget (AUD)</Label><CurrencyInput value={form.monthlyBudget} onChange={v => setForm({...form, monthlyBudget: v})} /></div>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

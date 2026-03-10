@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -130,7 +131,7 @@ export function AssetsPage() {
               </div>
               <div>
                 <Label>Current Value (AUD)</Label>
-                <Input type="number" placeholder="0" value={form.currentValue} onChange={e => setForm({...form, currentValue: e.target.value})} />
+                <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
               </div>
               <div>
                 <Label>Expected Growth Rate (% p.a.)</Label>
