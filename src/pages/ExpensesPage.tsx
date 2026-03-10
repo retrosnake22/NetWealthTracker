@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
-import type { ExpenseCategory } from '@/types/models'
+import type { ExpenseBudget, ExpenseCategory } from '@/types/models'
 
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
@@ -58,6 +59,7 @@ export function ExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ExpenseBudget | null>(null)
   const [form, setForm] = useState({
     label: '', category: 'groceries' as ExpenseCategory, monthlyBudget: '',
   })
@@ -80,6 +82,12 @@ export function ExpensesPage() {
     if (!item) return
     setForm({ label: item.label, category: item.category, monthlyBudget: String(item.monthlyBudget) })
     setEditId(id); setOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeExpenseBudget(deleteTarget.id)
+    setDeleteTarget(null)
   }
 
   const total = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
@@ -146,7 +154,7 @@ export function ExpensesPage() {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeExpenseBudget(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -154,6 +162,24 @@ export function ExpensesPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this expense budget. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

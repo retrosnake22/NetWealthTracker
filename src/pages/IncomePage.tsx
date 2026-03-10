@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
-import type { IncomeCategory } from '@/types/models'
+import type { IncomeItem, IncomeCategory } from '@/types/models'
 
 const CATEGORY_LABELS: Record<IncomeCategory, string> = {
   salary: 'Salary / Wages',
@@ -33,6 +34,7 @@ export function IncomePage() {
   const { incomes, addIncome, updateIncome, removeIncome } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<IncomeItem | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '', isActive: true,
   })
@@ -56,6 +58,12 @@ export function IncomePage() {
     if (!item) return
     setForm({ name: item.name, category: item.category, monthlyAmount: String(item.monthlyAmount), isActive: item.isActive })
     setEditId(id); setOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeIncome(deleteTarget.id)
+    setDeleteTarget(null)
   }
 
   const total = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
@@ -127,7 +135,7 @@ export function IncomePage() {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeIncome(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -135,6 +143,24 @@ export function IncomePage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this income source. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

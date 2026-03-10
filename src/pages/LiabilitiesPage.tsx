@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
-import type { LiabilityCategory } from '@/types/models'
+import type { Liability, LiabilityCategory } from '@/types/models'
 
 const CATEGORY_LABELS: Record<LiabilityCategory, string> = {
   mortgage: 'Mortgage',
@@ -33,6 +34,7 @@ export function LiabilitiesPage() {
   const { liabilities, addLiability, updateLiability, removeLiability, properties } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Liability | null>(null)
   const [form, setForm] = useState({
     name: '',
     category: 'personal_loan' as LiabilityCategory,
@@ -78,6 +80,12 @@ export function LiabilitiesPage() {
     })
     setEditId(id)
     setOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeLiability(deleteTarget.id)
+    setDeleteTarget(null)
   }
 
   const getLinkedProperty = (id: string) => {
@@ -200,7 +208,7 @@ export function LiabilitiesPage() {
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => removeLiability(item.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -211,6 +219,24 @@ export function LiabilitiesPage() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this liability. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

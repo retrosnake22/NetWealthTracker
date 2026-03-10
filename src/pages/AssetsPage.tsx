@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
-import type { AssetCategory } from '@/types/models'
+import type { Asset, AssetCategory } from '@/types/models'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash / Savings',
@@ -42,6 +43,7 @@ export function AssetsPage() {
   const { assets, addAsset, updateAsset, removeAsset } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null)
   const [form, setForm] = useState({
     name: '',
     category: 'cash' as AssetCategory,
@@ -89,6 +91,12 @@ export function AssetsPage() {
     })
     setEditId(id)
     setOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeAsset(deleteTarget.id)
+    setDeleteTarget(null)
   }
 
   const total = assets.reduce((s, a) => s + a.currentValue, 0)
@@ -176,7 +184,7 @@ export function AssetsPage() {
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(asset.id)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeAsset(asset.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(asset)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -186,6 +194,24 @@ export function AssetsPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this asset. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
