@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 import {
   ArrowRight, ArrowLeft, Check, Plus, Trash2, X, Pencil,
   Sparkles, Briefcase, Wallet, Building2, CreditCard,
   Receipt, Target, TrendingUp, DollarSign, PiggyBank,
-  Home, Car
+  Home, Car, Info
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,16 +15,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory
+  AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory, MortgageType, Property
 } from '@/types/models'
+
+// ── Mortgage calculation helpers ─────────────────────────────────────────────
+
+function calcInterestOnlyMonthly(balance: number, annualRate: number): number {
+  return (balance * annualRate) / 12
+}
+
+function calcPIMonthly(balance: number, annualRate: number, termYears: number): number {
+  if (annualRate === 0) return balance / (termYears * 12)
+  const r = annualRate / 12
+  const n = termYears * 12
+  return balance * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+}
+
+function calcMortgageMonthly(balance: number, annualRate: number, type: MortgageType, termYears: number): number {
+  if (type === 'interest_only') return calcInterestOnlyMonthly(balance, annualRate)
+  return calcPIMonthly(balance, annualRate, termYears)
+}
 
 // ── Step definitions ──────────────────────────────────────────────────────────
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Sparkles },
-  { id: 'income', label: 'Income', icon: Briefcase },
   { id: 'assets', label: 'Assets & Property', icon: Wallet },
   { id: 'liabilities', label: 'Debts', icon: CreditCard },
+  { id: 'income', label: 'Income', icon: Briefcase },
   { id: 'expenses', label: 'Expenses', icon: Receipt },
   { id: 'projections', label: 'Goals', icon: Target },
   { id: 'summary', label: 'Summary', icon: TrendingUp },
@@ -175,9 +193,9 @@ export function SetupWizardPage() {
       {/* ── Step Content ── */}
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-32">
         {step.id === 'welcome' && <WelcomeStep onNext={goNext} />}
-        {step.id === 'income' && <IncomeStep store={store} />}
         {step.id === 'assets' && <AssetsStep store={store} />}
         {step.id === 'liabilities' && <LiabilitiesStep store={store} />}
+        {step.id === 'income' && <IncomeStep store={store} />}
         {step.id === 'expenses' && <ExpensesStep store={store} />}
         {step.id === 'projections' && <ProjectionsStep store={store} />}
         {step.id === 'summary' && <SummaryStep store={store} onFinish={finishWizard} />}
@@ -218,16 +236,16 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           Let's map your finances
         </h1>
         <p className="text-muted-foreground text-lg">
-          We'll walk through everything step by step — income, assets, debts, and expenses.
+          We'll walk through everything step by step — assets, debts, income, and expenses.
           It takes about <span className="text-foreground font-medium">5 minutes</span>.
         </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg">
         {[
-          { icon: Briefcase, label: 'Income', color: 'text-emerald-500' },
           { icon: Wallet, label: 'Assets', color: 'text-blue-500' },
           { icon: CreditCard, label: 'Debts', color: 'text-red-500' },
+          { icon: Briefcase, label: 'Income', color: 'text-emerald-500' },
           { icon: Receipt, label: 'Expenses', color: 'text-amber-500' },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/50">
@@ -248,162 +266,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   )
 }
 
-// ── Step 2: Income ────────────────────────────────────────────────────────────
-
-function IncomeStep({ store }: { store: FinanceState }) {
-  const { incomes, addIncome, removeIncome, updateIncome } = store
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    name: '', category: 'salary' as IncomeCategory, monthlyAmount: '',
-  })
-
-  const resetForm = () => {
-    setForm({ name: '', category: 'salary', monthlyAmount: '' })
-    setShowForm(false)
-    setEditingId(null)
-  }
-
-  const startEdit = (inc: typeof incomes[0]) => {
-    setForm({ name: inc.name, category: inc.category, monthlyAmount: String(inc.monthlyAmount) })
-    setEditingId(inc.id)
-    setShowForm(true)
-  }
-
-  const handleAdd = () => {
-    if (!form.name || !form.monthlyAmount) return
-    if (editingId) {
-      updateIncome(editingId, {
-        name: form.name,
-        category: form.category,
-        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
-      })
-    } else {
-      addIncome({
-        name: form.name,
-        category: form.category,
-        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
-        isActive: true,
-      })
-    }
-    resetForm()
-  }
-
-  const totalMonthly = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
-
-  return (
-    <div className="space-y-6">
-      <StepHeader
-        title="What do you earn?"
-        description="Add your income sources. Include salary, rental income, dividends — anything that brings in money."
-        icon={Briefcase}
-      />
-
-      {/* Existing items */}
-      {incomes.length > 0 && (
-        <div className="space-y-2">
-          {incomes.map(inc => (
-            <Card key={inc.id} className="card-hover group">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{inc.name}</p>
-                    <p className="text-xs text-muted-foreground">{INCOME_LABELS[inc.category]}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
-                    <p className="text-xs text-muted-foreground">/month</p>
-                  </div>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => startEdit(inc)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                    onClick={() => removeIncome(inc.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Total */}
-          <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
-            <span className="text-sm font-medium text-muted-foreground">Total Monthly Income</span>
-            <span className="font-bold text-primary tabular-nums">{formatCurrency(totalMonthly)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Add/Edit form */}
-      {showForm ? (
-        <Card className="border-primary/30">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Income Source'}</h3>
-              <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Name</Label>
-                <Input
-                  placeholder="e.g. Full-time salary"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category} onValueChange={(v: IncomeCategory) => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][]).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs">Monthly Amount</Label>
-                <CurrencyInput
-                  value={form.monthlyAmount}
-                  onValueChange={v => setForm({ ...form, monthlyAmount: v })}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <Button onClick={handleAdd} disabled={!form.name || !form.monthlyAmount} className="w-full gap-2">
-              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Income</>}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <button
-          onClick={() => { resetForm(); setShowForm(true) }}
-          className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">Add Income Source</span>
-        </button>
-      )}
-    </div>
-  )
-}
-
-// ── Step 3: Assets & Property (unified) ───────────────────────────────────────
+// ── Step 2: Assets & Property (unified) ───────────────────────────────────────
 
 function AssetsStep({ store }: { store: FinanceState }) {
   const {
@@ -425,6 +288,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
     address: '', currentValue: '', growthRatePA: '7',
     hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+    mortgageType: 'principal_and_interest' as MortgageType,
+    loanTermYears: '30',
+    repaymentOverridden: false,
     weeklyRent: '',
   })
 
@@ -432,7 +298,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setAssetForm({ name: '', currentValue: '', growthRatePA: String(DEFAULT_GROWTH[activeTab] * 100) })
     setPropForm({
       name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7',
-      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '', weeklyRent: '',
+      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+      mortgageType: 'principal_and_interest', loanTermYears: '30',
+      repaymentOverridden: false, weeklyRent: '',
     })
     setShowForm(false)
     setEditingId(null)
@@ -442,6 +310,25 @@ function AssetsStep({ store }: { store: FinanceState }) {
     resetForm()
     setActiveTab(tab)
     setAssetForm(f => ({ ...f, growthRatePA: String(DEFAULT_GROWTH[tab] * 100) }))
+  }
+
+  // ── Auto-calc mortgage repayment ──
+  const autoCalcRepayment = (balance: string, rate: string, type: MortgageType, term: string): string => {
+    const bal = parseFloat(balance) || 0
+    const r = (parseFloat(rate) || 0) / 100
+    const t = parseInt(term) || 30
+    if (bal <= 0 || r < 0) return ''
+    const monthly = calcMortgageMonthly(bal, r, type, t)
+    return Math.round(monthly).toString()
+  }
+
+  // Update repayment when mortgage fields change (unless user overrode)
+  const updateMortgageField = (updates: Partial<typeof propForm>) => {
+    const next = { ...propForm, ...updates }
+    if (!next.repaymentOverridden && next.hasMortgage) {
+      next.repayment = autoCalcRepayment(next.mortgageBalance, next.interestRate, next.mortgageType, next.loanTermYears)
+    }
+    setPropForm(next)
   }
 
   // ── Asset CRUD ──
@@ -484,6 +371,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
       currentValue: String(prop.currentValue),
       growthRatePA: String(prop.growthRatePA * 100),
       hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+      mortgageType: 'principal_and_interest', loanTermYears: '30',
+      repaymentOverridden: false,
       weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
     })
     setEditingId(prop.id)
@@ -515,6 +404,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
         interestRatePA: (parseFloat(propForm.interestRate) || 0) / 100,
         minimumRepayment: parseFloat(propForm.repayment) || 0,
         repaymentFrequency: 'monthly' as const,
+        mortgageType: propForm.mortgageType,
+        loanTermYears: parseInt(propForm.loanTermYears) || 30,
       }
       addLiability(mortData)
       const liabs = useFinanceStore.getState().liabilities
@@ -699,6 +590,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
                         placeholder="0"
                       />
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        This will be automatically added to your income
+                      </p>
                     </div>
                   )}
                 </div>
@@ -710,37 +605,81 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       <input
                         type="checkbox"
                         checked={propForm.hasMortgage}
-                        onChange={e => setPropForm({ ...propForm, hasMortgage: e.target.checked })}
+                        onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
                         className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <span className="text-sm font-medium">This property has a mortgage</span>
                     </label>
 
                     {propForm.hasMortgage && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 ml-7">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Mortgage Balance</Label>
-                          <CurrencyInput
-                            value={propForm.mortgageBalance}
-                            onValueChange={v => setPropForm({ ...propForm, mortgageBalance: v })}
-                            placeholder="0"
-                          />
+                      <div className="space-y-3 mt-3 ml-7">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Mortgage Balance</Label>
+                            <CurrencyInput
+                              value={propForm.mortgageBalance}
+                              onValueChange={v => updateMortgageField({ mortgageBalance: v })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Interest Rate (%)</Label>
+                            <Input
+                              type="number" step="0.01"
+                              value={propForm.interestRate}
+                              onChange={e => updateMortgageField({ interestRate: e.target.value })}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Interest Rate (%)</Label>
-                          <Input
-                            type="number" step="0.01"
-                            value={propForm.interestRate}
-                            onChange={e => setPropForm({ ...propForm, interestRate: e.target.value })}
-                          />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Loan Type</Label>
+                            <Select
+                              value={propForm.mortgageType}
+                              onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                                <SelectItem value="interest_only">Interest Only</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {propForm.mortgageType === 'principal_and_interest' && (
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Loan Term (years)</Label>
+                              <Input
+                                type="number" min="1" max="40"
+                                value={propForm.loanTermYears}
+                                onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
+                              />
+                            </div>
+                          )}
                         </div>
+
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Monthly Repayment</Label>
+                          <Label className="text-xs">Monthly Repayment {!propForm.repaymentOverridden && propForm.repayment ? '(auto-calculated)' : ''}</Label>
                           <CurrencyInput
                             value={propForm.repayment}
-                            onValueChange={v => setPropForm({ ...propForm, repayment: v })}
+                            onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
                             placeholder="0"
                           />
+                          {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
+                            <button
+                              className="text-xs text-primary hover:underline"
+                              onClick={() => {
+                                const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
+                                setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
+                              }}
+                            >
+                              Reset to calculated amount
+                            </button>
+                          )}
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            This will be automatically added to your monthly expenses
+                          </p>
                         </div>
                       </div>
                     )}
@@ -873,7 +812,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 4: Liabilities ───────────────────────────────────────────────────────
+// ── Step 3: Liabilities ───────────────────────────────────────────────────────
 
 function LiabilitiesStep({ store }: { store: FinanceState }) {
   const { liabilities, addLiability, removeLiability, updateLiability } = store
@@ -965,6 +904,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     <p className="font-medium">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatPercent(m.interestRatePA)} interest · {formatCurrency(m.minimumRepayment)}/month
+                      {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
                     </p>
                   </div>
                 </div>
@@ -1141,17 +1081,238 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
   )
 }
 
+// ── Step 4: Income ────────────────────────────────────────────────────────────
+
+function IncomeStep({ store }: { store: FinanceState }) {
+  const { incomes, addIncome, removeIncome, updateIncome, properties } = store
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    name: '', category: 'salary' as IncomeCategory, monthlyAmount: '',
+  })
+
+  // Compute auto-generated rental income from investment properties
+  const rentalIncomes = useMemo(() => {
+    return properties
+      .filter((p: Property) => p.type === 'investment' && p.weeklyRent && p.weeklyRent > 0)
+      .map((p: Property) => ({
+        propertyName: p.name,
+        weeklyRent: p.weeklyRent!,
+        monthlyAmount: (p.weeklyRent! * 52) / 12,
+      }))
+  }, [properties])
+
+  const resetForm = () => {
+    setForm({ name: '', category: 'salary', monthlyAmount: '' })
+    setShowForm(false)
+    setEditingId(null)
+  }
+
+  const startEdit = (inc: typeof incomes[0]) => {
+    setForm({ name: inc.name, category: inc.category, monthlyAmount: String(inc.monthlyAmount) })
+    setEditingId(inc.id)
+    setShowForm(true)
+  }
+
+  const handleAdd = () => {
+    if (!form.name || !form.monthlyAmount) return
+    if (editingId) {
+      updateIncome(editingId, {
+        name: form.name,
+        category: form.category,
+        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
+      })
+    } else {
+      addIncome({
+        name: form.name,
+        category: form.category,
+        monthlyAmount: parseFloat(form.monthlyAmount) || 0,
+        isActive: true,
+      })
+    }
+    resetForm()
+  }
+
+  const manualIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
+  const rentalTotal = rentalIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
+  const totalMonthly = manualIncome + rentalTotal
+
+  return (
+    <div className="space-y-6">
+      <StepHeader
+        title="What do you earn?"
+        description="Add your income sources. Include salary, dividends — anything that brings in money. Rental income from your properties is shown automatically."
+        icon={Briefcase}
+      />
+
+      {/* Auto-generated rental income from properties */}
+      {rentalIncomes.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5" /> From Your Properties
+          </p>
+          {rentalIncomes.map((ri: { propertyName: string; weeklyRent: number; monthlyAmount: number }) => (
+            <Card key={ri.propertyName} className="bg-muted/30">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-sky-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{ri.propertyName} — Rent</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(ri.weeklyRent)}/wk × 52 ÷ 12
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold tabular-nums">{formatCurrency(ri.monthlyAmount)}</p>
+                  <p className="text-xs text-muted-foreground">/month</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Manual income items */}
+      {incomes.length > 0 && (
+        <div className="space-y-2">
+          {rentalIncomes.length > 0 && (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
+          )}
+          {incomes.map((inc: { id: string; name: string; category: IncomeCategory; monthlyAmount: number; isActive: boolean }) => (
+            <Card key={inc.id} className="card-hover group">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{inc.name}</p>
+                    <p className="text-xs text-muted-foreground">{INCOME_LABELS[inc.category]}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
+                    <p className="text-xs text-muted-foreground">/month</p>
+                  </div>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(inc)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                    onClick={() => removeIncome(inc.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Total */}
+      {totalMonthly > 0 && (
+        <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+          <span className="text-sm font-medium text-muted-foreground">Total Monthly Income</span>
+          <span className="font-bold text-primary tabular-nums">{formatCurrency(totalMonthly)}</span>
+        </div>
+      )}
+
+      {/* Add/Edit form */}
+      {showForm ? (
+        <Card className="border-primary/30">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Income Source'}</h3>
+              <Button variant="ghost" size="icon" onClick={resetForm}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Name</Label>
+                <Input
+                  placeholder="e.g. Full-time salary"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Category</Label>
+                <Select value={form.category} onValueChange={(v: IncomeCategory) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][]).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs">Monthly Amount</Label>
+                <CurrencyInput
+                  value={form.monthlyAmount}
+                  onValueChange={v => setForm({ ...form, monthlyAmount: v })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <Button onClick={handleAdd} disabled={!form.name || !form.monthlyAmount} className="w-full gap-2">
+              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Income</>}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <button
+          onClick={() => { resetForm(); setShowForm(true) }}
+          className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="font-medium">Add Income Source</span>
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ── Step 5: Expenses ──────────────────────────────────────────────────────────
 
 function ExpensesStep({ store }: { store: FinanceState }) {
-  const { expenseBudgets, addExpenseBudget, removeExpenseBudget, updateExpenseBudget } = store
+  const { expenseBudgets, addExpenseBudget, removeExpenseBudget, updateExpenseBudget, liabilities, properties } = store
   const [expandedGroup, setExpandedGroup] = useState<string | null>('🛒 Living')
   const [addingCategory, setAddingCategory] = useState<ExpenseCategory | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
 
+  // Auto-generated property expenses (mortgage repayments)
+  const propertyExpenses = useMemo(() => {
+    return liabilities
+      .filter(l => l.category === 'mortgage' && l.minimumRepayment > 0)
+      .map(m => {
+        // Find linked property name
+        const linkedProp = properties.find((p: Property) => p.mortgageId === m.id)
+        return {
+          name: linkedProp ? `${linkedProp.name} — Mortgage` : m.name,
+          monthlyAmount: m.minimumRepayment,
+          type: m.mortgageType === 'interest_only' ? 'Interest Only' : 'P&I',
+        }
+      })
+  }, [liabilities, properties])
+
+  const propertyExpenseTotal = propertyExpenses.reduce((s: number, e: { monthlyAmount: number }) => s + e.monthlyAmount, 0)
+
   const existingCategories = new Set(expenseBudgets.map((b: { category: ExpenseCategory }) => b.category))
-  const totalMonthly = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
+  const manualTotal = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
+  const totalMonthly = manualTotal + propertyExpenseTotal
 
   const handleAdd = (cat: ExpenseCategory) => {
     if (!amount) return
@@ -1181,7 +1342,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you spend?"
-        description="Go through each category and enter your monthly budget. Skip what doesn't apply — you can always come back."
+        description="Go through each category and enter your monthly budget. Mortgage repayments from your properties are shown automatically."
         icon={Receipt}
       />
 
@@ -1189,6 +1350,34 @@ function ExpensesStep({ store }: { store: FinanceState }) {
         <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
           <span className="text-sm font-medium text-muted-foreground">Total Monthly Expenses</span>
           <span className="font-bold text-amber-400 tabular-nums">{formatCurrency(totalMonthly)}</span>
+        </div>
+      )}
+
+      {/* Auto-generated property expenses */}
+      {propertyExpenses.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <Home className="w-3.5 h-3.5" /> Property Expenses
+          </p>
+          {propertyExpenses.map((pe: { name: string; monthlyAmount: number; type: string }, i: number) => (
+            <Card key={i} className="bg-muted/30">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Home className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{pe.name}</p>
+                    <p className="text-xs text-muted-foreground">{pe.type} · Auto from property setup</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold tabular-nums text-amber-400">{formatCurrency(pe.monthlyAmount)}</p>
+                  <p className="text-xs text-muted-foreground">/month</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
@@ -1381,12 +1570,22 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
   const { assets, properties, liabilities, incomes, expenseBudgets } = store
   const [revealed, setRevealed] = useState(false)
 
+  // Include auto-generated rental income in totals
+  const rentalIncome = properties
+    .filter((p: Property) => p.type === 'investment' && p.weeklyRent && p.weeklyRent > 0)
+    .reduce((s: number, p: Property) => s + (p.weeklyRent! * 52) / 12, 0)
+
+  // Include auto-generated mortgage expenses in totals
+  const mortgageExpenses = liabilities
+    .filter(l => l.category === 'mortgage' && l.minimumRepayment > 0)
+    .reduce((s: number, l) => s + l.minimumRepayment, 0)
+
   const totalAssets = assets.reduce((s: number, a: { currentValue: number }) => s + a.currentValue, 0)
     + properties.reduce((s: number, p: { currentValue: number }) => s + p.currentValue, 0)
   const totalLiabilities = liabilities.reduce((s: number, l: { currentBalance: number }) => s + l.currentBalance, 0)
   const netWealth = totalAssets - totalLiabilities
-  const monthlyIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
-  const monthlyExpenses = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
+  const monthlyIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0) + rentalIncome
+  const monthlyExpenses = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0) + mortgageExpenses
   const monthlySurplus = monthlyIncome - monthlyExpenses
 
   useEffect(() => {
@@ -1419,14 +1618,20 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground uppercase tracking-widest">Monthly Income</p>
             <p className="text-xl font-bold text-emerald-400 tabular-nums mt-1">{formatCurrency(monthlyIncome)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{incomes.length} source{incomes.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {incomes.length} source{incomes.length !== 1 ? 's' : ''}
+              {rentalIncome > 0 ? ' + rental' : ''}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground uppercase tracking-widest">Monthly Expenses</p>
             <p className="text-xl font-bold text-amber-400 tabular-nums mt-1">{formatCurrency(monthlyExpenses)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{expenseBudgets.length} categor{expenseBudgets.length !== 1 ? 'ies' : 'y'}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {expenseBudgets.length} categor{expenseBudgets.length !== 1 ? 'ies' : 'y'}
+              {mortgageExpenses > 0 ? ' + mortgage' : ''}
+            </p>
           </CardContent>
         </Card>
         <Card className="col-span-2">

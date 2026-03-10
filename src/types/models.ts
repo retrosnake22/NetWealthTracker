@@ -68,6 +68,8 @@ export interface Property extends BaseEntity {
   maintenanceBudgetPA?: number
 }
 
+export type MortgageType = 'interest_only' | 'principal_and_interest'
+
 export interface Liability extends BaseEntity {
   name: string
   category: LiabilityCategory
@@ -77,6 +79,8 @@ export interface Liability extends BaseEntity {
   repaymentFrequency: 'weekly' | 'fortnightly' | 'monthly'
   linkedPropertyId?: string
   offsetAccountIds?: string[]
+  mortgageType?: MortgageType
+  loanTermYears?: number
 }
 
 export interface IncomeItem extends BaseEntity {
