@@ -95,7 +95,7 @@ export function DashboardPage() {
       {/* ── Compare strip — always visible ──────────────────────────── */}
       <Card className="rounded-xl bg-card">
         <CardContent className="p-0">
-          <div className="grid grid-cols-3 divide-x divide-border">
+          <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-y-0 md:divide-x divide-border">
 
             {/* Savings Rate */}
             <div className="flex flex-col items-center justify-center gap-1 px-6 py-5">
