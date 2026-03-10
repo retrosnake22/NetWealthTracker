@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, Wallet } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Plus, Pencil, Trash2, Wallet, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
-import type { Asset, AssetCategory } from '@/types/models'
+import type { Asset, AssetCategory, Property } from '@/types/models'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash / Savings',
@@ -41,7 +42,10 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 }
 
 export function AssetsPage() {
-  const { assets, addAsset, updateAsset, removeAsset } = useFinanceStore()
+  const { assets, properties, addAsset, updateAsset, removeAsset } = useFinanceStore()
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category') as AssetCategory | null
+
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null)
@@ -53,8 +57,24 @@ export function AssetsPage() {
     isOffset: false,
   })
 
+  // Filter assets based on category param
+  const filteredAssets = useMemo(() => {
+    if (!categoryFilter || categoryFilter === 'property') return assets.filter(a => !categoryFilter || a.category === categoryFilter)
+    return assets.filter(a => a.category === categoryFilter)
+  }, [assets, categoryFilter])
+
+  // For property category, show properties from the properties array
+  const showProperties = categoryFilter === 'property' || !categoryFilter
+
+  // Calculate totals
+  const assetTotal = filteredAssets.reduce((s, a) => s + a.currentValue, 0)
+  const propertyTotal = showProperties ? properties.reduce((s, p) => s + p.currentValue, 0) : 0
+  const total = assetTotal + (categoryFilter === 'property' ? propertyTotal : (!categoryFilter ? propertyTotal : 0))
+
+  const pageTitle = categoryFilter ? CATEGORY_LABELS[categoryFilter] || 'Assets' : 'All Assets'
+
   const resetForm = () => {
-    setForm({ name: '', category: 'cash', currentValue: '', growthRatePA: '', isOffset: false })
+    setForm({ name: '', category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory, currentValue: '', growthRatePA: '', isOffset: false })
     setEditId(null)
   }
 
@@ -100,100 +120,156 @@ export function AssetsPage() {
     setDeleteTarget(null)
   }
 
-  const total = assets.reduce((s, a) => s + a.currentValue, 0)
+  // Don't show add button for property category (managed in wizard)
+  const canAddHere = categoryFilter !== 'property'
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Asset</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? 'Edit' : 'Add'} Asset</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Name</Label>
-                <Input placeholder="e.g. Emergency Fund" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => handleCategoryChange(v as AssetCategory)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'property').map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Current Value (AUD)</Label>
-                <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
-              </div>
-              <div>
-                <Label>Expected Growth Rate (% p.a.)</Label>
-                <Input type="number" step="0.1" value={form.growthRatePA} onChange={e => setForm({...form, growthRatePA: e.target.value})} />
-              </div>
-              {form.category === 'cash' && (
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="isOffset" checked={form.isOffset} onChange={e => setForm({...form, isOffset: e.target.checked})} className="rounded" />
-                  <Label htmlFor="isOffset">This is a mortgage offset account</Label>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">{pageTitle}</h2>
+        {canAddHere && (
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Add Asset</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editId ? 'Edit' : 'Add'} Asset</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input placeholder="e.g. Emergency Fund" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleSave} disabled={!form.name || !form.currentValue}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                <div>
+                  <Label>Category</Label>
+                  <Select value={form.category} onValueChange={(v) => handleCategoryChange(v as AssetCategory)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'property').map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Current Value (AUD)</Label>
+                  <CurrencyInput value={form.currentValue} onChange={v => setForm({...form, currentValue: v})} />
+                </div>
+                <div>
+                  <Label>Expected Growth Rate (% p.a.)</Label>
+                  <Input type="number" step="0.1" value={form.growthRatePA} onChange={e => setForm({...form, growthRatePA: e.target.value})} />
+                </div>
+                {form.category === 'cash' && (
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="isOffset" checked={form.isOffset} onChange={e => setForm({...form, isOffset: e.target.checked})} className="rounded" />
+                    <Label htmlFor="isOffset">This is a mortgage offset account</Label>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={handleSave} disabled={!form.name || !form.currentValue}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card className="card-hover">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Total Assets</span>
+            <span>Total {pageTitle}</span>
             <span className="text-emerald-500">{formatCurrency(total)}</span>
           </CardTitle>
         </CardHeader>
       </Card>
 
-      {assets.length === 0 ? (
+      {/* Property cards (from properties array) */}
+      {showProperties && properties.length > 0 && (categoryFilter === 'property' || !categoryFilter) && (
+        <>
+          {categoryFilter !== 'property' && properties.length > 0 && (
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Property</h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {properties.map((prop: Property) => (
+              <Card key={prop.id} className="card-hover group">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1.5">
+                      <Badge className={CATEGORY_COLORS.property}>
+                        <Home className="h-3 w-3 mr-1" />
+                        {prop.propertyType === 'investment' ? 'Investment' : 'Primary Residence'}
+                      </Badge>
+                      <p className="font-semibold">{prop.name}</p>
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(prop.currentValue)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(prop.growthRatePA)} p.a.</span>
+                      {prop.weeklyRent > 0 && (
+                        <span className="text-xs text-emerald-500 tabular-nums">{formatCurrency(prop.weeklyRent)}/wk rent</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Regular asset cards */}
+      {filteredAssets.length > 0 && (
+        <>
+          {!categoryFilter && properties.length > 0 && (
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-4">Financial Assets</h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAssets.filter(a => a.category !== 'property').map(asset => (
+              <Card key={asset.id} className="card-hover group">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1.5">
+                      {!categoryFilter && (
+                        <Badge className={CATEGORY_COLORS[asset.category]}>{CATEGORY_LABELS[asset.category]}</Badge>
+                      )}
+                      <p className="font-semibold">{asset.name}</p>
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(asset.currentValue)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(asset.id)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(asset)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                      <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(asset.growthRatePA)} p.a.</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {filteredAssets.length === 0 && (!showProperties || properties.length === 0) && (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <Wallet className="h-12 w-12 mx-auto text-primary mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No assets yet</h3>
-          <p className="text-muted-foreground mb-4">Add your cash, stocks, super and other assets.</p>
-          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Asset</Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assets.map(asset => (
-            <Card key={asset.id} className="card-hover group">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1.5">
-                    <Badge className={CATEGORY_COLORS[asset.category]}>{CATEGORY_LABELS[asset.category]}</Badge>
-                    <p className="font-semibold">{asset.name}</p>
-                    <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(asset.currentValue)}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(asset.id)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(asset)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(asset.growthRatePA)} p.a.</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <h3 className="text-lg font-semibold mb-2">
+            No {categoryFilter ? CATEGORY_LABELS[categoryFilter].toLowerCase() : 'assets'} yet
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            {categoryFilter === 'property'
+              ? 'Add properties via the Setup Wizard.'
+              : `Add your ${categoryFilter ? CATEGORY_LABELS[categoryFilter].toLowerCase() : 'cash, stocks, super and other assets'}.`
+            }
+          </p>
+          {canAddHere && (
+            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Asset</Button>
+          )}
         </div>
       )}
 

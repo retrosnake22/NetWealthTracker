@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import {
   LayoutDashboard,
@@ -20,6 +20,7 @@ import {
   Car,
   ChevronDown,
   ChevronRight,
+  Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -45,11 +46,12 @@ const navSections = [
         label: 'Assets',
         expandable: true,
         subItems: [
-          { to: '/assets?category=cash', label: 'Cash & Savings', icon: PiggyBank },
-          { to: '/assets?category=stocks', label: 'Stocks / ETFs', icon: TrendingUp },
-          { to: '/assets?category=super', label: 'Superannuation', icon: Target },
-          { to: '/assets?category=vehicles', label: 'Vehicles', icon: Car },
-          { to: '/assets?category=property', label: 'Property', icon: Home },
+          { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', icon: PiggyBank },
+          { to: '/assets?category=stocks', category: 'stocks', label: 'Stocks / ETFs', icon: TrendingUp },
+          { to: '/assets?category=super', category: 'super', label: 'Superannuation', icon: Target },
+          { to: '/assets?category=vehicles', category: 'vehicles', label: 'Vehicles', icon: Car },
+          { to: '/assets?category=property', category: 'property', label: 'Property', icon: Home },
+          { to: '/assets?category=other', category: 'other', label: 'Other', icon: Package },
         ],
       },
       { to: '/liabilities', icon: CreditCard, label: 'Liabilities' },
@@ -113,9 +115,36 @@ function BrandLogo() {
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const [expandedNav, setExpandedNav] = useState<string | null>('/assets')
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   const toggleExpand = (to: string) => {
     setExpandedNav((prev) => (prev === to ? null : to))
+  }
+
+  // Check if a nav item is active based on pathname + query params
+  const isItemActive = (itemTo: string, end?: boolean) => {
+    const [itemPath, itemSearch] = itemTo.split('?')
+    const currentPath = location.pathname
+
+    if (itemPath !== currentPath) return false
+
+    // For items with query params (sub-items), match the category
+    if (itemSearch) {
+      const itemParams = new URLSearchParams(itemSearch)
+      const itemCategory = itemParams.get('category')
+      const currentCategory = searchParams.get('category')
+      return itemCategory === currentCategory
+    }
+
+    // For parent items without query params: active only if NO category is selected
+    if (end) return true
+    // For "/assets" parent: only active when no category filter
+    if (itemPath === '/assets') {
+      return !searchParams.get('category')
+    }
+
+    return true
   }
 
   return (
@@ -128,36 +157,30 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           <div className="space-y-0.5">
             {section.items.map((item) => {
               const isExpandable = 'expandable' in item && item.expandable
-              const subItems = 'subItems' in item ? item.subItems : undefined
+              const subItems = 'subItems' in item ? (item as any).subItems : undefined
               const isExpanded = expandedNav === item.to
+              const parentActive = isItemActive(item.to, 'end' in item ? (item as any).end : false)
 
               return (
                 <div key={item.to}>
                   {isExpandable ? (
-                    /* Expandable parent row: NavLink on the left, chevron toggle on the right */
+                    /* Expandable parent row */
                     <div className="flex items-center rounded-lg overflow-hidden">
-                      <NavLink
+                      <Link
                         to={item.to}
-                        end={'end' in item ? (item as any).end : undefined}
                         onClick={onNavigate}
-                        className={({ isActive }) =>
-                          `group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
-                            isActive
-                              ? 'bg-emerald-subtle text-primary'
-                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                          }`
-                        }
+                        className={`group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
+                          parentActive
+                            ? 'bg-emerald-subtle text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
                       >
-                        {({ isActive }) => (
-                          <>
-                            {isActive && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
-                            )}
-                            <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                            <span className="truncate">{item.label}</span>
-                          </>
+                        {parentActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
                         )}
-                      </NavLink>
+                        <item.icon className={`h-4 w-4 shrink-0 ${parentActive ? 'text-primary' : ''}`} />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
                       {/* Chevron toggle */}
                       <button
                         onClick={() => toggleExpand(item.to)}
@@ -206,27 +229,24 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       }}
                     >
                       <div className="pl-4 pr-1 pb-0.5 space-y-0.5">
-                        {subItems.map((sub) => (
-                          <NavLink
-                            key={sub.to}
-                            to={sub.to}
-                            onClick={onNavigate}
-                            className={({ isActive }) =>
-                              `group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-                                isActive
+                        {subItems.map((sub: any) => {
+                          const subActive = isItemActive(sub.to)
+                          return (
+                            <Link
+                              key={sub.to}
+                              to={sub.to}
+                              onClick={onNavigate}
+                              className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+                                subActive
                                   ? 'bg-emerald-subtle text-primary'
                                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                              }`
-                            }
-                          >
-                            {({ isActive }) => (
-                              <>
-                                <sub.icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                                {sub.label}
-                              </>
-                            )}
-                          </NavLink>
-                        ))}
+                              }`}
+                            >
+                              <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'text-primary' : ''}`} />
+                              {sub.label}
+                            </Link>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
