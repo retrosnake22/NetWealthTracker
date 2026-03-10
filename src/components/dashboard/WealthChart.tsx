@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 interface WealthChartProps {
@@ -25,16 +25,16 @@ export function WealthChart({ data }: WealthChartProps) {
         <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 rounded bg-emerald-500 inline-block" />
+            <span className="w-3 h-1 rounded bg-emerald-400 inline-block" />
+            <span className="font-medium text-foreground">Net Wealth</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-0.5 rounded bg-emerald-700/60 inline-block" />
             Assets
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 rounded bg-red-400 inline-block" />
+            <span className="w-2.5 h-0.5 rounded bg-amber-400/60 inline-block border border-dashed border-amber-400/40" />
             Liabilities
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 rounded bg-foreground inline-block" />
-            Net Wealth
           </span>
         </div>
       </CardHeader>
@@ -47,19 +47,11 @@ export function WealthChart({ data }: WealthChartProps) {
         ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
-                  <linearGradient id="assetGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="liabilityGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
-                  </linearGradient>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#34d399" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
 
@@ -93,33 +85,40 @@ export function WealthChart({ data }: WealthChartProps) {
                   cursor={{ stroke: '#34d399', strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
 
-                <Area
-                  type="monotone"
-                  dataKey="totalAssets"
-                  stroke="#10b981"
-                  strokeWidth={1.5}
-                  fill="url(#assetGrad)"
-                  dot={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="totalLiabilities"
-                  stroke="#f87171"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  fill="url(#liabilityGrad)"
-                  dot={false}
-                />
+                {/* Net Wealth — primary, filled area */}
                 <Area
                   type="monotone"
                   dataKey="netWealth"
                   stroke="#34d399"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   fill="url(#netWealthGrad)"
                   dot={false}
                   activeDot={{ r: 5, fill: '#34d399', strokeWidth: 0 }}
                 />
-              </AreaChart>
+
+                {/* Assets — subtle secondary line */}
+                <Line
+                  type="monotone"
+                  dataKey="totalAssets"
+                  stroke="#065f46"
+                  strokeWidth={1.5}
+                  strokeOpacity={0.5}
+                  dot={false}
+                  activeDot={{ r: 3, fill: '#065f46', strokeWidth: 0 }}
+                />
+
+                {/* Liabilities — subtle dashed secondary line */}
+                <Line
+                  type="monotone"
+                  dataKey="totalLiabilities"
+                  stroke="#fbbf24"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  strokeOpacity={0.5}
+                  dot={false}
+                  activeDot={{ r: 3, fill: '#fbbf24', strokeWidth: 0 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         )}

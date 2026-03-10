@@ -90,8 +90,32 @@ export function calculateMonthlyExpenses(budgets: ExpenseBudget[]): number {
   return budgets.reduce((sum, b) => sum + b.monthlyBudget, 0)
 }
 
-export function calculateMonthlyCashflow(incomes: IncomeItem[], budgets: ExpenseBudget[]): number {
-  return calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(budgets)
+export function calculateMonthlyPropertyExpenses(properties: Property[], liabilities: Liability[]): number {
+  let total = 0
+  for (const prop of properties) {
+    if (prop.mortgageId) {
+      const lia = liabilities.find(l => l.id === prop.mortgageId)
+      if (lia && lia.minimumRepayment > 0) {
+        const freq = lia.repaymentFrequency === 'weekly' ? 52 : lia.repaymentFrequency === 'fortnightly' ? 26 : 12
+        total += (lia.minimumRepayment * freq) / 12
+      }
+    }
+    total += (prop.councilRatesPA ?? 0) / 12
+    total += (prop.waterRatesPA ?? 0) / 12
+    total += (prop.insurancePA ?? 0) / 12
+    total += (prop.strataPA ?? 0) / 12
+    total += (prop.landTaxPA ?? 0) / 12
+    total += (prop.maintenanceBudgetPA ?? 0) / 12
+    if (prop.weeklyRent && prop.weeklyRent > 0 && prop.propertyManagementPct && prop.propertyManagementPct > 0) {
+      total += (prop.weeklyRent * 52 * prop.propertyManagementPct) / 100 / 12
+    }
+  }
+  return total
+}
+
+export function calculateMonthlyCashflow(incomes: IncomeItem[], budgets: ExpenseBudget[], properties?: Property[], liabilities?: Liability[]): number {
+  const propertyExpenses = properties && liabilities ? calculateMonthlyPropertyExpenses(properties, liabilities) : 0
+  return calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(budgets) - propertyExpenses
 }
 
 export function calculateSavingsRate(incomes: IncomeItem[], budgets: ExpenseBudget[]): number {
@@ -126,7 +150,9 @@ export function projectNetWealth(
   incomes: IncomeItem[],
   budgets: ExpenseBudget[],
   allocations: SurplusAllocation[],
-  years: number
+  years: number,
+  propertyGrowthOverride?: number,
+  stockGrowthOverride?: number
 ): ProjectionPoint[] {
   const points: ProjectionPoint[] = []
   const months = years * 12
@@ -139,13 +165,19 @@ export function projectNetWealth(
   liabilities.forEach(l => liabilityValues.set(l.id, l.currentBalance))
 
   const growthRates = new Map<string, number>()
-  assets.forEach(a => growthRates.set(a.id, a.growthRatePA))
-  properties.forEach(p => growthRates.set(p.id, p.growthRatePA))
+  assets.forEach(a => {
+    if ((a.category === 'stocks' || a.category === 'super') && stockGrowthOverride !== undefined) {
+      growthRates.set(a.id, stockGrowthOverride)
+    } else {
+      growthRates.set(a.id, a.growthRatePA)
+    }
+  })
+  properties.forEach(p => growthRates.set(p.id, propertyGrowthOverride ?? p.growthRatePA))
 
   const interestRates = new Map<string, number>()
   liabilities.forEach(l => interestRates.set(l.id, l.interestRatePA))
 
-  const monthlySurplus = calculateMonthlyCashflow(incomes, budgets)
+  const monthlySurplus = calculateMonthlyCashflow(incomes, budgets, properties, liabilities)
 
   for (let m = 0; m <= months; m++) {
     if (m % 12 === 0) {

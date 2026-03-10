@@ -117,6 +117,8 @@ export interface ProjectionSettings {
   surplusAllocations: SurplusAllocation[]
   projectionYears: number
   defaultGrowthRates: Record<AssetCategory, number>
+  propertyGrowthOverride?: number   // annual %, e.g. 0.05 = 5%
+  stockGrowthOverride?: number      // annual %, e.g. 0.08 = 8%
 }
 
 export interface MonthlySnapshot {

@@ -172,7 +172,7 @@ export function LiabilitiesPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Liabilities</span>
-            <span className="text-red-500">{formatCurrency(total)}</span>
+            <span className="text-amber-400">{formatCurrency(total)}</span>
           </CardTitle>
         </CardHeader>
       </Card>
@@ -203,7 +203,7 @@ export function LiabilitiesPage() {
                         )}
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(item.currentBalance)}</p>
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-amber-400">{formatCurrency(item.currentBalance)}</p>
                       <p className="text-xs text-muted-foreground">
                         Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
                       </p>

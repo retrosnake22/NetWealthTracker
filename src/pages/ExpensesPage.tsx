@@ -29,12 +29,12 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 }
 
 const SUPER_CATEGORIES: { label: string; icon: string; color: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Property', icon: '🏠', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
-  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20', categories: ['rent', 'utilities'] },
-  { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-600 border-violet-500/20', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: 'Living', icon: '🛒', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
-  { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-600 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
-  { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'other'] },
+  { label: 'Property', icon: '🏠', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
+  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'utilities'] },
+  { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
+  { label: 'Living', icon: '🛒', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
+  { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
+  { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'other'] },
 ]
 
 interface AutoExpenseItem {
@@ -238,9 +238,9 @@ export function ExpensesPage() {
                         {items.map((item, idx) => (
                           <div
                             key={item.key}
-                            className={`flex items-center justify-between px-5 py-3 pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
+                            className={`flex items-center gap-4 px-5 py-3 pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
                           >
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2.5 flex-1 min-w-0">
                               <Badge variant="outline" className={`text-xs ${getCategoryColor(item.category)}`}>
                                 {item.label}
                               </Badge>
@@ -260,7 +260,7 @@ export function ExpensesPage() {
           {groupedExpenses.length > 0 && (
             <div className="space-y-3">
               {autoByProperty.length > 0 && (
-                <h2 className="text-base font-semibold">Manual Expenses</h2>
+                <h2 className="text-base font-semibold">Daily Living Expenses</h2>
               )}
               {groupedExpenses.map(group => {
                 const collapsed = collapsedGroups.has(group.label)
@@ -294,9 +294,9 @@ export function ExpensesPage() {
                           {group.items.map((item, idx) => (
                             <div
                               key={item.id}
-                              className={`flex items-center justify-between px-5 py-3.5 pl-12 hover:bg-muted/30 transition-colors group ${idx !== group.items.length - 1 ? 'border-b border-border/30' : ''}`}
+                              className={`flex items-center gap-4 px-5 py-3.5 pl-12 hover:bg-muted/30 transition-colors group ${idx !== group.items.length - 1 ? 'border-b border-border/30' : ''}`}
                             >
-                              <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <span className="text-sm font-medium truncate">{item.label}</span>
                                 {item.label !== CATEGORY_LABELS[item.category] && (
                                   <span className="text-xs text-muted-foreground hidden sm:inline">({CATEGORY_LABELS[item.category]})</span>

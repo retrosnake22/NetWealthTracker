@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, LineChart, PiggyBank, Target } from 'lucide-react'
+import { Plus, Trash2, LineChart, PiggyBank, TrendingUp } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,7 +20,7 @@ export function ProjectionsPage() {
 
   const [newAlloc, setNewAlloc] = useState({ targetId: '', percentage: '20' })
 
-  const monthlySurplus = calculateMonthlyCashflow(incomes, expenseBudgets)
+  const monthlySurplus = calculateMonthlyCashflow(incomes, expenseBudgets, properties, liabilities)
   const allocations = projectionSettings.surplusAllocations
 
   // Build target options from assets + liabilities
@@ -65,7 +65,9 @@ export function ProjectionsPage() {
   const data = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
     allocations,
-    projectionSettings.projectionYears
+    projectionSettings.projectionYears,
+    projectionSettings.propertyGrowthOverride,
+    projectionSettings.stockGrowthOverride
   )
 
   const finalPoint = data[data.length - 1]
@@ -110,24 +112,69 @@ export function ProjectionsPage() {
           {/* Chart */}
           <WealthChart data={data} />
 
-          {/* Settings */}
+          {/* Growth Assumptions */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Projection Settings
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Growth Assumptions
               </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Adjust the assumed annual growth rates used in the projection above.
+              </p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="max-w-xs">
-                <Label>Projection Period (years)</Label>
-                <Input
-                  type="number"
-                  value={projectionSettings.projectionYears}
-                  onChange={e => updateProjectionSettings({ projectionYears: parseInt(e.target.value) || 20 })}
-                  min={1}
-                  max={50}
-                />
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <Label>Property Growth (% p.a.)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    max={30}
+                    value={projectionSettings.propertyGrowthOverride !== undefined ? (projectionSettings.propertyGrowthOverride * 100).toFixed(1) : ''}
+                    placeholder="Per-asset default"
+                    onChange={e => {
+                      const val = e.target.value
+                      if (val === '') {
+                        updateProjectionSettings({ propertyGrowthOverride: undefined })
+                      } else {
+                        updateProjectionSettings({ propertyGrowthOverride: parseFloat(val) / 100 })
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave blank to use each property's own rate</p>
+                </div>
+                <div>
+                  <Label>Stock / Super Growth (% p.a.)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    max={30}
+                    value={projectionSettings.stockGrowthOverride !== undefined ? (projectionSettings.stockGrowthOverride * 100).toFixed(1) : ''}
+                    placeholder="Per-asset default"
+                    onChange={e => {
+                      const val = e.target.value
+                      if (val === '') {
+                        updateProjectionSettings({ stockGrowthOverride: undefined })
+                      } else {
+                        updateProjectionSettings({ stockGrowthOverride: parseFloat(val) / 100 })
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave blank to use each asset's own rate</p>
+                </div>
+                <div>
+                  <Label>Projection Period (years)</Label>
+                  <Input
+                    type="number"
+                    value={projectionSettings.projectionYears}
+                    onChange={e => updateProjectionSettings({ projectionYears: parseInt(e.target.value) || 20 })}
+                    min={1}
+                    max={50}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

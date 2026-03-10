@@ -125,7 +125,9 @@ export function DashboardPage() {
   const projectionData = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
     projectionSettings.surplusAllocations,
-    projectionSettings.projectionYears
+    projectionSettings.projectionYears,
+    projectionSettings.propertyGrowthOverride,
+    projectionSettings.stockGrowthOverride
   )
 
   // Asset breakdown for pie chart
