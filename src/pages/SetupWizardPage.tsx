@@ -23,8 +23,7 @@ import type {
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Sparkles },
   { id: 'income', label: 'Income', icon: Briefcase },
-  { id: 'assets', label: 'Assets', icon: Wallet },
-  { id: 'properties', label: 'Properties', icon: Building2 },
+  { id: 'assets', label: 'Assets & Property', icon: Wallet },
   { id: 'liabilities', label: 'Debts', icon: CreditCard },
   { id: 'expenses', label: 'Expenses', icon: Receipt },
   { id: 'projections', label: 'Goals', icon: Target },
@@ -39,7 +38,7 @@ const INCOME_LABELS: Record<IncomeCategory, string> = {
 }
 
 const ASSET_LABELS: Record<AssetCategory, string> = {
-  cash: 'Cash / Savings', property: 'Property', stocks: 'Stocks / ETFs',
+  cash: 'Cash & Savings', property: 'Property', stocks: 'Stocks / ETFs',
   super: 'Superannuation', vehicles: 'Vehicles', other: 'Other',
 }
 
@@ -72,6 +71,17 @@ const EXPENSE_QUICK_PICKS: { label: string; categories: ExpenseCategory[] }[] = 
 const DEFAULT_GROWTH: Record<AssetCategory, number> = {
   cash: 0.045, property: 0.07, stocks: 0.08, super: 0.07, vehicles: -0.10, other: 0.03,
 }
+
+// Asset type tabs config
+type AssetTab = AssetCategory
+const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: string }[] = [
+  { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-emerald-500 bg-emerald-500/10' },
+  { id: 'stocks', label: 'Stocks / ETFs', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
+  { id: 'super', label: 'Super', icon: Target, color: 'text-violet-500 bg-violet-500/10' },
+  { id: 'vehicles', label: 'Vehicles', icon: Car, color: 'text-amber-500 bg-amber-500/10' },
+  { id: 'property', label: 'Property', icon: Home, color: 'text-sky-500 bg-sky-500/10' },
+  { id: 'other', label: 'Other', icon: Wallet, color: 'text-gray-500 bg-gray-500/10' },
+]
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -167,7 +177,6 @@ export function SetupWizardPage() {
         {step.id === 'welcome' && <WelcomeStep onNext={goNext} />}
         {step.id === 'income' && <IncomeStep store={store} />}
         {step.id === 'assets' && <AssetsStep store={store} />}
-        {step.id === 'properties' && <PropertiesStep store={store} />}
         {step.id === 'liabilities' && <LiabilitiesStep store={store} />}
         {step.id === 'expenses' && <ExpensesStep store={store} />}
         {step.id === 'projections' && <ProjectionsStep store={store} />}
@@ -394,30 +403,51 @@ function IncomeStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 3: Assets ────────────────────────────────────────────────────────────
+// ── Step 3: Assets & Property (unified) ───────────────────────────────────────
 
 function AssetsStep({ store }: { store: FinanceState }) {
-  const { assets, addAsset, removeAsset, updateAsset } = store
+  const {
+    assets, addAsset, removeAsset, updateAsset,
+    properties, addProperty, removeProperty, addLiability, updateProperty,
+  } = store
+
+  const [activeTab, setActiveTab] = useState<AssetTab>('cash')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    name: '', category: 'cash' as AssetCategory, currentValue: '', growthRatePA: '4.5',
+
+  // Simple asset form state
+  const [assetForm, setAssetForm] = useState({
+    name: '', currentValue: '', growthRatePA: '4.5',
+  })
+
+  // Property form state
+  const [propForm, setPropForm] = useState({
+    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
+    address: '', currentValue: '', growthRatePA: '7',
+    hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
+    weeklyRent: '',
   })
 
   const resetForm = () => {
-    setForm({ name: '', category: 'cash', currentValue: '', growthRatePA: '4.5' })
+    setAssetForm({ name: '', currentValue: '', growthRatePA: String(DEFAULT_GROWTH[activeTab] * 100) })
+    setPropForm({
+      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7',
+      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '', weeklyRent: '',
+    })
     setShowForm(false)
     setEditingId(null)
   }
 
-  const handleCategoryChange = (cat: AssetCategory) => {
-    setForm({ ...form, category: cat, growthRatePA: String(DEFAULT_GROWTH[cat] * 100) })
+  const handleTabChange = (tab: AssetTab) => {
+    resetForm()
+    setActiveTab(tab)
+    setAssetForm(f => ({ ...f, growthRatePA: String(DEFAULT_GROWTH[tab] * 100) }))
   }
 
-  const startEdit = (asset: typeof assets[0]) => {
-    setForm({
+  // ── Asset CRUD ──
+  const startEditAsset = (asset: typeof assets[0]) => {
+    setAssetForm({
       name: asset.name,
-      category: asset.category,
       currentValue: String(asset.currentValue),
       growthRatePA: String(asset.growthRatePA * 100),
     })
@@ -425,214 +455,29 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setShowForm(true)
   }
 
-  const handleAdd = () => {
-    if (!form.name || !form.currentValue) return
+  const handleAddAsset = () => {
+    if (!assetForm.name || !assetForm.currentValue) return
     if (editingId) {
       updateAsset(editingId, {
-        name: form.name,
-        category: form.category,
-        currentValue: parseFloat(form.currentValue) || 0,
-        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+        name: assetForm.name,
+        category: activeTab,
+        currentValue: parseFloat(assetForm.currentValue) || 0,
+        growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
       })
     } else {
       addAsset({
-        name: form.name,
-        category: form.category,
-        currentValue: parseFloat(form.currentValue) || 0,
-        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+        name: assetForm.name,
+        category: activeTab,
+        currentValue: parseFloat(assetForm.currentValue) || 0,
+        growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
       })
     }
     resetForm()
   }
 
-  const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
-
-  const ASSET_ICONS: Record<AssetCategory, { icon: typeof Wallet; color: string }> = {
-    cash: { icon: PiggyBank, color: 'text-emerald-500 bg-emerald-500/10' },
-    stocks: { icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
-    super: { icon: Target, color: 'text-violet-500 bg-violet-500/10' },
-    vehicles: { icon: Car, color: 'text-amber-500 bg-amber-500/10' },
-    property: { icon: Home, color: 'text-blue-500 bg-blue-500/10' },
-    other: { icon: Wallet, color: 'text-gray-500 bg-gray-500/10' },
-  }
-
-  return (
-    <div className="space-y-6">
-      <StepHeader
-        title="What do you own?"
-        description="Add your assets — savings accounts, investment portfolios, superannuation, vehicles, and anything else of value."
-        icon={Wallet}
-      />
-
-      {/* Quick-add category buttons */}
-      {!showForm && assets.length === 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {(Object.entries(ASSET_LABELS) as [AssetCategory, string][])
-            .filter(([k]) => k !== 'property')
-            .map(([cat, label]) => {
-              const { icon: Icon, color } = ASSET_ICONS[cat]
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    handleCategoryChange(cat)
-                    setShowForm(true)
-                  }}
-                  className="p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-2"
-                >
-                  <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium">{label}</span>
-                </button>
-              )
-            })}
-        </div>
-      )}
-
-      {/* Existing items */}
-      {assets.length > 0 && (
-        <div className="space-y-2">
-          {assets.map(asset => {
-            const { icon: Icon, color } = ASSET_ICONS[asset.category]
-            return (
-              <Card key={asset.id} className="card-hover group">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{asset.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {ASSET_LABELS[asset.category]} · {formatPercent(asset.growthRatePA)} p.a.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
-                    <Button
-                      variant="ghost" size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => startEdit(asset)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost" size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                      onClick={() => removeAsset(asset.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-
-          <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
-            <span className="text-sm font-medium text-muted-foreground">Total Assets</span>
-            <span className="font-bold text-primary tabular-nums">{formatCurrency(totalAssets)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Add/Edit form */}
-      {showForm ? (
-        <Card className="border-primary/30">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Asset' : 'Add Asset'}</h3>
-              <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Name</Label>
-                <Input
-                  placeholder="e.g. Emergency Fund"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category} onValueChange={(v: AssetCategory) => handleCategoryChange(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(ASSET_LABELS) as [AssetCategory, string][])
-                      .filter(([k]) => k !== 'property')
-                      .map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Current Value</Label>
-                <CurrencyInput
-                  value={form.currentValue}
-                  onValueChange={v => setForm({ ...form, currentValue: v })}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Growth Rate (% p.a.)</Label>
-                <Input
-                  type="number" step="0.1"
-                  value={form.growthRatePA}
-                  onChange={e => setForm({ ...form, growthRatePA: e.target.value })}
-                />
-              </div>
-            </div>
-            <Button onClick={handleAdd} disabled={!form.name || !form.currentValue} className="w-full gap-2">
-              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Asset</>}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : assets.length > 0 ? (
-        <button
-          onClick={() => { resetForm(); setShowForm(true) }}
-          className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">Add Another Asset</span>
-        </button>
-      ) : null}
-    </div>
-  )
-}
-
-// ── Step 4: Properties ────────────────────────────────────────────────────────
-
-function PropertiesStep({ store }: { store: FinanceState }) {
-  const { properties, addProperty, removeProperty, addLiability, updateProperty } = store
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    address: '', currentValue: '', growthRatePA: '7',
-    hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
-    weeklyRent: '',
-  })
-
-  const defaultForm = {
-    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    address: '', currentValue: '', growthRatePA: '7',
-    hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
-    weeklyRent: '',
-  }
-
-  const resetForm = () => {
-    setForm(defaultForm)
-    setShowForm(false)
-    setEditingId(null)
-  }
-
-  const startEdit = (prop: typeof properties[0]) => {
-    setForm({
+  // ── Property CRUD ──
+  const startEditProperty = (prop: typeof properties[0]) => {
+    setPropForm({
       name: prop.name,
       type: prop.type,
       address: prop.address || '',
@@ -645,236 +490,390 @@ function PropertiesStep({ store }: { store: FinanceState }) {
     setShowForm(true)
   }
 
-  const handleAdd = () => {
-    if (!form.name || !form.currentValue) return
+  const handleAddProperty = () => {
+    if (!propForm.name || !propForm.currentValue) return
 
     if (editingId) {
       updateProperty(editingId, {
-        name: form.name,
-        type: form.type,
-        address: form.address || undefined,
-        currentValue: parseFloat(form.currentValue) || 0,
-        growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
-        weeklyRent: form.type === 'investment' ? (parseFloat(form.weeklyRent) || 0) : undefined,
+        name: propForm.name,
+        type: propForm.type,
+        address: propForm.address || undefined,
+        currentValue: parseFloat(propForm.currentValue) || 0,
+        growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
+        weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
       })
       resetForm()
       return
     }
 
     let mortgageId: string | undefined
-    if (form.hasMortgage && form.mortgageBalance) {
+    if (propForm.hasMortgage && propForm.mortgageBalance) {
       const mortData = {
-        name: `${form.name} Mortgage`,
+        name: `${propForm.name} Mortgage`,
         category: 'mortgage' as const,
-        currentBalance: parseFloat(form.mortgageBalance) || 0,
-        interestRatePA: (parseFloat(form.interestRate) || 0) / 100,
-        minimumRepayment: parseFloat(form.repayment) || 0,
+        currentBalance: parseFloat(propForm.mortgageBalance) || 0,
+        interestRatePA: (parseFloat(propForm.interestRate) || 0) / 100,
+        minimumRepayment: parseFloat(propForm.repayment) || 0,
         repaymentFrequency: 'monthly' as const,
       }
       addLiability(mortData)
-      // Get the ID from the last added liability
       const liabs = useFinanceStore.getState().liabilities
       mortgageId = liabs[liabs.length - 1]?.id
     }
 
     addProperty({
-      name: form.name,
-      type: form.type,
-      address: form.address || undefined,
-      currentValue: parseFloat(form.currentValue) || 0,
-      growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
+      name: propForm.name,
+      type: propForm.type,
+      address: propForm.address || undefined,
+      currentValue: parseFloat(propForm.currentValue) || 0,
+      growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
       mortgageId,
-      weeklyRent: form.type === 'investment' ? (parseFloat(form.weeklyRent) || 0) : undefined,
+      weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
     })
 
     resetForm()
   }
 
-  const totalValue = properties.reduce((s, p) => s + p.currentValue, 0)
+  // ── Totals ──
+  const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
+  const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
+  const grandTotal = totalAssets + totalProperties
+
+  // Items for current tab
+  const tabAssets = activeTab === 'property' ? [] : assets.filter(a => a.category === activeTab)
+  const tabProperties = activeTab === 'property' ? properties : []
+  const isPropertyTab = activeTab === 'property'
+
+  // Count items per tab for badges
+  const getTabCount = (tab: AssetTab) => {
+    if (tab === 'property') return properties.length
+    return assets.filter(a => a.category === tab).length
+  }
 
   return (
     <div className="space-y-6">
       <StepHeader
-        title="Do you own any property?"
-        description="Add your home and any investment properties. We'll include the mortgage in the next step if you add one here."
-        icon={Building2}
+        title="What do you own?"
+        description="Add all your assets — savings, investments, super, vehicles, and property."
+        icon={Wallet}
       />
 
-      {properties.length > 0 && (
-        <div className="space-y-2">
-          {properties.map(prop => (
-            <Card key={prop.id} className="card-hover group">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    {prop.type === 'primary_residence' ? (
-                      <Home className="w-5 h-5 text-blue-500" />
-                    ) : (
-                      <Building2 className="w-5 h-5 text-blue-500" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium">{prop.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} · {formatPercent(prop.growthRatePA)} p.a.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => startEdit(prop)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                    onClick={() => removeProperty(prop.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
-            <span className="text-sm font-medium text-muted-foreground">Total Property Value</span>
-            <span className="font-bold text-primary tabular-nums">{formatCurrency(totalValue)}</span>
-          </div>
+      {/* Grand total */}
+      {grandTotal > 0 && (
+        <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+          <span className="text-sm font-medium text-muted-foreground">Total Assets</span>
+          <span className="font-bold text-primary tabular-nums">{formatCurrency(grandTotal)}</span>
         </div>
       )}
 
-      {showForm ? (
-        <Card className="border-primary/30">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
-              <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Property Name</Label>
-                <Input
-                  placeholder="e.g. Family Home"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Type</Label>
-                <Select value={form.type} onValueChange={(v: 'primary_residence' | 'investment') => setForm({ ...form, type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="primary_residence">Primary Residence</SelectItem>
-                    <SelectItem value="investment">Investment Property</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Current Value</Label>
-                <CurrencyInput
-                  value={form.currentValue}
-                  onValueChange={v => setForm({ ...form, currentValue: v })}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Growth Rate (% p.a.)</Label>
-                <Input
-                  type="number" step="0.1"
-                  value={form.growthRatePA}
-                  onChange={e => setForm({ ...form, growthRatePA: e.target.value })}
-                />
-              </div>
-
-              {form.type === 'investment' && (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs">Weekly Rent</Label>
-                  <CurrencyInput
-                    value={form.weeklyRent}
-                    onValueChange={v => setForm({ ...form, weeklyRent: v })}
-                    placeholder="0"
-                  />
-                </div>
+      {/* Category tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        {ASSET_TABS.map(tab => {
+          const count = getTabCount(tab.id)
+          const isActive = activeTab === tab.id
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium whitespace-nowrap transition-all ${
+                isActive
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+              {count > 0 && (
+                <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${
+                  isActive ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {count}
+                </span>
               )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Property tab content ── */}
+      {isPropertyTab && (
+        <div className="space-y-4">
+          {/* Existing properties */}
+          {tabProperties.length > 0 && (
+            <div className="space-y-2">
+              {tabProperties.map(prop => (
+                <Card key={prop.id} className="card-hover group">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                        {prop.type === 'primary_residence' ? (
+                          <Home className="w-5 h-5 text-sky-500" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-sky-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{prop.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} · {formatPercent(prop.growthRatePA)} p.a.
+                          {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => startEditProperty(prop)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                        onClick={() => removeProperty(prop.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          )}
 
-            {/* Mortgage toggle — only show when adding new */}
-            {!editingId && (
-              <div className="pt-2 border-t border-border/50">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.hasMortgage}
-                    onChange={e => setForm({ ...form, hasMortgage: e.target.checked })}
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <span className="text-sm font-medium">This property has a mortgage</span>
-                </label>
+          {/* Property form */}
+          {showForm ? (
+            <Card className="border-primary/30">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
+                  <Button variant="ghost" size="icon" onClick={resetForm}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
 
-                {form.hasMortgage && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 ml-7">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Mortgage Balance</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Property Name</Label>
+                    <Input
+                      placeholder="e.g. Family Home"
+                      value={propForm.name}
+                      onChange={e => setPropForm({ ...propForm, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Type</Label>
+                    <Select value={propForm.type} onValueChange={(v: 'primary_residence' | 'investment') => setPropForm({ ...propForm, type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary_residence">Primary Residence</SelectItem>
+                        <SelectItem value="investment">Investment Property</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Current Value</Label>
+                    <CurrencyInput
+                      value={propForm.currentValue}
+                      onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Growth Rate (% p.a.)</Label>
+                    <Input
+                      type="number" step="0.1"
+                      value={propForm.growthRatePA}
+                      onChange={e => setPropForm({ ...propForm, growthRatePA: e.target.value })}
+                    />
+                  </div>
+
+                  {propForm.type === 'investment' && (
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs">Weekly Rent</Label>
                       <CurrencyInput
-                        value={form.mortgageBalance}
-                        onValueChange={v => setForm({ ...form, mortgageBalance: v })}
+                        value={propForm.weeklyRent}
+                        onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
                         placeholder="0"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Interest Rate (%)</Label>
-                      <Input
-                        type="number" step="0.01"
-                        value={form.interestRate}
-                        onChange={e => setForm({ ...form, interestRate: e.target.value })}
+                  )}
+                </div>
+
+                {/* Mortgage toggle — only show when adding new */}
+                {!editingId && (
+                  <div className="pt-2 border-t border-border/50">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={propForm.hasMortgage}
+                        onChange={e => setPropForm({ ...propForm, hasMortgage: e.target.checked })}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Monthly Repayment</Label>
-                      <CurrencyInput
-                        value={form.repayment}
-                        onValueChange={v => setForm({ ...form, repayment: v })}
-                        placeholder="0"
-                      />
-                    </div>
+                      <span className="text-sm font-medium">This property has a mortgage</span>
+                    </label>
+
+                    {propForm.hasMortgage && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 ml-7">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Mortgage Balance</Label>
+                          <CurrencyInput
+                            value={propForm.mortgageBalance}
+                            onValueChange={v => setPropForm({ ...propForm, mortgageBalance: v })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Interest Rate (%)</Label>
+                          <Input
+                            type="number" step="0.01"
+                            value={propForm.interestRate}
+                            onChange={e => setPropForm({ ...propForm, interestRate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Monthly Repayment</Label>
+                          <CurrencyInput
+                            value={propForm.repayment}
+                            onValueChange={v => setPropForm({ ...propForm, repayment: v })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
 
-            <Button onClick={handleAdd} disabled={!form.name || !form.currentValue} className="w-full gap-2">
-              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <button
-          onClick={() => { resetForm(); setShowForm(true) }}
-          className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">{properties.length > 0 ? 'Add Another Property' : 'Add a Property'}</span>
-        </button>
+                <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
+                  {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <button
+              onClick={() => { resetForm(); setShowForm(true) }}
+              className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="font-medium">{properties.length > 0 ? 'Add Another Property' : 'Add a Property'}</span>
+            </button>
+          )}
+
+          {properties.length === 0 && !showForm && (
+            <p className="text-center text-sm text-muted-foreground">
+              No property? No worries — switch to another asset type or hit <strong>Continue</strong>.
+            </p>
+          )}
+        </div>
       )}
 
-      {properties.length === 0 && !showForm && (
-        <p className="text-center text-sm text-muted-foreground">
-          No property? No worries — hit <strong>Continue</strong> to skip.
-        </p>
+      {/* ── Non-property tab content ── */}
+      {!isPropertyTab && (
+        <div className="space-y-4">
+          {/* Existing items for this category */}
+          {tabAssets.length > 0 && (
+            <div className="space-y-2">
+              {tabAssets.map(asset => {
+                const tabConfig = ASSET_TABS.find(t => t.id === asset.category)!
+                const Icon = tabConfig.icon
+                return (
+                  <Card key={asset.id} className="card-hover group">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg ${tabConfig.color} flex items-center justify-center`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{asset.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {ASSET_LABELS[asset.category]} · {formatPercent(asset.growthRatePA)} p.a.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => startEditAsset(asset)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                          onClick={() => removeAsset(asset.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Simple asset form */}
+          {showForm ? (
+            <Card className="border-primary/30">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">{editingId ? `Edit ${ASSET_LABELS[activeTab]}` : `Add ${ASSET_LABELS[activeTab]}`}</h3>
+                  <Button variant="ghost" size="icon" onClick={resetForm}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs">Name</Label>
+                    <Input
+                      placeholder={activeTab === 'cash' ? 'e.g. Emergency Fund' : activeTab === 'stocks' ? 'e.g. VDHG Portfolio' : activeTab === 'super' ? 'e.g. AustralianSuper' : activeTab === 'vehicles' ? 'e.g. 2020 Toyota RAV4' : 'e.g. Collectibles'}
+                      value={assetForm.name}
+                      onChange={e => setAssetForm({ ...assetForm, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Current Value</Label>
+                    <CurrencyInput
+                      value={assetForm.currentValue}
+                      onValueChange={v => setAssetForm({ ...assetForm, currentValue: v })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Growth Rate (% p.a.)</Label>
+                    <Input
+                      type="number" step="0.1"
+                      value={assetForm.growthRatePA}
+                      onChange={e => setAssetForm({ ...assetForm, growthRatePA: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <Button onClick={handleAddAsset} disabled={!assetForm.name || !assetForm.currentValue} className="w-full gap-2">
+                  {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add {ASSET_LABELS[activeTab]}</>}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <button
+              onClick={() => { resetForm(); setShowForm(true) }}
+              className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="font-medium">{tabAssets.length > 0 ? `Add Another ${ASSET_LABELS[activeTab]}` : `Add ${ASSET_LABELS[activeTab]}`}</span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
 }
 
-// ── Step 5: Liabilities ───────────────────────────────────────────────────────
+// ── Step 4: Liabilities ───────────────────────────────────────────────────────
 
 function LiabilitiesStep({ store }: { store: FinanceState }) {
   const { liabilities, addLiability, removeLiability, updateLiability } = store
@@ -1142,7 +1141,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 6: Expenses ──────────────────────────────────────────────────────────
+// ── Step 5: Expenses ──────────────────────────────────────────────────────────
 
 function ExpensesStep({ store }: { store: FinanceState }) {
   const { expenseBudgets, addExpenseBudget, removeExpenseBudget, updateExpenseBudget } = store
@@ -1151,8 +1150,8 @@ function ExpensesStep({ store }: { store: FinanceState }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
 
-  const existingCategories = new Set(expenseBudgets.map(b => b.category))
-  const totalMonthly = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+  const existingCategories = new Set(expenseBudgets.map((b: { category: ExpenseCategory }) => b.category))
+  const totalMonthly = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
 
   const handleAdd = (cat: ExpenseCategory) => {
     if (!amount) return
@@ -1198,8 +1197,8 @@ function ExpensesStep({ store }: { store: FinanceState }) {
         {EXPENSE_QUICK_PICKS.map(group => {
           const isExpanded = expandedGroup === group.label
           const groupTotal = expenseBudgets
-            .filter(b => group.categories.includes(b.category))
-            .reduce((s, b) => s + b.monthlyBudget, 0)
+            .filter((b: { category: ExpenseCategory }) => group.categories.includes(b.category))
+            .reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
           const filledCount = group.categories.filter(c => existingCategories.has(c)).length
 
           return (
@@ -1228,7 +1227,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
               {isExpanded && (
                 <div className="border-t border-border/50 px-4 py-3 space-y-2">
                   {group.categories.map(cat => {
-                    const existing = expenseBudgets.find(b => b.category === cat)
+                    const existing = expenseBudgets.find((b: { category: ExpenseCategory }) => b.category === cat)
                     const isAdding = addingCategory === cat
 
                     if (isAdding) {
@@ -1295,7 +1294,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 7: Projections ───────────────────────────────────────────────────────
+// ── Step 6: Projections ───────────────────────────────────────────────────────
 
 function ProjectionsStep({ store }: { store: FinanceState }) {
   const { projectionSettings, updateProjectionSettings, assets, properties, liabilities } = store
@@ -1308,6 +1307,8 @@ function ProjectionsStep({ store }: { store: FinanceState }) {
       updateProjectionSettings({ projectionYears: num })
     }
   }
+
+  const totalAssetCount = assets.length + properties.length
 
   return (
     <div className="space-y-6">
@@ -1358,14 +1359,10 @@ function ProjectionsStep({ store }: { store: FinanceState }) {
       <Card className="bg-muted/30">
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground mb-3">Your projection will include:</p>
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-2 gap-3 text-center">
             <div>
-              <p className="text-2xl font-bold tabular-nums">{assets.length}</p>
+              <p className="text-2xl font-bold tabular-nums">{totalAssetCount}</p>
               <p className="text-xs text-muted-foreground">Assets</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tabular-nums">{properties.length}</p>
-              <p className="text-xs text-muted-foreground">Properties</p>
             </div>
             <div>
               <p className="text-2xl font-bold tabular-nums">{liabilities.length}</p>
@@ -1378,18 +1375,18 @@ function ProjectionsStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 8: Summary ───────────────────────────────────────────────────────────
+// ── Step 7: Summary ───────────────────────────────────────────────────────────
 
 function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () => void }) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = store
   const [revealed, setRevealed] = useState(false)
 
-  const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
-    + properties.reduce((s, p) => s + p.currentValue, 0)
-  const totalLiabilities = liabilities.reduce((s, l) => s + l.currentBalance, 0)
+  const totalAssets = assets.reduce((s: number, a: { currentValue: number }) => s + a.currentValue, 0)
+    + properties.reduce((s: number, p: { currentValue: number }) => s + p.currentValue, 0)
+  const totalLiabilities = liabilities.reduce((s: number, l: { currentBalance: number }) => s + l.currentBalance, 0)
   const netWealth = totalAssets - totalLiabilities
-  const monthlyIncome = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
-  const monthlyExpenses = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+  const monthlyIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
+  const monthlyExpenses = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0)
   const monthlySurplus = monthlyIncome - monthlyExpenses
 
   useEffect(() => {
@@ -1451,8 +1448,12 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Asset Breakdown</p>
           <div className="space-y-2">
             {[
-              ...properties.map(p => ({ name: p.name, value: p.currentValue, color: 'bg-blue-500' })),
-              ...assets.map(a => ({ name: a.name, value: a.currentValue, color: a.category === 'cash' ? 'bg-emerald-500' : a.category === 'stocks' ? 'bg-blue-500' : a.category === 'super' ? 'bg-violet-500' : a.category === 'vehicles' ? 'bg-amber-500' : 'bg-gray-500' })),
+              ...properties.map((p: { name: string; currentValue: number }) => ({ name: p.name, value: p.currentValue, color: 'bg-sky-500' })),
+              ...assets.map((a: { name: string; currentValue: number; category: AssetCategory }) => ({
+                name: a.name,
+                value: a.currentValue,
+                color: a.category === 'cash' ? 'bg-emerald-500' : a.category === 'stocks' ? 'bg-blue-500' : a.category === 'super' ? 'bg-violet-500' : a.category === 'vehicles' ? 'bg-amber-500' : 'bg-gray-500',
+              })),
             ]
               .sort((a, b) => b.value - a.value)
               .map((item, i) => {
