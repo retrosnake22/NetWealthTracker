@@ -70,13 +70,13 @@ export function WealthChart({ data }: WealthChartProps) {
                 />
 
                 <Tooltip
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: unknown, name: string) => {
                     const labels: Record<string, string> = {
                       totalAssets: 'Assets',
                       totalLiabilities: 'Liabilities',
                       netWealth: 'Net Wealth',
                     }
-                    return [formatCurrency(value), labels[name] || name]
+                    return [formatCurrency(Number(value)), labels[name] || name]
                   }}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',
