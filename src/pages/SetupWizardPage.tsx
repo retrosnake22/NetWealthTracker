@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory, MortgageType, Property
+  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, ExpenseCategory, MortgageType, Property
 } from '@/types/models'
 
 // ── Mortgage calculation helpers ─────────────────────────────────────────────
@@ -1181,7 +1181,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
           {rentalIncomes.length > 0 && (
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
           )}
-          {incomes.map((inc: { id: string; name: string; category: IncomeCategory; monthlyAmount: number; isActive: boolean }) => (
+          {incomes.map((inc: IncomeItem) => (
             <Card key={inc.id} className="card-hover group">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
