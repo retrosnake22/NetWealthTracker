@@ -272,6 +272,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
   const {
     assets, addAsset, removeAsset, updateAsset,
     properties, addProperty, removeProperty, addLiability, updateProperty,
+    liabilities, updateLiability, removeLiability,
   } = store
 
   const [activeTab, setActiveTab] = useState<AssetTab>('cash')
@@ -364,14 +365,23 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
   // ── Property CRUD ──
   const startEditProperty = (prop: typeof properties[0]) => {
+    // Find linked mortgage if any
+    const linkedMortgage = prop.mortgageId
+      ? liabilities.find(l => l.id === prop.mortgageId)
+      : undefined
+
     setPropForm({
       name: prop.name,
       type: prop.type,
       address: prop.address || '',
       currentValue: String(prop.currentValue),
       growthRatePA: String(prop.growthRatePA * 100),
-      hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
-      mortgageType: 'principal_and_interest', loanTermYears: '30',
+      hasMortgage: !!linkedMortgage,
+      mortgageBalance: linkedMortgage ? String(linkedMortgage.currentBalance) : '',
+      interestRate: linkedMortgage ? String(linkedMortgage.interestRatePA * 100) : '',
+      repayment: linkedMortgage ? String(linkedMortgage.minimumRepayment) : '',
+      mortgageType: linkedMortgage?.mortgageType || 'principal_and_interest',
+      loanTermYears: linkedMortgage?.loanTermYears ? String(linkedMortgage.loanTermYears) : '30',
       repaymentOverridden: false,
       weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
     })
@@ -383,6 +393,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
     if (!propForm.name || !propForm.currentValue) return
 
     if (editingId) {
+      // Update property
+      const prop = properties.find(p => p.id === editingId)
       updateProperty(editingId, {
         name: propForm.name,
         type: propForm.type,
@@ -391,10 +403,43 @@ function AssetsStep({ store }: { store: FinanceState }) {
         growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
         weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
       })
+
+      // Update or create/remove linked mortgage
+      if (propForm.hasMortgage && propForm.mortgageBalance) {
+        const mortgageData = {
+          name: `${propForm.name} Mortgage`,
+          category: 'mortgage' as const,
+          currentBalance: parseFloat(propForm.mortgageBalance) || 0,
+          interestRatePA: (parseFloat(propForm.interestRate) || 0) / 100,
+          minimumRepayment: parseFloat(propForm.repayment) || 0,
+          repaymentFrequency: 'monthly' as const,
+          mortgageType: propForm.mortgageType,
+          loanTermYears: parseInt(propForm.loanTermYears) || 30,
+        }
+
+        if (prop?.mortgageId) {
+          // Update existing mortgage
+          updateLiability(prop.mortgageId, mortgageData)
+        } else {
+          // Create new mortgage and link it
+          addLiability(mortgageData)
+          const liabs = useFinanceStore.getState().liabilities
+          const newMortgageId = liabs[liabs.length - 1]?.id
+          if (newMortgageId) {
+            updateProperty(editingId, { mortgageId: newMortgageId })
+          }
+        }
+      } else if (prop?.mortgageId && !propForm.hasMortgage) {
+        // Remove mortgage if unchecked
+        removeLiability(prop.mortgageId)
+        updateProperty(editingId, { mortgageId: undefined })
+      }
+
       resetForm()
       return
     }
 
+    // Adding new property
     let mortgageId: string | undefined
     if (propForm.hasMortgage && propForm.mortgageBalance) {
       const mortData = {
@@ -423,6 +468,15 @@ function AssetsStep({ store }: { store: FinanceState }) {
     })
 
     resetForm()
+  }
+
+  // ── Delete property (also removes linked mortgage) ──
+  const handleDeleteProperty = (propId: string) => {
+    const prop = properties.find(p => p.id === propId)
+    if (prop?.mortgageId) {
+      removeLiability(prop.mortgageId)
+    }
+    removeProperty(propId)
   }
 
   // ── Totals ──
@@ -493,45 +547,50 @@ function AssetsStep({ store }: { store: FinanceState }) {
           {/* Existing properties */}
           {tabProperties.length > 0 && (
             <div className="space-y-2">
-              {tabProperties.map(prop => (
-                <Card key={prop.id} className="card-hover group">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                        {prop.type === 'primary_residence' ? (
-                          <Home className="w-5 h-5 text-sky-500" />
-                        ) : (
-                          <Building2 className="w-5 h-5 text-sky-500" />
-                        )}
+              {tabProperties.map(prop => {
+                const linkedMortgage = prop.mortgageId
+                  ? liabilities.find(l => l.id === prop.mortgageId)
+                  : undefined
+                return (
+                  <Card key={prop.id} className="card-hover">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                          {prop.type === 'primary_residence' ? (
+                            <Home className="w-5 h-5 text-sky-500" />
+                          ) : (
+                            <Building2 className="w-5 h-5 text-sky-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{prop.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} · {formatPercent(prop.growthRatePA)} p.a.
+                            {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                            {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{prop.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} · {formatPercent(prop.growthRatePA)} p.a.
-                          {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
+                        <Button
+                          variant="ghost" size="icon"
+                          onClick={() => startEditProperty(prop)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDeleteProperty(prop.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => startEditProperty(prop)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                        onClick={() => removeProperty(prop.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
 
@@ -598,93 +657,91 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   )}
                 </div>
 
-                {/* Mortgage toggle — only show when adding new */}
-                {!editingId && (
-                  <div className="pt-2 border-t border-border/50">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={propForm.hasMortgage}
-                        onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium">This property has a mortgage</span>
-                    </label>
+                {/* Mortgage section — always visible */}
+                <div className="pt-2 border-t border-border/50">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={propForm.hasMortgage}
+                      onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium">This property has a mortgage</span>
+                  </label>
 
-                    {propForm.hasMortgage && (
-                      <div className="space-y-3 mt-3 ml-7">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Mortgage Balance</Label>
-                            <CurrencyInput
-                              value={propForm.mortgageBalance}
-                              onValueChange={v => updateMortgageField({ mortgageBalance: v })}
-                              placeholder="0"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Interest Rate (%)</Label>
-                            <Input
-                              type="number" step="0.01"
-                              value={propForm.interestRate}
-                              onChange={e => updateMortgageField({ interestRate: e.target.value })}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Loan Type</Label>
-                            <Select
-                              value={propForm.mortgageType}
-                              onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
-                            >
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
-                                <SelectItem value="interest_only">Interest Only</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {propForm.mortgageType === 'principal_and_interest' && (
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Loan Term (years)</Label>
-                              <Input
-                                type="number" min="1" max="40"
-                                value={propForm.loanTermYears}
-                                onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
-                              />
-                            </div>
-                          )}
-                        </div>
-
+                  {propForm.hasMortgage && (
+                    <div className="space-y-3 mt-3 ml-7">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Monthly Repayment {!propForm.repaymentOverridden && propForm.repayment ? '(auto-calculated)' : ''}</Label>
+                          <Label className="text-xs">Mortgage Balance</Label>
                           <CurrencyInput
-                            value={propForm.repayment}
-                            onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
+                            value={propForm.mortgageBalance}
+                            onValueChange={v => updateMortgageField({ mortgageBalance: v })}
                             placeholder="0"
                           />
-                          {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
-                            <button
-                              className="text-xs text-primary hover:underline"
-                              onClick={() => {
-                                const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
-                                setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
-                              }}
-                            >
-                              Reset to calculated amount
-                            </button>
-                          )}
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Info className="w-3 h-3" />
-                            This will be automatically added to your monthly expenses
-                          </p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Interest Rate (%)</Label>
+                          <Input
+                            type="number" step="0.01"
+                            value={propForm.interestRate}
+                            onChange={e => updateMortgageField({ interestRate: e.target.value })}
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Loan Type</Label>
+                          <Select
+                            value={propForm.mortgageType}
+                            onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                              <SelectItem value="interest_only">Interest Only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {propForm.mortgageType === 'principal_and_interest' && (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Loan Term (years)</Label>
+                            <Input
+                              type="number" min="1" max="40"
+                              value={propForm.loanTermYears}
+                              onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Monthly Repayment {!propForm.repaymentOverridden && propForm.repayment ? '(auto-calculated)' : ''}</Label>
+                        <CurrencyInput
+                          value={propForm.repayment}
+                          onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
+                          placeholder="0"
+                        />
+                        {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
+                          <button
+                            className="text-xs text-primary hover:underline"
+                            onClick={() => {
+                              const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
+                              setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
+                            }}
+                          >
+                            Reset to calculated amount
+                          </button>
+                        )}
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          This will be automatically added to your monthly expenses
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
                   {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
@@ -719,7 +776,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                 const tabConfig = ASSET_TABS.find(t => t.id === asset.category)!
                 const Icon = tabConfig.icon
                 return (
-                  <Card key={asset.id} className="card-hover group">
+                  <Card key={asset.id} className="card-hover">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg ${tabConfig.color} flex items-center justify-center`}>
@@ -732,18 +789,17 @@ function AssetsStep({ store }: { store: FinanceState }) {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
                         <Button
                           variant="ghost" size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => startEditAsset(asset)}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost" size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                          className="text-destructive"
                           onClick={() => removeAsset(asset.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -894,7 +950,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">From Properties</p>
           {mortgages.map(m => (
-            <Card key={m.id} className="bg-muted/30 group">
+            <Card key={m.id} className="bg-muted/30">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg ${LIA_ICONS.mortgage.color} flex items-center justify-center`}>
@@ -908,11 +964,10 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
                   <Button
                     variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => startEdit(m)}
                   >
                     <Pencil className="w-4 h-4" />
@@ -931,7 +986,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Debts</p>
           )}
           {otherDebts.map(lia => (
-            <Card key={lia.id} className="card-hover group">
+            <Card key={lia.id} className="card-hover">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg ${LIA_ICONS[lia.category].color} flex items-center justify-center`}>
@@ -942,18 +997,17 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     <p className="text-xs text-muted-foreground">{LIABILITY_LABELS[lia.category]}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <p className="font-semibold tabular-nums text-red-400">{formatCurrency(lia.currentBalance)}</p>
                   <Button
                     variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => startEdit(lia)}
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                    className="text-destructive"
                     onClick={() => removeLiability(lia.id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1182,7 +1236,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
           )}
           {incomes.map((inc: IncomeItem) => (
-            <Card key={inc.id} className="card-hover group">
+            <Card key={inc.id} className="card-hover">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
@@ -1193,21 +1247,20 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <p className="text-xs text-muted-foreground">{INCOME_LABELS[inc.category]}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className="text-right">
                     <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
                     <p className="text-xs text-muted-foreground">/month</p>
                   </div>
                   <Button
                     variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => startEdit(inc)}
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost" size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                    className="text-destructive"
                     onClick={() => removeIncome(inc.id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1441,18 +1494,18 @@ function ExpensesStep({ store }: { store: FinanceState }) {
 
                     if (existing) {
                       return (
-                        <div key={cat} className="flex items-center justify-between py-1.5 group">
+                        <div key={cat} className="flex items-center justify-between py-1.5">
                           <span className="text-sm">{EXPENSE_LABELS[cat]}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold tabular-nums">{formatCurrency(existing.monthlyBudget)}/mo</span>
                             <Button
-                              variant="ghost" size="icon" className="w-7 h-7 opacity-0 group-hover:opacity-100"
+                              variant="ghost" size="icon" className="w-7 h-7"
                               onClick={() => startEdit(existing)}
                             >
                               <Pencil className="w-3 h-3" />
                             </Button>
                             <Button
-                              variant="ghost" size="icon" className="w-7 h-7 opacity-0 group-hover:opacity-100 text-destructive"
+                              variant="ghost" size="icon" className="w-7 h-7 text-destructive"
                               onClick={() => removeExpenseBudget(existing.id)}
                             >
                               <Trash2 className="w-3 h-3" />
