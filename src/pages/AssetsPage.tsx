@@ -42,10 +42,11 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 }
 
 export function AssetsPage() {
-  const { assets, properties, addAsset, updateAsset, removeAsset } = useFinanceStore()
+  const { assets, properties, addAsset, updateAsset, removeAsset, updateProperty, removeProperty } = useFinanceStore()
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category') as AssetCategory | null
 
+  // Asset form state
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null)
@@ -57,22 +58,40 @@ export function AssetsPage() {
     isOffset: false,
   })
 
+  // Property form state
+  const [propOpen, setPropOpen] = useState(false)
+  const [propEditId, setPropEditId] = useState<string | null>(null)
+  const [deletePropTarget, setDeletePropTarget] = useState<Property | null>(null)
+  const [propForm, setPropForm] = useState({
+    name: '',
+    type: 'investment' as 'primary_residence' | 'investment',
+    currentValue: '',
+    growthRatePA: '7',
+    weeklyRent: '',
+    councilRatesPA: '',
+    waterRatesPA: '',
+    insurancePA: '',
+    strataPA: '',
+    maintenancePA: '',
+    propertyManagementPct: '',
+    landTaxPA: '',
+  })
+
   // Filter assets based on category param
   const filteredAssets = useMemo(() => {
     if (!categoryFilter || categoryFilter === 'property') return assets.filter(a => !categoryFilter || a.category === categoryFilter)
     return assets.filter(a => a.category === categoryFilter)
   }, [assets, categoryFilter])
 
-  // For property category, show properties from the properties array
   const showProperties = categoryFilter === 'property' || !categoryFilter
 
-  // Calculate totals
   const assetTotal = filteredAssets.reduce((s, a) => s + a.currentValue, 0)
   const propertyTotal = showProperties ? properties.reduce((s, p) => s + p.currentValue, 0) : 0
   const total = assetTotal + (categoryFilter === 'property' ? propertyTotal : (!categoryFilter ? propertyTotal : 0))
 
   const pageTitle = categoryFilter ? CATEGORY_LABELS[categoryFilter] || 'Assets' : 'All Assets'
 
+  // --- Asset handlers ---
   const resetForm = () => {
     setForm({ name: '', category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory, currentValue: '', growthRatePA: '', isOffset: false })
     setEditId(null)
@@ -90,7 +109,6 @@ export function AssetsPage() {
       growthRatePA: (parseFloat(form.growthRatePA) || 0) / 100,
       ...(form.category === 'cash' ? { isOffset: form.isOffset } : {}),
     }
-
     if (editId) {
       updateAsset(editId, data)
     } else {
@@ -120,7 +138,68 @@ export function AssetsPage() {
     setDeleteTarget(null)
   }
 
-  // Don't show add button for property category (managed in wizard)
+  // --- Property handlers ---
+  const resetPropForm = () => {
+    setPropForm({
+      name: '', type: 'investment', currentValue: '', growthRatePA: '7', weeklyRent: '',
+      councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
+      maintenancePA: '', propertyManagementPct: '', landTaxPA: '',
+    })
+    setPropEditId(null)
+  }
+
+  const handleEditProperty = (prop: Property) => {
+    setPropForm({
+      name: prop.name,
+      type: prop.type,
+      currentValue: String(prop.currentValue),
+      growthRatePA: String((prop.growthRatePA || 0.07) * 100),
+      weeklyRent: String(prop.weeklyRent || ''),
+      councilRatesPA: String((prop.councilRatesPA || 0) / 4 || ''),
+      waterRatesPA: String((prop.waterRatesPA || 0) / 4 || ''),
+      insurancePA: String(prop.insurancePA || ''),
+      strataPA: String((prop.strataPA || 0) / 4 || ''),
+      maintenancePA: String(prop.maintenanceBudgetPA || ''),
+      propertyManagementPct: String(prop.propertyManagementPct || ''),
+      landTaxPA: String(prop.landTaxPA || ''),
+    })
+    setPropEditId(prop.id)
+    setPropOpen(true)
+  }
+
+  const handleSaveProperty = () => {
+    const councilQ = parseFloat(propForm.councilRatesPA) || 0
+    const waterQ = parseFloat(propForm.waterRatesPA) || 0
+    const strataQ = parseFloat(propForm.strataPA) || 0
+
+    const data: Partial<Property> = {
+      name: propForm.name,
+      type: propForm.type,
+      currentValue: parseFloat(propForm.currentValue) || 0,
+      growthRatePA: (parseFloat(propForm.growthRatePA) || 0) / 100,
+      weeklyRent: parseFloat(propForm.weeklyRent) || 0,
+      councilRatesPA: councilQ * 4,
+      waterRatesPA: waterQ * 4,
+      insurancePA: parseFloat(propForm.insurancePA) || 0,
+      strataPA: strataQ * 4,
+      maintenanceBudgetPA: parseFloat(propForm.maintenancePA) || 0,
+      propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
+      landTaxPA: parseFloat(propForm.landTaxPA) || 0,
+    }
+
+    if (propEditId) {
+      updateProperty(propEditId, data)
+    }
+    resetPropForm()
+    setPropOpen(false)
+  }
+
+  const confirmDeleteProperty = () => {
+    if (!deletePropTarget) return
+    removeProperty(deletePropTarget.id)
+    setDeletePropTarget(null)
+  }
+
   const canAddHere = categoryFilter !== 'property'
 
   return (
@@ -185,15 +264,15 @@ export function AssetsPage() {
         </CardHeader>
       </Card>
 
-      {/* Property cards (from properties array) */}
-      {showProperties && properties.length > 0 && (categoryFilter === 'property' || !categoryFilter) && (
+      {/* Property cards */}
+      {showProperties && properties.length > 0 && (
         <>
-          {categoryFilter !== 'property' && properties.length > 0 && (
+          {!categoryFilter && (
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Property</h3>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {properties.map((prop: Property) => (
-              <Card key={prop.id} className="card-hover group">
+              <Card key={prop.id} className="card-hover">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5">
@@ -205,6 +284,14 @@ export function AssetsPage() {
                       <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(prop.currentValue)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditProperty(prop)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeletePropTarget(prop)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                       <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(prop.growthRatePA)} p.a.</span>
                       {(prop.weeklyRent ?? 0) > 0 && (
                         <span className="text-xs text-emerald-500 tabular-nums">{formatCurrency(prop.weeklyRent ?? 0)}/wk rent</span>
@@ -226,7 +313,7 @@ export function AssetsPage() {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredAssets.filter(a => a.category !== 'property').map(asset => (
-              <Card key={asset.id} className="card-hover group">
+              <Card key={asset.id} className="card-hover">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5">
@@ -273,7 +360,7 @@ export function AssetsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
+      {/* Asset Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -290,6 +377,105 @@ export function AssetsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Property Delete Confirmation */}
+      <AlertDialog open={!!deletePropTarget} onOpenChange={(o) => { if (!o) setDeletePropTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deletePropTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this property and its associated expenses. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDeleteProperty}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Property Edit Dialog */}
+      <Dialog open={propOpen} onOpenChange={(o) => { setPropOpen(o); if (!o) resetPropForm() }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Property</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Property Name</Label>
+              <Input value={propForm.name} onChange={e => setPropForm({...propForm, name: e.target.value})} />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Select value={propForm.type} onValueChange={(v: string) => setPropForm({...propForm, type: v as 'primary_residence' | 'investment'})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="primary_residence">Primary Residence</SelectItem>
+                  <SelectItem value="investment">Investment Property</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Estimated Value</Label>
+              <CurrencyInput value={propForm.currentValue} onChange={v => setPropForm({...propForm, currentValue: v})} />
+            </div>
+            <div>
+              <Label>Growth Rate (% p.a.)</Label>
+              <Input type="number" step="0.1" value={propForm.growthRatePA} onChange={e => setPropForm({...propForm, growthRatePA: e.target.value})} />
+            </div>
+            {propForm.type === 'investment' && (
+              <div>
+                <Label>Weekly Rent ($)</Label>
+                <CurrencyInput value={propForm.weeklyRent} onChange={v => setPropForm({...propForm, weeklyRent: v})} />
+              </div>
+            )}
+
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm mb-3">Running Costs</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Council Rates ($/quarter)</Label>
+                  <CurrencyInput value={propForm.councilRatesPA} onChange={v => setPropForm({...propForm, councilRatesPA: v})} />
+                </div>
+                <div>
+                  <Label className="text-xs">Water Rates ($/quarter)</Label>
+                  <CurrencyInput value={propForm.waterRatesPA} onChange={v => setPropForm({...propForm, waterRatesPA: v})} />
+                </div>
+                <div>
+                  <Label className="text-xs">Building Insurance ($/year)</Label>
+                  <CurrencyInput value={propForm.insurancePA} onChange={v => setPropForm({...propForm, insurancePA: v})} />
+                </div>
+                <div>
+                  <Label className="text-xs">Strata / Body Corp ($/quarter)</Label>
+                  <CurrencyInput value={propForm.strataPA} onChange={v => setPropForm({...propForm, strataPA: v})} />
+                </div>
+                <div>
+                  <Label className="text-xs">Maintenance ($/year)</Label>
+                  <CurrencyInput value={propForm.maintenancePA} onChange={v => setPropForm({...propForm, maintenancePA: v})} />
+                </div>
+                {propForm.type === 'investment' && (
+                  <>
+                    <div>
+                      <Label className="text-xs">Property Mgmt (%)</Label>
+                      <Input type="number" step="0.1" value={propForm.propertyManagementPct} onChange={e => setPropForm({...propForm, propertyManagementPct: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Land Tax ($/year)</Label>
+                      <CurrencyInput value={propForm.landTaxPA} onChange={v => setPropForm({...propForm, landTaxPA: v})} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={handleSaveProperty} disabled={!propForm.name || !propForm.currentValue}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
