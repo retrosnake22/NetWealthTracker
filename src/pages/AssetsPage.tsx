@@ -199,15 +199,15 @@ export function AssetsPage() {
                     <div className="space-y-1.5">
                       <Badge className={CATEGORY_COLORS.property}>
                         <Home className="h-3 w-3 mr-1" />
-                        {prop.propertyType === 'investment' ? 'Investment' : 'Primary Residence'}
+                        {prop.type === 'investment' ? 'Investment' : 'Primary Residence'}
                       </Badge>
                       <p className="font-semibold">{prop.name}</p>
                       <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(prop.currentValue)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className="text-xs text-muted-foreground tabular-nums">{formatPercent(prop.growthRatePA)} p.a.</span>
-                      {prop.weeklyRent > 0 && (
-                        <span className="text-xs text-emerald-500 tabular-nums">{formatCurrency(prop.weeklyRent)}/wk rent</span>
+                      {(prop.weeklyRent ?? 0) > 0 && (
+                        <span className="text-xs text-emerald-500 tabular-nums">{formatCurrency(prop.weeklyRent ?? 0)}/wk rent</span>
                       )}
                     </div>
                   </div>
