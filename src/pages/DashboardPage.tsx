@@ -24,7 +24,7 @@ function CashflowBar({ label, amount, max, color, icon: Icon }: {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${color.includes('emerald') ? 'text-emerald-500' : 'text-red-400'}`} />
+          <Icon className={`h-4 w-4 ${color.includes('green') ? 'text-green-500' : 'text-red-400'}`} />
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </div>
         <span className="text-sm font-bold tabular-nums">{formatCurrency(amount)}</span>
@@ -45,14 +45,14 @@ function KpiCard({
   label: string
   value: string
   tag: string
-  tagColor: 'emerald' | 'amber' | 'red'
+  tagColor: 'green' | 'amber' | 'red'
   ratio: number
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
 }) {
-  const barColor = { emerald: 'bg-emerald-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
+  const barColor = { green: 'bg-green-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
   const tagBg = {
-    emerald: 'bg-emerald-500/10 text-emerald-500',
+    green: 'bg-green-500/10 text-green-500',
     amber: 'bg-amber-500/10 text-amber-500',
     red: 'bg-red-500/10 text-red-500',
   }[tagColor]
@@ -158,11 +158,11 @@ export function DashboardPage() {
 
   // KPI tags
   const savingsTag = savingsRate > 0.2 ? 'Excellent' : savingsRate > 0.1 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
-  const savingsColor = savingsRate > 0.2 ? 'emerald' as const : savingsRate > 0.1 ? 'emerald' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const savingsColor = savingsRate > 0.2 ? 'green' as const : savingsRate > 0.1 ? 'green' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
-  const debtColor = debtRatio < 0.3 ? 'emerald' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
+  const debtColor = debtRatio < 0.3 ? 'green' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const surplusTag = monthlyCashflow > 500 ? 'Strong' : monthlyCashflow > 0 ? 'Positive' : 'Deficit'
-  const surplusColor = monthlyCashflow > 500 ? 'emerald' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
+  const surplusColor = monthlyCashflow > 500 ? 'green' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
 
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
 
@@ -189,7 +189,7 @@ export function DashboardPage() {
           icon={DollarSign}
           trend={netWealth >= 0 ? 'up' : 'down'}
           breakdownItems={[
-            { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#10b981' },
+            { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#22C55E' },
             { label: 'Total Liabilities', value: formatCurrency(totalLiabilities), color: '#f87171' },
             { label: 'Monthly Surplus',  value: formatCurrency(monthlyCashflow),  color: monthlyCashflow >= 0 ? '#3b82f6' : '#f59e0b' },
           ]}
@@ -209,7 +209,7 @@ export function DashboardPage() {
               label="Income"
               amount={monthlyIncome}
               max={cashflowMax}
-              color="bg-emerald-500"
+              color="bg-green-500"
               icon={ArrowUpRight}
             />
             <CashflowBar
@@ -222,7 +222,7 @@ export function DashboardPage() {
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Surplus</span>
-                <span className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                <span className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-green-500' : 'text-red-400'}`}>
                   {formatCurrency(monthlyCashflow)}
                 </span>
               </div>
@@ -240,7 +240,7 @@ export function DashboardPage() {
               tagColor={savingsColor}
               ratio={savingsRate}
               icon={PiggyBank}
-              accentColor="#10b981"
+              accentColor="#22C55E"
             />
           </div>
           <div className="animate-fade-up animate-delay-3">

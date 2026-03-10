@@ -49,7 +49,7 @@ export default function LoginPage() {
         <CardContent className="pt-8 pb-6">
           {/* Brand logo */}
           <div className="flex flex-col items-center mb-6">
-            <div className="h-14 w-14 rounded-2xl gradient-emerald glow-emerald flex items-center justify-center mb-4">
+            <div className="h-14 w-14 rounded-2xl gradient-sapphire glow-sapphire flex items-center justify-center mb-4">
               <ArrowUpRight className="h-7 w-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold">Net Wealth Tracker</h1>
@@ -104,7 +104,7 @@ export default function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            {message && <p className="text-sm text-emerald-500">{message}</p>}
+            {message && <p className="text-sm text-blue-500">{message}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
             </Button>

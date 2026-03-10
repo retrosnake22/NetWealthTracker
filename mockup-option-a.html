@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NWT — Option A: Midnight Sapphire</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-base: #060B18;
+    --bg-surface-1: #0D1425;
+    --bg-surface-2: #131B30;
+    --bg-surface-3: #1A2340;
+    --border: rgba(99, 130, 191, 0.12);
+    --border-accent: rgba(99, 130, 191, 0.25);
+    --text-primary: #F1F3F8;
+    --text-secondary: #8B9DC3;
+    --text-muted: #5A6E94;
+    --blue-primary: #3B82F6;
+    --blue-bright: #60A5FA;
+    --blue-glow: rgba(59, 130, 246, 0.15);
+    --gold: #F59E0B;
+    --gold-muted: #D97706;
+    --gold-glow: rgba(245, 158, 11, 0.12);
+    --positive: #22C55E;
+    --positive-glow: rgba(34, 197, 94, 0.10);
+    --negative: #F87171;
+    --negative-muted: rgba(248, 113, 113, 0.12);
+    --teal: #14B8A6;
+    --purple: #A78BFA;
+    --radius: 14px;
+    --font: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+  }
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px;
+    background: var(--bg-surface-1);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .brand {
+    padding: 28px 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.3);
+  }
+  .brand-icon svg { width: 20px; height: 20px; color: white; }
+  .brand-text h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; color: var(--text-primary); }
+  .brand-text p { font-size: 10px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .nav-section { padding: 0 12px; margin-bottom: 24px; }
+  .nav-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    padding: 0 12px;
+    margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(59, 130, 246, 0.06); color: var(--text-primary); }
+  .nav-item.active {
+    background: var(--blue-glow);
+    color: var(--blue-bright);
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+    background: var(--blue-primary);
+  }
+  .nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  /* Sidebar wealth widget */
+  .sidebar-wealth {
+    margin: auto 12px 12px;
+    padding: 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
+    border: 1px solid rgba(59, 130, 246, 0.15);
+  }
+  .sidebar-wealth-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 700; }
+  .sidebar-wealth-value { font-size: 20px; font-weight: 800; color: var(--blue-bright); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .sidebar-wealth-row { display: flex; gap: 16px; margin-top: 8px; }
+  .sidebar-wealth-row span { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Main content ── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    background: rgba(6, 11, 24, 0.8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar h2 { font-size: 15px; font-weight: 600; }
+  .topbar .subtitle { font-size: 13px; color: var(--text-muted); margin-left: 12px; }
+
+  .content { padding: 28px 32px; max-width: 1200px; }
+
+  /* ── Hero — Net Wealth ── */
+  .hero {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue-primary), var(--gold), var(--teal));
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--blue-glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .hero-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-primary); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .hero-value { font-size: 48px; font-weight: 800; letter-spacing: -2px; margin-top: 8px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .hero-breakdown {
+    display: flex;
+    gap: 40px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .hero-breakdown-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; }
+  .hero-breakdown-item .val { font-size: 18px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .hero-breakdown-item .val.pos { color: var(--positive); }
+  .hero-breakdown-item .val.neg { color: var(--negative); }
+  .hero-breakdown-item .val.blue { color: var(--blue-bright); }
+
+  /* ── Metric strip ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 16px; bottom: 16px;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+  }
+  .metric-card.blue::before { background: var(--blue-primary); }
+  .metric-card.gold::before { background: var(--gold); }
+  .metric-card.green::before { background: var(--positive); }
+  .metric-card.red::before { background: var(--negative); }
+  .metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .metric-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .metric-tag.green { background: var(--positive-glow); color: var(--positive); }
+  .metric-tag.gold { background: var(--gold-glow); color: var(--gold); }
+  .metric-tag.red { background: var(--negative-muted); color: var(--negative); }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 12px;
+  }
+  .metric-bar {
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .metric-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Charts row ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+  }
+  /* Simulated chart area */
+  .chart-area {
+    height: 240px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, transparent 100%);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(59, 130, 246, 0.08);
+  }
+  .chart-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+  }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* Donut chart */
+  .donut-container { display: flex; align-items: center; justify-content: center; height: 200px; position: relative; }
+  .donut-center {
+    position: absolute;
+    text-align: center;
+  }
+  .donut-center .amount { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .donut-center .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .donut-legend { margin-top: 16px; }
+  .donut-legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .donut-legend-item .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+  .donut-legend-item .name { color: var(--text-secondary); flex: 1; }
+  .donut-legend-item .val { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+  /* ── Cashflow card ── */
+  .cashflow-section { margin-top: 24px; }
+  .cashflow-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+  .cashflow-bars {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .cashflow-bar-card {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .cf-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cf-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .cf-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cf-value.green { color: var(--positive); }
+  .cf-value.red { color: var(--negative); }
+  .cf-bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); margin-top: 12px; overflow: hidden; }
+  .cf-bar-fill { height: 100%; border-radius: 6px; }
+  .cf-bar-fill.green { background: linear-gradient(90deg, #059669, #22C55E); }
+  .cf-bar-fill.red { background: linear-gradient(90deg, #DC2626, #F87171); }
+
+  /* Design notes */
+  .design-notes {
+    margin-top: 48px;
+    padding: 32px;
+    background: var(--bg-surface-2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .design-notes h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--gold); }
+  .design-notes ul { padding-left: 20px; }
+  .design-notes li { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+  .design-notes strong { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+    </div>
+    <div class="brand-text">
+      <h1>NWT</h1>
+      <p>Net Wealth Tracker</p>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Balance Sheet</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      Assets
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+      Liabilities
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Income Statement</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      Income
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
+      Expenses
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Planning</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      Projections
+    </div>
+  </div>
+
+  <div class="sidebar-wealth">
+    <div class="sidebar-wealth-label">Net Wealth</div>
+    <div class="sidebar-wealth-value">$1,247,830</div>
+    <div class="sidebar-wealth-row">
+      <span style="color: #22C55E;">▲ $1,892,400</span>
+      <span style="color: #F87171;">▼ $644,570</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="topbar">
+    <h2>Dashboard</h2>
+    <span class="subtitle">— Your financial overview at a glance</span>
+  </div>
+
+  <div class="content">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-label"><span class="dot"></span> Net Wealth</div>
+      <div class="hero-value">$1,247,830</div>
+      <div class="hero-breakdown">
+        <div class="hero-breakdown-item">
+          <label>Total Assets</label>
+          <div class="val pos">$1,892,400</div>
+        </div>
+        <div class="hero-breakdown-item">
+          <label>Total Liabilities</label>
+          <div class="val neg">$644,570</div>
+        </div>
+        <div class="hero-breakdown-item">
+          <label>Monthly Surplus</label>
+          <div class="val blue">$3,450</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric-card blue">
+        <div class="metric-header">
+          <span class="metric-label">Monthly Cashflow</span>
+        </div>
+        <div class="metric-value" style="color: var(--blue-bright);">$3,450</div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+          <span>Income <strong style="color: var(--positive);">$12,200</strong></span>
+          <span>Expenses <strong style="color: var(--negative);">$8,750</strong></span>
+        </div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 72%; background: linear-gradient(90deg, var(--blue-primary), var(--blue-bright));"></div>
+        </div>
+      </div>
+
+      <div class="metric-card green">
+        <div class="metric-header">
+          <span class="metric-label">Savings Rate</span>
+          <span class="metric-tag green">Excellent</span>
+        </div>
+        <div class="metric-value" style="color: var(--positive);">28.3%</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 28.3%; background: linear-gradient(90deg, #059669, #22C55E);"></div>
+        </div>
+      </div>
+
+      <div class="metric-card gold">
+        <div class="metric-header">
+          <span class="metric-label">Debt Ratio</span>
+          <span class="metric-tag gold">Moderate</span>
+        </div>
+        <div class="metric-value" style="color: var(--gold);">34.1%</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 34.1%; background: linear-gradient(90deg, var(--gold-muted), var(--gold));"></div>
+        </div>
+      </div>
+
+      <div class="metric-card green">
+        <div class="metric-header">
+          <span class="metric-label">Monthly Surplus</span>
+          <span class="metric-tag green">Strong</span>
+        </div>
+        <div class="metric-value" style="color: var(--positive);">$3,450</div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width: 65%; background: linear-gradient(90deg, #059669, #22C55E);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Wealth Projection</h3>
+        <div class="chart-area">
+          <svg class="chart-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
+            <!-- Grid lines -->
+            <line x1="0" y1="60" x2="800" y2="60" stroke="rgba(99,130,191,0.06)" stroke-width="1"/>
+            <line x1="0" y1="120" x2="800" y2="120" stroke="rgba(99,130,191,0.06)" stroke-width="1"/>
+            <line x1="0" y1="180" x2="800" y2="180" stroke="rgba(99,130,191,0.06)" stroke-width="1"/>
+            <!-- Net Wealth fill -->
+            <path d="M0,200 C100,190 200,170 300,145 C400,115 500,80 600,55 C700,30 750,20 800,15 L800,240 L0,240 Z" fill="url(#blueGrad)" opacity="0.4"/>
+            <!-- Net Wealth line -->
+            <path d="M0,200 C100,190 200,170 300,145 C400,115 500,80 600,55 C700,30 750,20 800,15" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+            <!-- Assets line (dashed, subtle) -->
+            <path d="M0,170 C100,160 200,140 300,110 C400,85 500,55 600,35 C700,15 750,8 800,5" fill="none" stroke="#22C55E" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+            <!-- Liabilities line (dashed, subtle) -->
+            <path d="M0,60 C100,62 200,65 300,70 C400,78 500,85 600,88 C700,90 750,90 800,90" fill="none" stroke="#F87171" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+            <defs>
+              <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div style="display: flex; gap: 24px; margin-top: 16px;">
+          <span style="font-size: 11px; display: flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 3px; background: #3B82F6; border-radius: 2px; display: inline-block;"></span> <span style="color: var(--text-secondary);">Net Wealth</span></span>
+          <span style="font-size: 11px; display: flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 1px; border-top: 2px dashed #22C55E; display: inline-block; opacity: 0.5;"></span> <span style="color: var(--text-muted);">Assets</span></span>
+          <span style="font-size: 11px; display: flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 1px; border-top: 2px dashed #F87171; display: inline-block; opacity: 0.5;"></span> <span style="color: var(--text-muted);">Liabilities</span></span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Asset Breakdown</h3>
+        <div class="donut-container">
+          <svg width="180" height="180" viewBox="0 0 180 180">
+            <!-- Donut segments -->
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#3B82F6" stroke-width="20" stroke-dasharray="132 308" stroke-dashoffset="0" transform="rotate(-90 90 90)"/>
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#A78BFA" stroke-width="20" stroke-dasharray="88 352" stroke-dashoffset="-132" transform="rotate(-90 90 90)"/>
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="66 374" stroke-dashoffset="-220" transform="rotate(-90 90 90)"/>
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#14B8A6" stroke-width="20" stroke-dasharray="55 385" stroke-dashoffset="-286" transform="rotate(-90 90 90)"/>
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#6B7280" stroke-width="20" stroke-dasharray="44 396" stroke-dashoffset="-341" transform="rotate(-90 90 90)"/>
+          </svg>
+          <div class="donut-center">
+            <div class="amount">$1.89M</div>
+            <div class="label">Total</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="donut-legend-item"><span class="dot" style="background: #3B82F6;"></span><span class="name">Property</span><span class="val">$950K</span></div>
+          <div class="donut-legend-item"><span class="dot" style="background: #A78BFA;"></span><span class="name">Stocks / ETFs</span><span class="val">$420K</span></div>
+          <div class="donut-legend-item"><span class="dot" style="background: #F59E0B;"></span><span class="name">Super</span><span class="val">$285K</span></div>
+          <div class="donut-legend-item"><span class="dot" style="background: #14B8A6;"></span><span class="name">Cash</span><span class="val">$162K</span></div>
+          <div class="donut-legend-item"><span class="dot" style="background: #6B7280;"></span><span class="name">Other</span><span class="val">$75K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Design Notes -->
+    <div class="design-notes">
+      <h2>🎨 Option A: "Midnight Sapphire" — Design Rationale</h2>
+      <ul>
+        <li><strong>Primary color shift:</strong> Emerald → Deep Sapphire Blue (#3B82F6). Blue conveys trust, stability, and financial sophistication — the standard in banking/fintech (think Xero, QuickBooks, Stripe).</li>
+        <li><strong>Background:</strong> Navy-black (#060B18) instead of pure black (#09090b). Warmer, easier on the eyes, more premium feel. Surface levels use blue undertones (#0D1425, #131B30).</li>
+        <li><strong>Semantic color separation:</strong> Gold (#F59E0B) for warnings/moderate, Green (#22C55E) for positive/growth, Coral (#F87171) for debt/negative, Teal (#14B8A6) as secondary accent. Each has a single job.</li>
+        <li><strong>Chart hierarchy:</strong> Net Wealth is the bold solid line with gradient fill. Assets/Liabilities are subtle dashed lines — clearly secondary.</li>
+        <li><strong>Metric cards:</strong> Left accent bars color-coded by meaning (blue=cashflow, green=savings, gold=debt-warning, green=surplus). Current design uses the same emerald accent everywhere.</li>
+        <li><strong>Typography:</strong> Inter instead of Geist for sharper tabular numbers. 48px hero number with -2px tracking for impact.</li>
+        <li><strong>Sidebar widget:</strong> Blue-tinted glass instead of emerald — matches the overall theme.</li>
+        <li><strong>Spacing:</strong> More generous padding (32px content), 14px border-radius for modern feel, 4px metric bars (thinner = more refined).</li>
+        <li><strong>Overall mood:</strong> Premium, institutional, "private banking dashboard" — builds trust with high-net-worth feel.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

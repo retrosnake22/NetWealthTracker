@@ -23,7 +23,7 @@ const CATEGORY_LABELS: Record<IncomeCategory, string> = {
 }
 
 const CATEGORY_COLORS: Record<IncomeCategory, string> = {
-  salary: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  salary: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
   rental: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
   dividends: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
   interest: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
@@ -182,7 +182,7 @@ export function IncomePage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Total Monthly Income</span>
-            <span className="text-emerald-500">{formatCurrency(grandTotal)}</span>
+            <span className="text-blue-400">{formatCurrency(grandTotal)}</span>
           </CardTitle>
         </CardHeader>
       </Card>
@@ -207,7 +207,7 @@ export function IncomePage() {
                         </Badge>
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-green-500">
                         {formatCurrency(item.monthlyAmount)}/mo
                       </p>
                       <p className="text-xs text-muted-foreground">{item.note}</p>
@@ -244,7 +244,7 @@ export function IncomePage() {
                         {!item.isActive && <Badge variant="outline">Inactive</Badge>}
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-emerald-500">{formatCurrency(item.monthlyAmount)}/mo</p>
+                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-green-500">{formatCurrency(item.monthlyAmount)}/mo</p>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>

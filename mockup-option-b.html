@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NWT — Option B: Warm Minimal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-base: #111111;
+    --bg-surface-1: #191919;
+    --bg-surface-2: #222222;
+    --bg-surface-3: #2A2A2A;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.12);
+    --text-primary: #EEEEEE;
+    --text-secondary: #999999;
+    --text-muted: #666666;
+    --teal: #0D9488;
+    --teal-bright: #2DD4BF;
+    --teal-glow: rgba(13, 148, 136, 0.10);
+    --green: #22C55E;
+    --amber: #F59E0B;
+    --red: #EF4444;
+    --red-soft: #FCA5A5;
+    --purple: #8B5CF6;
+    --font: 'DM Sans', -apple-system, system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 12px;
+  }
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    background: var(--bg-surface-1);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .brand {
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-icon svg { width: 18px; height: 18px; color: white; }
+  .brand h1 { font-size: 14px; font-weight: 700; }
+  .brand p { font-size: 10px; color: var(--text-muted); }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    margin: 16px 0 4px;
+  }
+  .nav-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+  .nav-item.active {
+    background: var(--teal-glow);
+    color: var(--teal-bright);
+    font-weight: 600;
+  }
+  .nav-icon { width: 16px; height: 16px; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-nw {
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border);
+  }
+  .sidebar-nw-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; }
+  .sidebar-nw-val { font-size: 18px; font-weight: 700; font-family: var(--mono); margin-top: 4px; color: var(--teal-bright); }
+  .sidebar-nw-row { display: flex; gap: 12px; margin-top: 8px; font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
+
+  /* ── Main ── */
+  .main { flex: 1; overflow-y: auto; }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    background: rgba(17,17,17,0.85);
+    backdrop-filter: blur(16px);
+    z-index: 10;
+  }
+  .topbar h2 { font-size: 14px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; color: var(--text-muted); margin-left: 12px; }
+
+  .content { padding: 32px 40px; max-width: 1100px; }
+
+  /* ── Hero: Table-style net wealth ── */
+  .hero-table {
+    margin-bottom: 32px;
+  }
+  .hero-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 6px 0;
+  }
+  .hero-label-main {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    width: 140px;
+    flex-shrink: 0;
+  }
+  .hero-value-main {
+    font-size: 52px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: -2px;
+    line-height: 1;
+    color: var(--text-primary);
+  }
+  .hero-divider {
+    height: 1px;
+    background: var(--border-strong);
+    margin: 16px 0;
+  }
+  .hero-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .hero-sub-item {
+    padding: 12px 0;
+  }
+  .hero-sub-item:not(:last-child) {
+    border-right: 1px solid var(--border);
+    padding-right: 24px;
+    margin-right: 24px;
+  }
+  .hero-sub-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .hero-sub-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: -0.5px;
+  }
+  .hero-sub-value.green { color: var(--green); }
+  .hero-sub-value.red { color: var(--red-soft); }
+  .hero-sub-value.teal { color: var(--teal-bright); }
+
+  /* ── Stats row: Minimal inline ── */
+  .stats-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-surface-1);
+  }
+  .stat {
+    flex: 1;
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .stat-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .stat-tag.green { background: rgba(34,197,94,0.12); color: var(--green); }
+  .stat-tag.amber { background: rgba(245,158,11,0.12); color: var(--amber); }
+  .stat-tag.red { background: rgba(239,68,68,0.12); color: var(--red); }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: -0.5px;
+  }
+  .stat-bar {
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.04);
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .stat-bar-fill { height: 100%; border-radius: 3px; }
+
+  /* ── Charts ── */
+  .charts {
+    display: grid;
+    grid-template-columns: 5fr 3fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .chart-area {
+    height: 220px;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* Breakdown list */
+  .breakdown-list { }
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .breakdown-name { flex: 1; font-size: 13px; color: var(--text-secondary); }
+  .breakdown-value {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text-primary);
+  }
+  .breakdown-pct {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    font-family: var(--mono);
+    width: 40px;
+    text-align: right;
+  }
+  .breakdown-bar {
+    margin-top: 20px;
+    height: 8px;
+    border-radius: 8px;
+    display: flex;
+    overflow: hidden;
+    gap: 2px;
+  }
+  .breakdown-bar-seg { height: 100%; }
+
+  /* ── Cashflow section ── */
+  .cashflow-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  .cf-card {
+    background: var(--bg-surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .cf-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+  .cf-value { font-size: 28px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.5px; }
+  .cf-value.green { color: var(--green); }
+  .cf-value.red { color: var(--red-soft); }
+  .cf-value.teal { color: var(--teal-bright); }
+  .cf-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Design notes ── */
+  .design-notes {
+    margin-top: 48px;
+    padding: 32px;
+    background: var(--bg-surface-2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+  }
+  .design-notes h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--teal-bright); }
+  .design-notes ul { padding-left: 20px; }
+  .design-notes li { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+  .design-notes strong { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+    </div>
+    <div>
+      <h1>NWT</h1>
+      <p>Net Wealth Tracker</p>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+
+    <div class="nav-label">Balance Sheet</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      Assets
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+      Liabilities
+    </div>
+
+    <div class="nav-label">Income Statement</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
+      Income
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/></svg>
+      Expenses
+    </div>
+
+    <div class="nav-label">Planning</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      Projections
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-nw">
+      <div class="sidebar-nw-label">Net Wealth</div>
+      <div class="sidebar-nw-val">$1,247,830</div>
+      <div class="sidebar-nw-row">
+        <span style="color: var(--green);">▲ $1.89M</span>
+        <span style="color: var(--red-soft);">▼ $645K</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="topbar">
+    <h2>Dashboard</h2>
+    <span class="topbar-sub">— Your financial overview</span>
+  </div>
+
+  <div class="content">
+
+    <!-- Hero: Clean typographic approach -->
+    <div class="hero-table">
+      <div class="hero-row">
+        <span class="hero-label-main">Net Wealth</span>
+        <span class="hero-value-main">$1,247,830</span>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-sub-grid">
+        <div class="hero-sub-item">
+          <div class="hero-sub-label">Total Assets</div>
+          <div class="hero-sub-value green">$1,892,400</div>
+        </div>
+        <div class="hero-sub-item">
+          <div class="hero-sub-label">Total Liabilities</div>
+          <div class="hero-sub-value red">$644,570</div>
+        </div>
+        <div class="hero-sub-item">
+          <div class="hero-sub-label">Monthly Surplus</div>
+          <div class="hero-sub-value teal">+$3,450</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row: Connected card strip -->
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-top">
+          <span class="stat-label">Monthly Income</span>
+        </div>
+        <div class="stat-value" style="color: var(--green);">$12,200</div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill" style="width: 100%; background: var(--green);"></div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="stat-top">
+          <span class="stat-label">Monthly Expenses</span>
+        </div>
+        <div class="stat-value" style="color: var(--red-soft);">$8,750</div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill" style="width: 72%; background: var(--red);"></div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="stat-top">
+          <span class="stat-label">Savings Rate</span>
+          <span class="stat-tag green">Excellent</span>
+        </div>
+        <div class="stat-value">28.3%</div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill" style="width: 28.3%; background: var(--teal);"></div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="stat-top">
+          <span class="stat-label">Debt Ratio</span>
+          <span class="stat-tag amber">Moderate</span>
+        </div>
+        <div class="stat-value">34.1%</div>
+        <div class="stat-bar">
+          <div class="stat-bar-fill" style="width: 34.1%; background: var(--amber);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts">
+      <div class="card">
+        <div class="card-title">Wealth Projection — 20 Years</div>
+        <div class="chart-area">
+          <svg class="chart-svg" viewBox="0 0 800 220" preserveAspectRatio="none">
+            <!-- Subtle grid -->
+            <line x1="0" y1="55" x2="800" y2="55" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="0" y1="110" x2="800" y2="110" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="0" y1="165" x2="800" y2="165" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+
+            <!-- Net wealth fill -->
+            <path d="M0,185 C80,180 160,170 240,155 C320,135 400,110 480,80 C560,55 640,35 720,22 L800,15 L800,220 L0,220 Z"
+                  fill="url(#tealGrad)"/>
+            <!-- Net wealth line -->
+            <path d="M0,185 C80,180 160,170 240,155 C320,135 400,110 480,80 C560,55 640,35 720,22 L800,15"
+                  fill="none" stroke="var(--teal-bright)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Assets (thin) -->
+            <path d="M0,160 C80,150 160,135 240,115 C320,90 400,65 480,45 C560,28 640,15 720,8 L800,4"
+                  fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+            <!-- Liabilities (thin) -->
+            <path d="M0,55 C80,58 160,62 240,68 C320,76 400,82 480,86 C560,88 640,90 720,90 L800,90"
+                  fill="none" stroke="rgba(252,165,165,0.25)" stroke-width="1" stroke-dasharray="4,4"/>
+            <defs>
+              <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div style="display: flex; gap: 20px; margin-top: 12px; font-size: 11px;">
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 2px; background: var(--teal-bright); border-radius: 1px;"></span><span style="color: var(--text-secondary);">Net Wealth</span></span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 0; border-top: 1px dashed rgba(255,255,255,0.3);"></span><span style="color: var(--text-muted);">Assets</span></span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 0; border-top: 1px dashed rgba(252,165,165,0.4);"></span><span style="color: var(--text-muted);">Liabilities</span></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Asset Allocation</div>
+        <!-- Stacked horizontal bar instead of donut -->
+        <div class="breakdown-bar">
+          <div class="breakdown-bar-seg" style="flex: 50; background: var(--teal);"></div>
+          <div class="breakdown-bar-seg" style="flex: 22; background: var(--purple);"></div>
+          <div class="breakdown-bar-seg" style="flex: 15; background: var(--amber);"></div>
+          <div class="breakdown-bar-seg" style="flex: 9; background: var(--green);"></div>
+          <div class="breakdown-bar-seg" style="flex: 4; background: #6B7280;"></div>
+        </div>
+        <div class="breakdown-list" style="margin-top: 20px;">
+          <div class="breakdown-item">
+            <span class="breakdown-dot" style="background: var(--teal);"></span>
+            <span class="breakdown-name">Property</span>
+            <span class="breakdown-value">$950K</span>
+            <span class="breakdown-pct">50%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-dot" style="background: var(--purple);"></span>
+            <span class="breakdown-name">Stocks / ETFs</span>
+            <span class="breakdown-value">$420K</span>
+            <span class="breakdown-pct">22%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-dot" style="background: var(--amber);"></span>
+            <span class="breakdown-name">Superannuation</span>
+            <span class="breakdown-value">$285K</span>
+            <span class="breakdown-pct">15%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-dot" style="background: var(--green);"></span>
+            <span class="breakdown-name">Cash & Savings</span>
+            <span class="breakdown-value">$162K</span>
+            <span class="breakdown-pct">9%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-dot" style="background: #6B7280;"></span>
+            <span class="breakdown-name">Other</span>
+            <span class="breakdown-value">$75K</span>
+            <span class="breakdown-pct">4%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cashflow cards -->
+    <div class="cashflow-grid">
+      <div class="cf-card">
+        <div class="cf-label">Monthly Income</div>
+        <div class="cf-value green">$12,200</div>
+        <div class="cf-sub">Salary + rental income</div>
+      </div>
+      <div class="cf-card">
+        <div class="cf-label">Monthly Expenses</div>
+        <div class="cf-value red">$8,750</div>
+        <div class="cf-sub">Including property costs</div>
+      </div>
+      <div class="cf-card">
+        <div class="cf-label">Monthly Surplus</div>
+        <div class="cf-value teal">+$3,450</div>
+        <div class="cf-sub">Available to invest or save</div>
+      </div>
+    </div>
+
+    <!-- Design notes -->
+    <div class="design-notes">
+      <h2>🎨 Option B: "Warm Minimal" — Design Rationale</h2>
+      <ul>
+        <li><strong>Warm neutrals:</strong> #111111 base instead of cold blue-blacks or pure black. All grays use neutral tones (no blue or green tint). Feels like a high-end editorial layout — think Bloomberg Terminal meets Notion.</li>
+        <li><strong>Primary: Teal (#0D9488 / #2DD4BF)</strong> — a fresh alternative to emerald. Slightly more sophisticated, less "health app". Still feels financial and trustworthy without being blue-generic.</li>
+        <li><strong>Typography-first hero:</strong> No card container — the net wealth figure is displayed as a large typographic statement with a simple divider. Uses JetBrains Mono for numbers (true tabular spacing). 52px at -2px tracking = serious financial presence.</li>
+        <li><strong>Connected stat strip:</strong> Instead of individual floating cards, the 4 KPIs sit in one unified row with dividers between them. This reduces visual noise and creates a clear "data bar" visual hierarchy. The eye scans left→right naturally.</li>
+        <li><strong>Horizontal bar allocation:</strong> Replaces the donut/pie chart with a stacked horizontal bar + list. Easier to compare proportions, takes less vertical space, and works better at small sizes. Percentages are explicitly shown.</li>
+        <li><strong>Minimal borders & shadows:</strong> 7% white borders only. No glow effects, no gradients on cards. The color comes from the data itself, not decorative elements. This is the "less is more" approach.</li>
+        <li><strong>DM Sans + JetBrains Mono:</strong> DM Sans is geometric and clean for labels. JetBrains Mono is purpose-built for numbers — better than any proportional font for financial data. The pairing creates clear role distinction.</li>
+        <li><strong>3px thin metric bars:</strong> Current design uses 6px progress bars. Thinner = more refined, lets the number speak for itself. Each bar uses semantic color only (green, amber, red, teal).</li>
+        <li><strong>Reduced color palette:</strong> Only 5 colors total — teal, green, amber/gold, red (soft), purple. Each has one clear semantic meaning. No competing shades. The warm grays do all the spatial work.</li>
+        <li><strong>Overall mood:</strong> Calm, confident, editorial. Designed for daily use — nothing should be visually fatiguing. Content-forward, decoration-minimal.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

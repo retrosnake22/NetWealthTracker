@@ -102,7 +102,7 @@ function useDarkMode() {
 function BrandLogo() {
   return (
     <div className="flex items-center gap-3 px-2">
-      <div className="h-9 w-9 rounded-xl gradient-emerald glow-emerald flex items-center justify-center">
+      <div className="h-9 w-9 rounded-xl gradient-sapphire glow-sapphire flex items-center justify-center">
         <ArrowUpRight className="h-5 w-5 text-white" />
       </div>
       <div>
@@ -171,7 +171,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                         onClick={onNavigate}
                         className={`group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
                           parentActive
-                            ? 'bg-emerald-subtle text-primary'
+                            ? 'bg-sapphire-subtle text-primary'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         }`}
                       >
@@ -202,7 +202,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       className={({ isActive }) =>
                         `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                           isActive
-                            ? 'bg-emerald-subtle text-primary'
+                            ? 'bg-sapphire-subtle text-primary'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         }`
                       }
@@ -238,7 +238,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                               onClick={onNavigate}
                               className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
                                 subActive
-                                  ? 'bg-emerald-subtle text-primary'
+                                  ? 'bg-sapphire-subtle text-primary'
                                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                               }`}
                             >
@@ -284,8 +284,8 @@ function NetWealthMini() {
     .join(' ')
 
   return (
-    <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-emerald-subtle relative overflow-hidden">
-      <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-emerald" />
+    <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-sapphire-subtle relative overflow-hidden">
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-sapphire" />
       <div className="flex items-center justify-between pl-2">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Net Wealth</p>
@@ -299,14 +299,14 @@ function NetWealthMini() {
       </div>
       <div className="flex items-center gap-3 pl-2 mt-1.5">
         <span className="text-[10px] text-muted-foreground tabular-nums">
-          <span className="text-emerald-500">▲</span> {formatCurrency(totalAssets)}
+          <span className="text-green-500">▲</span> {formatCurrency(totalAssets)}
         </span>
         <span className="text-[10px] text-muted-foreground tabular-nums">
           <span className="text-red-400">▼</span> {formatCurrency(totalLiabilities)}
         </span>
       </div>
       {monthlySurplus !== 0 && (
-        <p className={`text-[10px] pl-2 mt-1 font-medium tabular-nums ${monthlySurplus > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+        <p className={`text-[10px] pl-2 mt-1 font-medium tabular-nums ${monthlySurplus > 0 ? 'text-blue-400' : 'text-red-400'}`}>
           {monthlySurplus > 0 ? '+' : ''}{formatCurrency(monthlySurplus)}/mo
         </p>
       )}
