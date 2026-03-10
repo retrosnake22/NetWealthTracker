@@ -90,7 +90,7 @@ export const useFinanceStore = create<FinanceState>()(
 
       // Properties
       addProperty: (property) => set((state) => ({
-        properties: [...state.properties, { ...property, id: generateId(), createdAt: now(), updatedAt: now() }]
+        properties: [...state.properties, { ...property, id: generateId(), createdAt: now(), updatedAt: now() } as Property]
       })),
       updateProperty: (id, updates) => set((state) => ({
         properties: state.properties.map(p => p.id === id ? { ...p, ...updates, updatedAt: now() } : p)
@@ -101,7 +101,7 @@ export const useFinanceStore = create<FinanceState>()(
 
       // Liabilities
       addLiability: (liability) => set((state) => ({
-        liabilities: [...state.liabilities, { ...liability, id: generateId(), createdAt: now(), updatedAt: now() }]
+        liabilities: [...state.liabilities, { ...liability, id: generateId(), createdAt: now(), updatedAt: now() } as Liability]
       })),
       updateLiability: (id, updates) => set((state) => ({
         liabilities: state.liabilities.map(l => l.id === id ? { ...l, ...updates, updatedAt: now() } : l)
@@ -112,7 +112,7 @@ export const useFinanceStore = create<FinanceState>()(
 
       // Income
       addIncome: (income) => set((state) => ({
-        incomes: [...state.incomes, { ...income, id: generateId(), createdAt: now(), updatedAt: now() }]
+        incomes: [...state.incomes, { ...income, id: generateId(), createdAt: now(), updatedAt: now() } as IncomeItem]
       })),
       updateIncome: (id, updates) => set((state) => ({
         incomes: state.incomes.map(i => i.id === id ? { ...i, ...updates, updatedAt: now() } : i)
@@ -123,7 +123,7 @@ export const useFinanceStore = create<FinanceState>()(
 
       // Expense Budgets
       addExpenseBudget: (budget) => set((state) => ({
-        expenseBudgets: [...state.expenseBudgets, { ...budget, id: generateId(), createdAt: now(), updatedAt: now() }]
+        expenseBudgets: [...state.expenseBudgets, { ...budget, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseBudget]
       })),
       updateExpenseBudget: (id, updates) => set((state) => ({
         expenseBudgets: state.expenseBudgets.map(b => b.id === id ? { ...b, ...updates, updatedAt: now() } : b)
@@ -134,7 +134,7 @@ export const useFinanceStore = create<FinanceState>()(
 
       // Expense Actuals
       addExpenseActual: (actual) => set((state) => ({
-        expenseActuals: [...state.expenseActuals, { ...actual, id: generateId(), createdAt: now(), updatedAt: now() }]
+        expenseActuals: [...state.expenseActuals, { ...actual, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseActual]
       })),
       updateExpenseActual: (id, updates) => set((state) => ({
         expenseActuals: state.expenseActuals.map(a => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
