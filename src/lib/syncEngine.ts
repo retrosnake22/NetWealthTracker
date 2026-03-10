@@ -32,12 +32,12 @@ export async function loadFromCloud(userId: string): Promise<SyncData | null> {
 /**
  * Save finance data to Supabase (upsert).
  */
-export async function saveToCloud(userId: string, storeState: SyncData): Promise<boolean> {
+export async function saveToCloud(userId: string, storeState: object): Promise<boolean> {
   // Extract only the data keys (not functions)
   const payload: SyncData = {}
   for (const key of DATA_KEYS) {
     if (key in storeState) {
-      payload[key] = storeState[key]
+      payload[key] = (storeState as SyncData)[key]
     }
   }
 
@@ -64,7 +64,7 @@ export async function saveToCloud(userId: string, storeState: SyncData): Promise
 export function createDebouncedSave(delay = 1500) {
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  return (userId: string, storeState: SyncData) => {
+  return (userId: string, storeState: object) => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       saveToCloud(userId, storeState)
