@@ -4,20 +4,18 @@ import {
   ArrowRight, ArrowLeft, Check, Plus, Trash2, X,
   Sparkles, Briefcase, Wallet, Building2, CreditCard,
   Receipt, Target, TrendingUp, DollarSign, PiggyBank,
-  Home, Car, GraduationCap, Heart
+  Home, Car
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory,
-  Asset, IncomeItem, Liability, ExpenseBudget, Property
+  AssetCategory, IncomeCategory, LiabilityCategory, ExpenseCategory
 } from '@/types/models'
 
 // ── Step definitions ──────────────────────────────────────────────────────────
@@ -32,8 +30,6 @@ const STEPS = [
   { id: 'projections', label: 'Goals', icon: Target },
   { id: 'summary', label: 'Summary', icon: TrendingUp },
 ] as const
-
-type StepId = (typeof STEPS)[number]['id']
 
 // ── Shared constants ──────────────────────────────────────────────────────────
 
@@ -83,20 +79,17 @@ export function SetupWizardPage() {
   const navigate = useNavigate()
   const store = useFinanceStore()
   const [currentStep, setCurrentStep] = useState(0)
-  const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward')
 
   const step = STEPS[currentStep]
   const progress = ((currentStep) / (STEPS.length - 1)) * 100
 
   const goNext = () => {
     if (currentStep < STEPS.length - 1) {
-      setAnimDir('forward')
       setCurrentStep(s => s + 1)
     }
   }
   const goBack = () => {
     if (currentStep > 0) {
-      setAnimDir('back')
       setCurrentStep(s => s - 1)
     }
   }
