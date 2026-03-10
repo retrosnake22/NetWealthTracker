@@ -347,14 +347,14 @@ function AssetsStep({ store }: { store: FinanceState }) {
     if (editingId) {
       updateAsset(editingId, {
         name: assetForm.name,
-        category: activeTab,
+        category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
       })
     } else {
       addAsset({
         name: assetForm.name,
-        category: activeTab,
+        category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: (parseFloat(assetForm.growthRatePA) || 0) / 100,
       })

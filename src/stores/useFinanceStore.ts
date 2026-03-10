@@ -18,32 +18,32 @@ export interface FinanceState {
   projectionSettings: ProjectionSettings
 
   // Asset CRUD
-  addAsset: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'> | Omit<CashAsset, 'id' | 'createdAt' | 'updatedAt'> | Omit<StockAsset, 'id' | 'createdAt' | 'updatedAt'> | Omit<SuperAsset, 'id' | 'createdAt' | 'updatedAt'> | Omit<VehicleAsset, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addAsset: (asset: Partial<Asset>) => void
   updateAsset: (id: string, updates: Partial<Asset>) => void
   removeAsset: (id: string) => void
 
   // Property CRUD
-  addProperty: (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addProperty: (property: Partial<Property>) => void
   updateProperty: (id: string, updates: Partial<Property>) => void
   removeProperty: (id: string) => void
 
   // Liability CRUD
-  addLiability: (liability: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addLiability: (liability: Partial<Liability>) => void
   updateLiability: (id: string, updates: Partial<Liability>) => void
   removeLiability: (id: string) => void
 
   // Income CRUD
-  addIncome: (income: Omit<IncomeItem, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addIncome: (income: Partial<IncomeItem>) => void
   updateIncome: (id: string, updates: Partial<IncomeItem>) => void
   removeIncome: (id: string) => void
 
   // Expense Budget CRUD
-  addExpenseBudget: (budget: Omit<ExpenseBudget, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addExpenseBudget: (budget: Partial<ExpenseBudget>) => void
   updateExpenseBudget: (id: string, updates: Partial<ExpenseBudget>) => void
   removeExpenseBudget: (id: string) => void
 
   // Expense Actuals
-  addExpenseActual: (actual: Omit<ExpenseActual, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addExpenseActual: (actual: Partial<ExpenseActual>) => void
   updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => void
 
   // Projection Settings
