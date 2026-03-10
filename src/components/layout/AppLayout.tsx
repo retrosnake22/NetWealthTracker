@@ -299,7 +299,7 @@ function NetWealthMini() {
       </div>
       <div className="flex items-center gap-3 pl-2 mt-1.5">
         <span className="text-[10px] text-muted-foreground tabular-nums">
-          <span className="text-green-500">▲</span> {formatCurrency(totalAssets)}
+          <span className="text-blue-400">▲</span> {formatCurrency(totalAssets)}
         </span>
         <span className="text-[10px] text-muted-foreground tabular-nums">
           <span className="text-red-400">▼</span> {formatCurrency(totalLiabilities)}

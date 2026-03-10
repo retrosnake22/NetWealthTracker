@@ -113,7 +113,7 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 // Asset type tabs config
 type AssetTab = AssetCategory
 const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: string }[] = [
-  { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-emerald-500 bg-emerald-500/10' },
+  { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-amber-500 bg-amber-500/10' },
   { id: 'stocks', label: 'Stocks / ETFs', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
   { id: 'super', label: 'Super', icon: Target, color: 'text-violet-500 bg-violet-500/10' },
   { id: 'vehicles', label: 'Vehicles', icon: Car, color: 'text-amber-500 bg-amber-500/10' },
@@ -241,7 +241,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-8">
       <div className="relative">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/25">
           <TrendingUp className="w-10 h-10 text-white" />
         </div>
         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary/20 animate-ping" />
@@ -261,7 +261,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         {[
           { icon: Wallet, label: 'Assets', color: 'text-blue-500' },
           { icon: CreditCard, label: 'Debts', color: 'text-red-500' },
-          { icon: Briefcase, label: 'Income', color: 'text-emerald-500' },
+          { icon: Briefcase, label: 'Income', color: 'text-blue-400' },
           { icon: Receipt, label: 'Expenses', color: 'text-amber-500' },
         ].map(({ icon: Icon, label, color }) => (
           <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/50">
@@ -1442,8 +1442,8 @@ function IncomeStep({ store }: { store: FinanceState }) {
             <Card key={inc.id} className="card-hover">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-emerald-500" />
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-blue-500" />
                   </div>
                   <div>
                     <p className="font-medium">{inc.name}</p>
@@ -1905,7 +1905,7 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground uppercase tracking-widest">Monthly Income</p>
-            <p className="text-xl font-bold text-emerald-400 tabular-nums mt-1">{formatCurrency(monthlyIncome)}</p>
+            <p className="text-xl font-bold text-blue-400 tabular-nums mt-1">{formatCurrency(monthlyIncome)}</p>
             <p className="text-xs text-muted-foreground mt-1">
               {incomes.length} source{incomes.length !== 1 ? 's' : ''}
               {rentalIncome > 0 ? ' + rental' : ''}
@@ -1946,7 +1946,7 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
               ...assets.map((a: { name: string; currentValue: number; category: AssetCategory }) => ({
                 name: a.name,
                 value: a.currentValue,
-                color: a.category === 'cash' ? 'bg-emerald-500' : a.category === 'stocks' ? 'bg-blue-500' : a.category === 'super' ? 'bg-violet-500' : a.category === 'vehicles' ? 'bg-amber-500' : 'bg-gray-500',
+                color: a.category === 'cash' ? 'bg-amber-500' : a.category === 'stocks' ? 'bg-blue-500' : a.category === 'super' ? 'bg-violet-500' : a.category === 'vehicles' ? 'bg-amber-500' : 'bg-gray-500',
               })),
             ]
               .sort((a, b) => b.value - a.value)

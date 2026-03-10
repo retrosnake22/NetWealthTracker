@@ -208,7 +208,7 @@ export function ProjectionsPage() {
                             <p className="font-medium truncate">{alloc.targetName}</p>
                             <Badge className={isLiability
                               ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                              : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                              : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                             }>
                               {isLiability ? 'Pay Down' : 'Invest'}
                             </Badge>
@@ -227,7 +227,7 @@ export function ProjectionsPage() {
                             step={1}
                             value={Math.round(alloc.percentage * 100)}
                             onChange={e => handlePercentageChange(alloc.targetId, parseInt(e.target.value))}
-                            className="w-24 accent-emerald-500"
+                            className="w-24 accent-blue-500"
                           />
                           <div className="w-16">
                             <Input
@@ -252,7 +252,7 @@ export function ProjectionsPage() {
                   {/* Total bar */}
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="text-sm font-medium">Total Allocated</span>
-                    <span className={`text-sm font-bold ${totalAllocated > 1 ? 'text-red-500' : totalAllocated === 1 ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    <span className={`text-sm font-bold ${totalAllocated > 1 ? 'text-red-500' : totalAllocated === 1 ? 'text-blue-400' : 'text-muted-foreground'}`}>
                       {formatPercent(totalAllocated)}
                     </span>
                   </div>

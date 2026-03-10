@@ -24,7 +24,7 @@ function CashflowBar({ label, amount, max, color, icon: Icon }: {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${color.includes('green') ? 'text-green-500' : 'text-red-400'}`} />
+          <Icon className={`h-4 w-4 ${color.includes('blue') ? 'text-blue-400' : 'text-red-400'}`} />
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </div>
         <span className="text-sm font-bold tabular-nums">{formatCurrency(amount)}</span>
@@ -189,7 +189,7 @@ export function DashboardPage() {
           icon={DollarSign}
           trend={netWealth >= 0 ? 'up' : 'down'}
           breakdownItems={[
-            { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#22C55E' },
+            { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#60A5FA' },
             { label: 'Total Liabilities', value: formatCurrency(totalLiabilities), color: '#f87171' },
             { label: 'Monthly Surplus',  value: formatCurrency(monthlyCashflow),  color: monthlyCashflow >= 0 ? '#3b82f6' : '#f59e0b' },
           ]}
@@ -209,7 +209,7 @@ export function DashboardPage() {
               label="Income"
               amount={monthlyIncome}
               max={cashflowMax}
-              color="bg-green-500"
+              color="bg-blue-500"
               icon={ArrowUpRight}
             />
             <CashflowBar
@@ -222,7 +222,7 @@ export function DashboardPage() {
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Surplus</span>
-                <span className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+                <span className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                   {formatCurrency(monthlyCashflow)}
                 </span>
               </div>
@@ -240,7 +240,7 @@ export function DashboardPage() {
               tagColor={savingsColor}
               ratio={savingsRate}
               icon={PiggyBank}
-              accentColor="#22C55E"
+              accentColor="#3B82F6"
             />
           </div>
           <div className="animate-fade-up animate-delay-3">
