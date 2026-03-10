@@ -18,7 +18,7 @@ import type {
   AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, ExpenseCategory, MortgageType, Property
 } from '@/types/models'
 
-// ── Mortgage calculation helpers ─────────────────────────────────────────────
+// -- Mortgage calculation helpers --
 
 function calcInterestOnlyMonthly(balance: number, annualRate: number): number {
   return (balance * annualRate) / 12
@@ -36,16 +36,14 @@ function calcMortgageMonthly(balance: number, annualRate: number, type: Mortgage
   return calcPIMonthly(balance, annualRate, termYears)
 }
 
-// ── Rounding helpers ─────────────────────────────────────────────────────────
+// -- Rounding helpers --
 
-/** Round a percentage string to N decimal places, return as fraction (e.g. "7.5" → 0.075) */
 function pctToFraction(pctStr: string, decimals: number): number {
   const raw = parseFloat(pctStr) || 0
   const rounded = parseFloat(raw.toFixed(decimals))
   return rounded / 100
 }
 
-/** Compute monthly repayment from string form values */
 function autoCalcRepayment(balance: string, rate: string, type: MortgageType, term: string): string {
   const bal = parseFloat(balance) || 0
   const r = (parseFloat(rate) || 0) / 100
@@ -55,7 +53,7 @@ function autoCalcRepayment(balance: string, rate: string, type: MortgageType, te
   return Math.round(monthly).toString()
 }
 
-// ── Step definitions ──────────────────────────────────────────────────────────
+// -- Step definitions --
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Sparkles },
@@ -67,7 +65,7 @@ const STEPS = [
   { id: 'summary', label: 'Summary', icon: TrendingUp },
 ] as const
 
-// ── Shared constants ──────────────────────────────────────────────────────────
+// -- Shared constants --
 
 const INCOME_LABELS: Record<IncomeCategory, string> = {
   salary: 'Salary / Wages', rental: 'Rental Income', dividends: 'Dividends',
@@ -87,6 +85,8 @@ const LIABILITY_LABELS: Record<LiabilityCategory, string> = {
 const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
   mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
   council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
+  property_management: 'Property Management', land_tax: 'Land Tax',
+  maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
   insurance_home: 'Home Insurance', insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
@@ -98,11 +98,12 @@ const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
 }
 
 const EXPENSE_QUICK_PICKS: { label: string; categories: ExpenseCategory[] }[] = [
-  { label: '🏠 Housing', categories: ['mortgage_repayment', 'rent', 'council_rates', 'water_rates', 'strata'] },
-  { label: '🛡️ Insurance', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: '🛒 Living', categories: ['groceries', 'utilities', 'transport', 'fuel', 'phone_internet'] },
-  { label: '🎉 Lifestyle', categories: ['subscriptions', 'entertainment', 'dining_out', 'clothing', 'health_fitness', 'personal_care'] },
-  { label: '📚 Other', categories: ['education', 'childcare', 'pet_expenses', 'gifts_donations', 'hecs_repayment', 'tax', 'other'] },
+  { label: '\u{1F3E0} Property', categories: ['council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
+  { label: '\u{1F3E1} Housing', categories: ['mortgage_repayment', 'rent'] },
+  { label: '\u{1F6E1}\uFE0F Insurance', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
+  { label: '\u{1F6D2} Living', categories: ['groceries', 'utilities', 'transport', 'fuel', 'phone_internet'] },
+  { label: '\u{1F389} Lifestyle', categories: ['subscriptions', 'entertainment', 'dining_out', 'clothing', 'health_fitness', 'personal_care'] },
+  { label: '\u{1F4DA} Other', categories: ['education', 'childcare', 'pet_expenses', 'gifts_donations', 'hecs_repayment', 'tax', 'other'] },
 ]
 
 const DEFAULT_GROWTH: Record<AssetCategory, number> = {
@@ -120,7 +121,7 @@ const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: str
   { id: 'other', label: 'Other', icon: Wallet, color: 'text-gray-500 bg-gray-500/10' },
 ]
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// -- Main Component --
 
 export function SetupWizardPage() {
   const store = useFinanceStore()
@@ -150,7 +151,7 @@ export function SetupWizardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Progress Bar ── */}
+      {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-muted">
         <div
           className="h-full bg-primary transition-all duration-500 ease-out"
@@ -158,11 +159,10 @@ export function SetupWizardPage() {
         />
       </div>
 
-      {/* ── Step Indicator ── */}
+      {/* Step Indicator */}
       <div className="fixed top-1 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Left: back button + step label */}
             <div className="flex items-center gap-3">
               {currentStep > 0 && (
                 <Button variant="ghost" size="sm" onClick={goBack} className="gap-1">
@@ -179,7 +179,6 @@ export function SetupWizardPage() {
               </div>
             </div>
 
-            {/* Center: step dots (desktop only) */}
             <div className="hidden md:flex items-center gap-1.5">
               {STEPS.map((s, i) => (
                 <button
@@ -197,7 +196,6 @@ export function SetupWizardPage() {
               ))}
             </div>
 
-            {/* Right: skip/finish */}
             <div>
               {currentStep < STEPS.length - 1 ? (
                 <Button variant="ghost" size="sm" onClick={finishWizard} className="text-muted-foreground">
@@ -209,7 +207,7 @@ export function SetupWizardPage() {
         </div>
       </div>
 
-      {/* ── Step Content ── */}
+      {/* Step Content */}
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-32">
         {step.id === 'welcome' && <WelcomeStep onNext={goNext} />}
         {step.id === 'assets' && <AssetsStep store={store} />}
@@ -220,7 +218,7 @@ export function SetupWizardPage() {
         {step.id === 'summary' && <SummaryStep store={store} onFinish={finishWizard} />}
       </div>
 
-      {/* ── Bottom Navigation ── */}
+      {/* Bottom Navigation */}
       {step.id !== 'welcome' && step.id !== 'summary' && (
         <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border/50">
           <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -237,12 +235,11 @@ export function SetupWizardPage() {
   )
 }
 
-// ── Step 1: Welcome ───────────────────────────────────────────────────────────
+// -- Step 1: Welcome --
 
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-8">
-      {/* Logo */}
       <div className="relative">
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
           <TrendingUp className="w-10 h-10 text-white" />
@@ -285,7 +282,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   )
 }
 
-// ── Step 2: Assets & Property (unified) ───────────────────────────────────────
+// -- Step 2: Assets & Property (unified) --
 
 function AssetsStep({ store }: { store: FinanceState }) {
   const {
@@ -298,12 +295,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  // Simple asset form state
   const [assetForm, setAssetForm] = useState({
     name: '', currentValue: '', growthRatePA: '4.5',
   })
 
-  // Property form state — mortgageType defaults to P&I so auto-calc works immediately
   const [propForm, setPropForm] = useState({
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
     address: '', currentValue: '', growthRatePA: '7.0',
@@ -312,6 +307,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
     loanTermYears: '30',
     repaymentOverridden: false,
     weeklyRent: '',
+    councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
+    propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
   })
 
   const resetForm = () => {
@@ -321,6 +318,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
       hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
       mortgageType: 'principal_and_interest', loanTermYears: '30',
       repaymentOverridden: false, weeklyRent: '',
+      councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
+      propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
     })
     setShowForm(false)
     setEditingId(null)
@@ -332,9 +331,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setAssetForm(f => ({ ...f, growthRatePA: (DEFAULT_GROWTH[tab] * 100).toFixed(1) }))
   }
 
-  // autoCalcRepayment is now at module level
-
-  // Update repayment when mortgage fields change (unless user overrode)
   const updateMortgageField = (updates: Partial<typeof propForm>) => {
     const next = { ...propForm, ...updates }
     if (!next.repaymentOverridden && next.hasMortgage) {
@@ -343,7 +339,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setPropForm(next)
   }
 
-  // ── Asset CRUD ──
+  // -- Asset CRUD --
   const startEditAsset = (asset: typeof assets[0]) => {
     setAssetForm({
       name: asset.name,
@@ -374,9 +370,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
     resetForm()
   }
 
-  // ── Property CRUD ──
+  // -- Property CRUD --
   const startEditProperty = (prop: typeof properties[0]) => {
-    // Find linked mortgage if any
     const linkedMortgage = prop.mortgageId
       ? liabilities.find(l => l.id === prop.mortgageId)
       : undefined
@@ -395,6 +390,13 @@ function AssetsStep({ store }: { store: FinanceState }) {
       loanTermYears: linkedMortgage?.loanTermYears ? String(linkedMortgage.loanTermYears) : '30',
       repaymentOverridden: false,
       weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
+      councilRatesPA: prop.councilRatesPA ? String(prop.councilRatesPA) : '',
+      waterRatesPA: prop.waterRatesPA ? String(prop.waterRatesPA) : '',
+      insurancePA: prop.insurancePA ? String(prop.insurancePA) : '',
+      strataPA: prop.strataPA ? String(prop.strataPA) : '',
+      propertyManagementPct: prop.propertyManagementPct ? String(prop.propertyManagementPct) : '',
+      landTaxPA: prop.landTaxPA ? String(prop.landTaxPA) : '',
+      maintenanceBudgetPA: prop.maintenanceBudgetPA ? String(prop.maintenanceBudgetPA) : '',
     })
     setEditingId(prop.id)
     setShowForm(true)
@@ -404,7 +406,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
     if (!propForm.name || !propForm.currentValue) return
 
     if (editingId) {
-      // Update property
       const prop = properties.find(p => p.id === editingId)
       updateProperty(editingId, {
         name: propForm.name,
@@ -413,9 +414,15 @@ function AssetsStep({ store }: { store: FinanceState }) {
         currentValue: parseFloat(propForm.currentValue) || 0,
         growthRatePA: pctToFraction(propForm.growthRatePA, 1),
         weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
+        councilRatesPA: parseFloat(propForm.councilRatesPA) || undefined,
+        waterRatesPA: parseFloat(propForm.waterRatesPA) || undefined,
+        insurancePA: parseFloat(propForm.insurancePA) || undefined,
+        strataPA: parseFloat(propForm.strataPA) || undefined,
+        propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
+        landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
+        maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
       })
 
-      // Update or create/remove linked mortgage
       if (propForm.hasMortgage && propForm.mortgageBalance) {
         const mortgageData = {
           name: `${propForm.name} Mortgage`,
@@ -429,10 +436,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
         }
 
         if (prop?.mortgageId) {
-          // Update existing mortgage
           updateLiability(prop.mortgageId, mortgageData)
         } else {
-          // Create new mortgage and link it
           addLiability(mortgageData)
           const liabs = useFinanceStore.getState().liabilities
           const newMortgageId = liabs[liabs.length - 1]?.id
@@ -441,7 +446,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
           }
         }
       } else if (prop?.mortgageId && !propForm.hasMortgage) {
-        // Remove mortgage if unchecked
         removeLiability(prop.mortgageId)
         updateProperty(editingId, { mortgageId: undefined })
       }
@@ -476,12 +480,18 @@ function AssetsStep({ store }: { store: FinanceState }) {
       growthRatePA: pctToFraction(propForm.growthRatePA, 1),
       mortgageId,
       weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
+      councilRatesPA: parseFloat(propForm.councilRatesPA) || undefined,
+      waterRatesPA: parseFloat(propForm.waterRatesPA) || undefined,
+      insurancePA: parseFloat(propForm.insurancePA) || undefined,
+      strataPA: parseFloat(propForm.strataPA) || undefined,
+      propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
+      landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
+      maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
     })
 
     resetForm()
   }
 
-  // ── Delete property (also removes linked mortgage) ──
   const handleDeleteProperty = (propId: string) => {
     const prop = properties.find(p => p.id === propId)
     if (prop?.mortgageId) {
@@ -490,17 +500,14 @@ function AssetsStep({ store }: { store: FinanceState }) {
     removeProperty(propId)
   }
 
-  // ── Totals ──
   const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
   const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
   const grandTotal = totalAssets + totalProperties
 
-  // Items for current tab
   const tabAssets = activeTab === 'property' ? [] : assets.filter(a => a.category === activeTab)
   const tabProperties = activeTab === 'property' ? properties : []
   const isPropertyTab = activeTab === 'property'
 
-  // Count items per tab for badges
   const getTabCount = (tab: AssetTab) => {
     if (tab === 'property') return properties.length
     return assets.filter(a => a.category === tab).length
@@ -510,11 +517,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you own?"
-        description="Add all your assets — savings, investments, super, vehicles, and property."
+        description="Add all your assets \u2014 savings, investments, super, vehicles, and property."
         icon={Wallet}
       />
 
-      {/* Grand total */}
       {grandTotal > 0 && (
         <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
           <span className="text-sm font-medium text-muted-foreground">Total Assets</span>
@@ -552,10 +558,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
         })}
       </div>
 
-      {/* ── Property tab content ── */}
+      {/* Property tab content */}
       {isPropertyTab && (
         <div className="space-y-4">
-          {/* Existing properties */}
           {tabProperties.length > 0 && (
             <div className="space-y-2">
               {tabProperties.map(prop => {
@@ -576,25 +581,18 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         <div>
                           <p className="font-medium">{prop.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} · {formatPercent(prop.growthRatePA)} p.a.
-                            {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
-                            {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
+                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} &middot; {formatPercent(prop.growthRatePA)} p.a.
+                            {prop.weeklyRent ? ` \u00B7 ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                            {linkedMortgage ? ` \u00B7 ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => startEditProperty(prop)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => startEditProperty(prop)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost" size="icon"
-                          className="text-destructive"
-                          onClick={() => handleDeleteProperty(prop.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProperty(prop.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -669,7 +667,86 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   )}
                 </div>
 
-                {/* Mortgage section — always visible */}
+                {/* Property Running Costs */}
+                <div className="pt-2 border-t border-border/50">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">
+                    Property Running Costs (Annual)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Council Rates ($ p.a.)</Label>
+                      <CurrencyInput
+                        value={propForm.councilRatesPA}
+                        onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Water Rates ($ p.a.)</Label>
+                      <CurrencyInput
+                        value={propForm.waterRatesPA}
+                        onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Building / Landlord Insurance ($ p.a.)</Label>
+                      <CurrencyInput
+                        value={propForm.insurancePA}
+                        onValueChange={v => setPropForm({ ...propForm, insurancePA: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Strata / Body Corp ($ p.a.)</Label>
+                      <CurrencyInput
+                        value={propForm.strataPA}
+                        onValueChange={v => setPropForm({ ...propForm, strataPA: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Maintenance Budget ($ p.a.)</Label>
+                      <CurrencyInput
+                        value={propForm.maintenanceBudgetPA}
+                        onValueChange={v => setPropForm({ ...propForm, maintenanceBudgetPA: v })}
+                        placeholder="0"
+                      />
+                    </div>
+                    {propForm.type === 'investment' && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Property Management Fee (%)</Label>
+                          <Input
+                            type="number" step="0.1" min="0" max="20"
+                            value={propForm.propertyManagementPct}
+                            onChange={e => setPropForm({ ...propForm, propertyManagementPct: e.target.value })}
+                            placeholder="e.g. 7"
+                          />
+                          {propForm.weeklyRent && propForm.propertyManagementPct && (
+                            <p className="text-xs text-muted-foreground">
+                              &asymp; {formatCurrency(parseFloat(propForm.weeklyRent) * 52 * parseFloat(propForm.propertyManagementPct) / 100 / 12)}/mo
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Land Tax ($ p.a.)</Label>
+                          <CurrencyInput
+                            value={propForm.landTaxPA}
+                            onValueChange={v => setPropForm({ ...propForm, landTaxPA: v })}
+                            placeholder="0"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                    <Info className="w-3 h-3" />
+                    These will automatically appear in your monthly expenses
+                  </p>
+                </div>
+
+                {/* Mortgage section */}
                 <div className="pt-2 border-t border-border/50">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
@@ -779,16 +856,15 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
           {properties.length === 0 && !showForm && (
             <p className="text-center text-sm text-muted-foreground">
-              No property? No worries — switch to another asset type or hit <strong>Continue</strong>.
+              No property? No worries \u2014 switch to another asset type or hit <strong>Continue</strong>.
             </p>
           )}
         </div>
       )}
 
-      {/* ── Non-property tab content ── */}
+      {/* Non-property tab content */}
       {!isPropertyTab && (
         <div className="space-y-4">
-          {/* Existing items for this category */}
           {tabAssets.length > 0 && (
             <div className="space-y-2">
               {tabAssets.map(asset => {
@@ -804,23 +880,16 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         <div>
                           <p className="font-medium">{asset.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {ASSET_LABELS[asset.category]} · {formatPercent(asset.growthRatePA)} p.a.
+                            {ASSET_LABELS[asset.category]} &middot; {formatPercent(asset.growthRatePA)} p.a.
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => startEditAsset(asset)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => startEditAsset(asset)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost" size="icon"
-                          className="text-destructive"
-                          onClick={() => removeAsset(asset.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeAsset(asset.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -888,7 +957,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 3: Liabilities ───────────────────────────────────────────────────────
+// -- Step 3: Liabilities --
 
 function LiabilitiesStep({ store }: { store: FinanceState }) {
   const { liabilities, addLiability, removeLiability, updateLiability } = store
@@ -911,7 +980,6 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     setEditingId(null)
   }
 
-  // Auto-calc repayment for mortgage/home_loan types
   const updateLoanField = (updates: Partial<typeof form>) => {
     const next = { ...form, ...updates }
     if (isMortgageCategory(next.category) && !next.repaymentOverridden) {
@@ -959,7 +1027,6 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
   }
 
   const totalDebt = liabilities.reduce((s, l) => s + l.currentBalance, 0)
-  // Separate mortgages (auto-added from properties step) from other debts
   const mortgages = liabilities.filter(l => l.category === 'mortgage')
   const otherDebts = liabilities.filter(l => l.category !== 'mortgage')
 
@@ -977,11 +1044,10 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you owe?"
-        description="Add any debts — home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
+        description="Add any debts \u2014 home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
         icon={CreditCard}
       />
 
-      {/* Show mortgages from property step */}
       {mortgages.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">From Properties</p>
@@ -995,18 +1061,15 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                   <div>
                     <p className="font-medium">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatPercent(m.interestRatePA)} interest · {formatCurrency(m.minimumRepayment)}/month
-                      {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
-                      {m.loanTermYears ? ` · ${m.loanTermYears}yr term` : ''}
+                      {formatPercent(m.interestRatePA)} interest &middot; {formatCurrency(m.minimumRepayment)}/month
+                      {m.mortgageType === 'interest_only' ? ' \u00B7 Interest Only' : ' \u00B7 P&I'}
+                      {m.loanTermYears ? ` \u00B7 ${m.loanTermYears}yr term` : ''}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => startEdit(m)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => startEdit(m)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1016,7 +1079,6 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Other debts */}
       {otherDebts.length > 0 && (
         <div className="space-y-2">
           {mortgages.length > 0 && (
@@ -1036,17 +1098,10 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="font-semibold tabular-nums text-red-400">{formatCurrency(lia.currentBalance)}</p>
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => startEdit(lia)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => startEdit(lia)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="text-destructive"
-                    onClick={() => removeLiability(lia.id)}
-                  >
+                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeLiability(lia.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1063,7 +1118,6 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Quick add buttons for common debt types */}
       {!showForm && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {([
@@ -1122,7 +1176,6 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                 </Select>
               </div>
 
-              {/* Mortgage-specific fields */}
               {isMortgageCategory(form.category) && (
                 <>
                   <div className="space-y-1.5">
@@ -1211,24 +1264,24 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 
       {liabilities.length === 0 && !showForm && (
         <p className="text-center text-sm text-muted-foreground">
-          Debt-free? Amazing — hit <strong>Continue</strong> to keep going.
+          Debt-free? Amazing \u2014 hit <strong>Continue</strong> to keep going.
         </p>
       )}
     </div>
   )
 }
 
-// ── Step 4: Income ────────────────────────────────────────────────────────────
+// -- Step 4: Income --
 
 function IncomeStep({ store }: { store: FinanceState }) {
-  const { incomes, addIncome, removeIncome, updateIncome, properties } = store
+  const { incomes, addIncome, removeIncome, updateIncome, properties, assets } = store
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '',
   })
 
-  // Compute auto-generated rental income from investment properties
+  // Auto-generated rental income from investment properties
   const rentalIncomes = useMemo(() => {
     return properties
       .filter((p: Property) => p.type === 'investment' && p.weeklyRent && p.weeklyRent > 0)
@@ -1238,6 +1291,28 @@ function IncomeStep({ store }: { store: FinanceState }) {
         monthlyAmount: (p.weeklyRent! * 52) / 12,
       }))
   }, [properties])
+
+  // Auto-generated interest income from cash/savings assets
+  const interestIncomes = useMemo(() => {
+    return assets
+      .filter(a => a.category === 'cash' && a.growthRatePA > 0 && a.currentValue > 0)
+      .map(a => ({
+        assetName: a.name,
+        rate: a.growthRatePA,
+        monthlyAmount: (a.currentValue * a.growthRatePA) / 12,
+      }))
+  }, [assets])
+
+  // Auto-generated dividend income from stock assets
+  const dividendIncomes = useMemo(() => {
+    return assets
+      .filter(a => a.category === 'stocks' && a.growthRatePA > 0 && a.currentValue > 0)
+      .map(a => ({
+        assetName: a.name,
+        rate: a.growthRatePA,
+        monthlyAmount: (a.currentValue * a.growthRatePA) / 12,
+      }))
+  }, [assets])
 
   const resetForm = () => {
     setForm({ name: '', category: 'salary', monthlyAmount: '' })
@@ -1272,22 +1347,27 @@ function IncomeStep({ store }: { store: FinanceState }) {
 
   const manualIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
   const rentalTotal = rentalIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
-  const totalMonthly = manualIncome + rentalTotal
+  const interestTotal = interestIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
+  const dividendTotal = dividendIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
+  const totalMonthly = manualIncome + rentalTotal + interestTotal + dividendTotal
+
+  const hasAutoIncome = rentalIncomes.length > 0 || interestIncomes.length > 0 || dividendIncomes.length > 0
 
   return (
     <div className="space-y-6">
       <StepHeader
         title="What do you earn?"
-        description="Add your income sources. Include salary, dividends — anything that brings in money. Rental income from your properties is shown automatically."
+        description="Add your income sources. Rental income, savings interest and stock dividends are calculated automatically from your assets."
         icon={Briefcase}
       />
 
-      {/* Auto-generated rental income from properties */}
-      {rentalIncomes.length > 0 && (
+      {/* Auto-generated income from assets */}
+      {hasAutoIncome && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <Building2 className="w-3.5 h-3.5" /> From Your Properties
+            <Sparkles className="w-3.5 h-3.5" /> Auto-Generated from Your Assets
           </p>
+
           {rentalIncomes.map((ri: { propertyName: string; weeklyRent: number; monthlyAmount: number }) => (
             <Card key={ri.propertyName} className="bg-muted/30">
               <CardContent className="p-4 flex items-center justify-between">
@@ -1296,14 +1376,54 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <Building2 className="w-5 h-5 text-sky-500" />
                   </div>
                   <div>
-                    <p className="font-medium">{ri.propertyName} — Rent</p>
+                    <p className="font-medium">{ri.propertyName} \u2014 Rent</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatCurrency(ri.weeklyRent)}/wk × 52 ÷ 12
+                      {formatCurrency(ri.weeklyRent)}/wk \u00D7 52 \u00F7 12
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold tabular-nums">{formatCurrency(ri.monthlyAmount)}</p>
+                  <p className="text-xs text-muted-foreground">/month</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {interestIncomes.map((ii) => (
+            <Card key={ii.assetName} className="bg-muted/30">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <PiggyBank className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{ii.assetName} \u2014 Interest</p>
+                    <p className="text-xs text-muted-foreground">Based on {formatPercent(ii.rate)} p.a.</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold tabular-nums">{formatCurrency(ii.monthlyAmount)}</p>
+                  <p className="text-xs text-muted-foreground">/month</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {dividendIncomes.map((di) => (
+            <Card key={di.assetName} className="bg-muted/30">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{di.assetName} \u2014 Dividends</p>
+                    <p className="text-xs text-muted-foreground">Based on {formatPercent(di.rate)} p.a.</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold tabular-nums">{formatCurrency(di.monthlyAmount)}</p>
                   <p className="text-xs text-muted-foreground">/month</p>
                 </div>
               </CardContent>
@@ -1315,7 +1435,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
       {/* Manual income items */}
       {incomes.length > 0 && (
         <div className="space-y-2">
-          {rentalIncomes.length > 0 && (
+          {hasAutoIncome && (
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
           )}
           {incomes.map((inc: IncomeItem) => (
@@ -1335,17 +1455,10 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
                     <p className="text-xs text-muted-foreground">/month</p>
                   </div>
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => startEdit(inc)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => startEdit(inc)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="text-destructive"
-                    onClick={() => removeIncome(inc.id)}
-                  >
+                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeIncome(inc.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1420,28 +1533,50 @@ function IncomeStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 5: Expenses ──────────────────────────────────────────────────────────
+// -- Step 5: Expenses --
 
 function ExpensesStep({ store }: { store: FinanceState }) {
   const { expenseBudgets, addExpenseBudget, removeExpenseBudget, updateExpenseBudget, liabilities, properties } = store
-  const [expandedGroup, setExpandedGroup] = useState<string | null>('🛒 Living')
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [addingCategory, setAddingCategory] = useState<ExpenseCategory | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
 
-  // Auto-generated property expenses (mortgage repayments)
+  // Auto-generated property expenses (mortgage repayments + running costs)
   const propertyExpenses = useMemo(() => {
-    return liabilities
+    const expenses: { name: string; monthlyAmount: number; type: string }[] = []
+
+    // Mortgage repayments
+    liabilities
       .filter(l => l.category === 'mortgage' && l.minimumRepayment > 0)
-      .map(m => {
-        // Find linked property name
+      .forEach(m => {
         const linkedProp = properties.find((p: Property) => p.mortgageId === m.id)
-        return {
-          name: linkedProp ? `${linkedProp.name} — Mortgage` : m.name,
+        expenses.push({
+          name: linkedProp ? `${linkedProp.name} \u2014 Mortgage` : m.name,
           monthlyAmount: m.minimumRepayment,
           type: m.mortgageType === 'interest_only' ? 'Interest Only' : 'P&I',
-        }
+        })
       })
+
+    // Property running costs
+    properties.forEach((p: Property) => {
+      if (p.councilRatesPA && p.councilRatesPA > 0)
+        expenses.push({ name: `${p.name} \u2014 Council Rates`, monthlyAmount: p.councilRatesPA / 12, type: 'Annual' })
+      if (p.waterRatesPA && p.waterRatesPA > 0)
+        expenses.push({ name: `${p.name} \u2014 Water Rates`, monthlyAmount: p.waterRatesPA / 12, type: 'Annual' })
+      if (p.insurancePA && p.insurancePA > 0)
+        expenses.push({ name: `${p.name} \u2014 Insurance`, monthlyAmount: p.insurancePA / 12, type: 'Annual' })
+      if (p.strataPA && p.strataPA > 0)
+        expenses.push({ name: `${p.name} \u2014 Strata`, monthlyAmount: p.strataPA / 12, type: 'Annual' })
+      if (p.maintenanceBudgetPA && p.maintenanceBudgetPA > 0)
+        expenses.push({ name: `${p.name} \u2014 Maintenance`, monthlyAmount: p.maintenanceBudgetPA / 12, type: 'Annual' })
+      if (p.type === 'investment' && p.propertyManagementPct && p.propertyManagementPct > 0 && p.weeklyRent && p.weeklyRent > 0)
+        expenses.push({ name: `${p.name} \u2014 Property Mgmt (${p.propertyManagementPct}%)`, monthlyAmount: p.weeklyRent * 52 * p.propertyManagementPct / 100 / 12, type: '% of rent' })
+      if (p.type === 'investment' && p.landTaxPA && p.landTaxPA > 0)
+        expenses.push({ name: `${p.name} \u2014 Land Tax`, monthlyAmount: p.landTaxPA / 12, type: 'Annual' })
+    })
+
+    return expenses
   }, [liabilities, properties])
 
   const propertyExpenseTotal = propertyExpenses.reduce((s: number, e: { monthlyAmount: number }) => s + e.monthlyAmount, 0)
@@ -1478,7 +1613,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you spend?"
-        description="Go through each category and enter your monthly budget. Mortgage repayments from your properties are shown automatically."
+        description="Go through each category and enter your monthly budget. Property costs from your assets are shown automatically."
         icon={Receipt}
       />
 
@@ -1493,7 +1628,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
       {propertyExpenses.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <Home className="w-3.5 h-3.5" /> Property Expenses
+            <Home className="w-3.5 h-3.5" /> Property Expenses (Auto)
           </p>
           {propertyExpenses.map((pe: { name: string; monthlyAmount: number; type: string }, i: number) => (
             <Card key={i} className="bg-muted/30">
@@ -1504,7 +1639,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
                   </div>
                   <div>
                     <p className="font-medium">{pe.name}</p>
-                    <p className="text-xs text-muted-foreground">{pe.type} · Auto from property setup</p>
+                    <p className="text-xs text-muted-foreground">{pe.type} &middot; Auto from property setup</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -1545,7 +1680,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
                   {groupTotal > 0 && (
                     <span className="text-sm font-semibold tabular-nums">{formatCurrency(groupTotal)}/mo</span>
                   )}
-                  <span className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▾</span>
+                  <span className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>{'\u25BE'}</span>
                 </div>
               </button>
 
@@ -1619,7 +1754,7 @@ function ExpensesStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 6: Projections ───────────────────────────────────────────────────────
+// -- Step 6: Projections --
 
 function ProjectionsStep({ store }: { store: FinanceState }) {
   const { projectionSettings, updateProjectionSettings, assets, properties, liabilities } = store
@@ -1680,7 +1815,6 @@ function ProjectionsStep({ store }: { store: FinanceState }) {
         </CardContent>
       </Card>
 
-      {/* Summary of what will be projected */}
       <Card className="bg-muted/30">
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground mb-3">Your projection will include:</p>
@@ -1700,28 +1834,48 @@ function ProjectionsStep({ store }: { store: FinanceState }) {
   )
 }
 
-// ── Step 7: Summary ───────────────────────────────────────────────────────────
+// -- Step 7: Summary --
 
 function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () => void }) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = store
   const [revealed, setRevealed] = useState(false)
 
-  // Include auto-generated rental income in totals
   const rentalIncome = properties
     .filter((p: Property) => p.type === 'investment' && p.weeklyRent && p.weeklyRent > 0)
     .reduce((s: number, p: Property) => s + (p.weeklyRent! * 52) / 12, 0)
 
-  // Include auto-generated mortgage expenses in totals
   const mortgageExpenses = liabilities
     .filter(l => l.category === 'mortgage' && l.minimumRepayment > 0)
     .reduce((s: number, l) => s + l.minimumRepayment, 0)
+
+  // Property running costs
+  const propertyRunningCosts = properties.reduce((s: number, p: Property) => {
+    let cost = 0
+    if (p.councilRatesPA) cost += p.councilRatesPA / 12
+    if (p.waterRatesPA) cost += p.waterRatesPA / 12
+    if (p.insurancePA) cost += p.insurancePA / 12
+    if (p.strataPA) cost += p.strataPA / 12
+    if (p.maintenanceBudgetPA) cost += p.maintenanceBudgetPA / 12
+    if (p.type === 'investment' && p.propertyManagementPct && p.weeklyRent)
+      cost += p.weeklyRent * 52 * p.propertyManagementPct / 100 / 12
+    if (p.type === 'investment' && p.landTaxPA) cost += p.landTaxPA / 12
+    return s + cost
+  }, 0)
+
+  // Interest + dividend income from assets
+  const assetIncome = assets.reduce((s, a) => {
+    if ((a.category === 'cash' || a.category === 'stocks') && a.growthRatePA > 0 && a.currentValue > 0) {
+      return s + (a.currentValue * a.growthRatePA) / 12
+    }
+    return s
+  }, 0)
 
   const totalAssets = assets.reduce((s: number, a: { currentValue: number }) => s + a.currentValue, 0)
     + properties.reduce((s: number, p: { currentValue: number }) => s + p.currentValue, 0)
   const totalLiabilities = liabilities.reduce((s: number, l: { currentBalance: number }) => s + l.currentBalance, 0)
   const netWealth = totalAssets - totalLiabilities
-  const monthlyIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0) + rentalIncome
-  const monthlyExpenses = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0) + mortgageExpenses
+  const monthlyIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0) + rentalIncome + assetIncome
+  const monthlyExpenses = expenseBudgets.reduce((s: number, b: { monthlyBudget: number }) => s + b.monthlyBudget, 0) + mortgageExpenses + propertyRunningCosts
   const monthlySurplus = monthlyIncome - monthlyExpenses
 
   useEffect(() => {
@@ -1737,18 +1891,16 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
         icon={Sparkles}
       />
 
-      {/* Net Wealth reveal */}
       <div className={`text-center transition-all duration-1000 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <p className="text-sm text-muted-foreground uppercase tracking-widest mb-2">Net Wealth</p>
         <p className={`text-5xl sm:text-6xl font-extrabold tracking-tight tabular-nums ${netWealth >= 0 ? 'text-primary' : 'text-red-400'}`}>
           {formatCompact(netWealth)}
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          {formatCurrency(totalAssets)} in assets − {formatCurrency(totalLiabilities)} in debts
+          {formatCurrency(totalAssets)} in assets &minus; {formatCurrency(totalLiabilities)} in debts
         </p>
       </div>
 
-      {/* Breakdown cards */}
       <div className={`grid grid-cols-2 gap-3 transition-all duration-1000 delay-300 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <Card>
           <CardContent className="p-4 text-center">
@@ -1757,6 +1909,7 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
             <p className="text-xs text-muted-foreground mt-1">
               {incomes.length} source{incomes.length !== 1 ? 's' : ''}
               {rentalIncome > 0 ? ' + rental' : ''}
+              {assetIncome > 0 ? ' + interest/dividends' : ''}
             </p>
           </CardContent>
         </Card>
@@ -1767,6 +1920,7 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
             <p className="text-xs text-muted-foreground mt-1">
               {expenseBudgets.length} categor{expenseBudgets.length !== 1 ? 'ies' : 'y'}
               {mortgageExpenses > 0 ? ' + mortgage' : ''}
+              {propertyRunningCosts > 0 ? ' + property costs' : ''}
             </p>
           </CardContent>
         </Card>
@@ -1783,7 +1937,6 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
         </Card>
       </div>
 
-      {/* Asset breakdown */}
       {(assets.length > 0 || properties.length > 0) && (
         <div className={`transition-all duration-1000 delay-500 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Asset Breakdown</p>
@@ -1812,7 +1965,6 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
         </div>
       )}
 
-      {/* Finish */}
       <div className={`transition-all duration-1000 delay-700 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <Button size="lg" onClick={onFinish} className="w-full gap-2 text-base py-6">
           <Sparkles className="w-5 h-5" /> Go to Dashboard
@@ -1825,7 +1977,7 @@ function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () =>
   )
 }
 
-// ── Shared Components ─────────────────────────────────────────────────────────
+// -- Shared Components --
 
 function StepHeader({ title, description, icon: Icon }: { title: string; description: string; icon: typeof Sparkles }) {
   return (

@@ -10,7 +10,9 @@ export type ExpenseCategory =
   | 'clothing' | 'health_fitness' | 'education'
   | 'childcare' | 'pet_expenses' | 'phone_internet'
   | 'personal_care' | 'gifts_donations'
-  | 'hecs_repayment' | 'tax' | 'other'
+  | 'hecs_repayment' | 'tax'
+  | 'property_management' | 'land_tax' | 'maintenance' | 'building_insurance'
+  | 'other'
 
 export interface BaseEntity {
   id: string

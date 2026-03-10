@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, TrendingDown, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,11 +11,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
-import type { ExpenseBudget, ExpenseCategory } from '@/types/models'
+import type { ExpenseBudget, ExpenseCategory, Property } from '@/types/models'
 
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
   council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
+  property_management: 'Property Management', land_tax: 'Land Tax',
+  maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
   insurance_home: 'Home Insurance', insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
@@ -32,6 +34,10 @@ const EXPENSE_GROUP_COLORS: Record<string, string> = {
   council_rates: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   water_rates: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
   strata: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  property_management: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  land_tax: 'bg-amber-600/10 text-amber-600 border-amber-600/20',
+  maintenance: 'bg-orange-400/10 text-orange-400 border-orange-400/20',
+  building_insurance: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
   insurance_home: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
   insurance_health: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
   insurance_car: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
@@ -59,9 +65,14 @@ const EXPENSE_GROUP_COLORS: Record<string, string> = {
 // Super-categories for grouping
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
   {
-    label: 'Housing',
+    label: 'Property',
     icon: '🏠',
-    categories: ['mortgage_repayment', 'rent', 'council_rates', 'water_rates', 'strata', 'utilities'],
+    categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'],
+  },
+  {
+    label: 'Housing',
+    icon: '🏡',
+    categories: ['rent', 'utilities'],
   },
   {
     label: 'Insurance',
@@ -85,8 +96,17 @@ const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCatego
   },
 ]
 
+// Auto-generated property expense item type
+interface AutoPropertyExpenseItem {
+  key: string
+  propertyName: string
+  label: string
+  category: ExpenseCategory
+  monthlyAmount: number
+}
+
 export function ExpensesPage() {
-  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
+  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, properties, liabilities } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ExpenseBudget | null>(null)
@@ -130,14 +150,125 @@ export function ExpensesPage() {
     })
   }
 
-  const total = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+  // Auto-generated property expense cards derived from property data
+  const autoPropertyExpenses = useMemo<AutoPropertyExpenseItem[]>(() => {
+    const items: AutoPropertyExpenseItem[] = []
+    for (const prop of properties as Property[]) {
+      // Mortgage repayment from linked liability
+      if (prop.mortgageId) {
+        const liability = liabilities.find(l => l.id === prop.mortgageId)
+        if (liability && liability.minimumRepayment > 0) {
+          items.push({
+            key: `${prop.id}-mortgage`,
+            propertyName: prop.name,
+            label: `${prop.name} — Mortgage`,
+            category: 'mortgage_repayment',
+            monthlyAmount: liability.minimumRepayment,
+          })
+        }
+      }
+      // Council rates
+      if (prop.councilRatesPA && prop.councilRatesPA > 0) {
+        items.push({
+          key: `${prop.id}-council`,
+          propertyName: prop.name,
+          label: `${prop.name} — Council Rates`,
+          category: 'council_rates',
+          monthlyAmount: prop.councilRatesPA / 12,
+        })
+      }
+      // Water rates
+      if (prop.waterRatesPA && prop.waterRatesPA > 0) {
+        items.push({
+          key: `${prop.id}-water`,
+          propertyName: prop.name,
+          label: `${prop.name} — Water Rates`,
+          category: 'water_rates',
+          monthlyAmount: prop.waterRatesPA / 12,
+        })
+      }
+      // Building / Landlord Insurance
+      if (prop.insurancePA && prop.insurancePA > 0) {
+        items.push({
+          key: `${prop.id}-insurance`,
+          propertyName: prop.name,
+          label: `${prop.name} — Insurance`,
+          category: 'building_insurance',
+          monthlyAmount: prop.insurancePA / 12,
+        })
+      }
+      // Strata
+      if (prop.strataPA && prop.strataPA > 0) {
+        items.push({
+          key: `${prop.id}-strata`,
+          propertyName: prop.name,
+          label: `${prop.name} — Strata`,
+          category: 'strata',
+          monthlyAmount: prop.strataPA / 12,
+        })
+      }
+      // Property management
+      if (prop.weeklyRent && prop.weeklyRent > 0 && prop.propertyManagementPct && prop.propertyManagementPct > 0) {
+        const monthly = (prop.weeklyRent * 52 * prop.propertyManagementPct) / 100 / 12
+        if (monthly > 0) {
+          items.push({
+            key: `${prop.id}-mgmt`,
+            propertyName: prop.name,
+            label: `${prop.name} — Property Management`,
+            category: 'property_management',
+            monthlyAmount: monthly,
+          })
+        }
+      }
+      // Land tax
+      if (prop.landTaxPA && prop.landTaxPA > 0) {
+        items.push({
+          key: `${prop.id}-landtax`,
+          propertyName: prop.name,
+          label: `${prop.name} — Land Tax`,
+          category: 'land_tax',
+          monthlyAmount: prop.landTaxPA / 12,
+        })
+      }
+      // Maintenance
+      if (prop.maintenanceBudgetPA && prop.maintenanceBudgetPA > 0) {
+        items.push({
+          key: `${prop.id}-maintenance`,
+          propertyName: prop.name,
+          label: `${prop.name} — Maintenance`,
+          category: 'maintenance',
+          monthlyAmount: prop.maintenanceBudgetPA / 12,
+        })
+      }
+    }
+    return items
+  }, [properties, liabilities])
 
-  // Group expenses by super-category
+  const autoPropertyTotal = autoPropertyExpenses.reduce((s, e) => s + e.monthlyAmount, 0)
+  const manualTotal = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+  const total = manualTotal + autoPropertyTotal
+
+  // Group manual expenses by super-category
   const groupedExpenses = SUPER_CATEGORIES.map(group => {
     const items = expenseBudgets.filter(b => group.categories.includes(b.category))
     const groupTotal = items.reduce((s, b) => s + b.monthlyBudget, 0)
     return { ...group, items, groupTotal }
   }).filter(g => g.items.length > 0)
+
+  // Group auto expenses by property name
+  const autoExpensesByProperty = useMemo(() => {
+    const map = new Map<string, AutoPropertyExpenseItem[]>()
+    for (const item of autoPropertyExpenses) {
+      const existing = map.get(item.propertyName) ?? []
+      existing.push(item)
+      map.set(item.propertyName, existing)
+    }
+    return Array.from(map.entries()).map(([propertyName, items]) => ({
+      propertyName,
+      items,
+      groupTotal: items.reduce((s, i) => s + i.monthlyAmount, 0),
+    }))
+  }, [autoPropertyExpenses])
 
   return (
     <div className="space-y-6">
@@ -185,7 +316,7 @@ export function ExpensesPage() {
         </CardHeader>
       </Card>
 
-      {expenseBudgets.length === 0 ? (
+      {expenseBudgets.length === 0 && autoPropertyExpenses.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <TrendingDown className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
@@ -194,6 +325,63 @@ export function ExpensesPage() {
         </div>
       ) : (
         <div className="space-y-4">
+
+          {/* Auto-generated property expenses grouped by property */}
+          {autoExpensesByProperty.length > 0 && (
+            <div>
+              <button
+                onClick={() => toggleGroup('__auto_property__')}
+                className="w-full flex items-center justify-between px-1 py-2 group cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  {collapsedGroups.has('__auto_property__') ? (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-semibold">🏠 Property</span>
+                  <Badge variant="outline" className="text-xs">{autoPropertyExpenses.length}</Badge>
+                  <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">🔗 Auto</Badge>
+                </div>
+                <span className="text-sm font-semibold text-red-500">{formatCurrency(autoPropertyTotal)}/mo</span>
+              </button>
+
+              {!collapsedGroups.has('__auto_property__') && (
+                <div className="space-y-3 pl-6">
+                  {autoExpensesByProperty.map(({ propertyName, items, groupTotal }) => (
+                    <div key={propertyName}>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center justify-between">
+                        <span>{propertyName}</span>
+                        <span className="tabular-nums">{formatCurrency(groupTotal)}/mo</span>
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {items.map(item => (
+                          <Card key={item.key} className="bg-muted/30 border-dashed">
+                            <CardContent className="p-5">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold">{item.label}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className={EXPENSE_GROUP_COLORS[item.category] ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'}>
+                                      {CATEGORY_LABELS[item.category]}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">🔗 Auto</Badge>
+                                  </div>
+                                  <p className="text-2xl font-extrabold tabular-nums tracking-tight mt-2 text-red-500">{formatCurrency(item.monthlyAmount)}/mo</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Manual expense groups */}
           {groupedExpenses.map(group => {
             const isCollapsed = collapsedGroups.has(group.label)
             return (

@@ -15,6 +15,11 @@ import {
   Sun,
   ArrowUpRight,
   Sparkles,
+  PiggyBank,
+  Target,
+  Car,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -32,11 +37,27 @@ const navSections = [
     ],
   },
   {
-    label: 'Money Flow',
+    label: 'Balance Sheet',
     items: [
-      { to: '/assets', icon: Wallet, label: 'Assets' },
-      { to: '/properties', icon: Home, label: 'Properties' },
+      {
+        to: '/assets',
+        icon: Wallet,
+        label: 'Assets',
+        expandable: true,
+        subItems: [
+          { to: '/assets?category=cash', label: 'Cash & Savings', icon: PiggyBank },
+          { to: '/assets?category=stocks', label: 'Stocks / ETFs', icon: TrendingUp },
+          { to: '/assets?category=super', label: 'Superannuation', icon: Target },
+          { to: '/assets?category=vehicles', label: 'Vehicles', icon: Car },
+          { to: '/assets?category=property', label: 'Property', icon: Home },
+        ],
+      },
       { to: '/liabilities', icon: CreditCard, label: 'Liabilities' },
+    ],
+  },
+  {
+    label: 'Income Statement',
+    items: [
       { to: '/income', icon: TrendingUp, label: 'Income' },
       { to: '/expenses', icon: Receipt, label: 'Expenses' },
     ],
@@ -53,8 +74,7 @@ const navSections = [
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Your financial overview at a glance' },
-  '/assets': { title: 'Assets', subtitle: 'Manage your cash, stocks, super & more' },
-  '/properties': { title: 'Properties', subtitle: 'Track property values and equity' },
+  '/assets': { title: 'Assets', subtitle: 'Manage your cash, stocks, super, vehicles & property' },
   '/liabilities': { title: 'Liabilities', subtitle: 'Mortgages, loans and debts' },
   '/income': { title: 'Income', subtitle: 'Your income sources' },
   '/expenses': { title: 'Expenses', subtitle: 'Budget and track spending' },
@@ -92,6 +112,12 @@ function BrandLogo() {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const [expandedNav, setExpandedNav] = useState<string | null>('/assets')
+
+  const toggleExpand = (to: string) => {
+    setExpandedNav((prev) => (prev === to ? null : to))
+  }
+
   return (
     <nav className="flex-1 px-3 py-2 space-y-5 overflow-y-auto">
       {navSections.map((section) => (
@@ -100,31 +126,113 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             {section.label}
           </p>
           <div className="space-y-0.5">
-            {section.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={'end' in item ? item.end : undefined}
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'bg-emerald-subtle text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
-                    )}
-                    <item.icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                    {item.label}
-                  </>
-                )}
-              </NavLink>
-            ))}
+            {section.items.map((item) => {
+              const isExpandable = 'expandable' in item && item.expandable
+              const subItems = 'subItems' in item ? item.subItems : undefined
+              const isExpanded = expandedNav === item.to
+
+              return (
+                <div key={item.to}>
+                  {isExpandable ? (
+                    /* Expandable parent row: NavLink on the left, chevron toggle on the right */
+                    <div className="flex items-center rounded-lg overflow-hidden">
+                      <NavLink
+                        to={item.to}
+                        end={'end' in item ? item.end : undefined}
+                        onClick={onNavigate}
+                        className={({ isActive }) =>
+                          `group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
+                            isActive
+                              ? 'bg-emerald-subtle text-primary'
+                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+                            )}
+                            <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                            <span className="truncate">{item.label}</span>
+                          </>
+                        )}
+                      </NavLink>
+                      {/* Chevron toggle */}
+                      <button
+                        onClick={() => toggleExpand(item.to)}
+                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                        className="flex items-center justify-center h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150 mr-1"
+                      >
+                        {isExpanded
+                          ? <ChevronDown className="h-3.5 w-3.5" />
+                          : <ChevronRight className="h-3.5 w-3.5" />
+                        }
+                      </button>
+                    </div>
+                  ) : (
+                    /* Regular nav item */
+                    <NavLink
+                      to={item.to}
+                      end={'end' in item ? item.end : undefined}
+                      onClick={onNavigate}
+                      className={({ isActive }) =>
+                        `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                          isActive
+                            ? 'bg-emerald-subtle text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {isActive && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+                          )}
+                          <item.icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+                          {item.label}
+                        </>
+                      )}
+                    </NavLink>
+                  )}
+
+                  {/* Sub-items with smooth expand/collapse animation */}
+                  {isExpandable && subItems && (
+                    <div
+                      className="overflow-hidden transition-all duration-200 ease-in-out"
+                      style={{
+                        maxHeight: isExpanded ? `${subItems.length * 40}px` : '0px',
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      <div className="pl-4 pr-1 pb-0.5 space-y-0.5">
+                        {subItems.map((sub) => (
+                          <NavLink
+                            key={sub.to}
+                            to={sub.to}
+                            onClick={onNavigate}
+                            className={({ isActive }) =>
+                              `group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+                                isActive
+                                  ? 'bg-emerald-subtle text-primary'
+                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                              }`
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <sub.icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                                {sub.label}
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       ))}
