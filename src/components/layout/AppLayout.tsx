@@ -189,8 +189,11 @@ function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 hidden md:flex items-center h-14 border-b border-border/50 bg-background/80 backdrop-blur-md px-8">
-      <div>
+      <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{page.title}</h1>
+        {page.subtitle && (
+          <span className="text-sm text-muted-foreground hidden lg:inline">— {page.subtitle}</span>
+        )}
       </div>
     </header>
   )
