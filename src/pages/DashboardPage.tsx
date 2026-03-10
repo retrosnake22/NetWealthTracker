@@ -90,9 +90,34 @@ export function DashboardPage() {
   const netWealth        = calculateNetWealth(assets, properties, liabilities)
   const totalAssets      = calculateTotalAssets(assets, properties)
   const totalLiabilities = calculateTotalLiabilities(liabilities)
-  const monthlyIncome    = calculateMonthlyIncome(incomes)
-  const monthlyExpenses  = calculateMonthlyExpenses(expenseBudgets)
-  const monthlyCashflow  = calculateMonthlyCashflow(incomes, expenseBudgets)
+  // Base income + rental income from investment properties
+  const baseIncome = calculateMonthlyIncome(incomes)
+  const rentalIncome = properties
+    .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
+    .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
+  const monthlyIncome = baseIncome + rentalIncome
+
+  // Base expenses + mortgage repayments + property running costs
+  const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
+  const mortgageExpenses = liabilities.reduce((sum, l) => {
+    const repayment = l.monthlyRepayment ?? 0
+    if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
+    if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
+    return sum + repayment
+  }, 0)
+  const propertyRunningCosts = properties.reduce((sum, p) => {
+    return sum
+      + (p.councilRatesPA ?? 0) / 12
+      + (p.waterRatesPA ?? 0) / 12
+      + (p.insurancePA ?? 0) / 12
+      + (p.strataPA ?? 0) / 12
+      + (p.maintenancePA ?? 0) / 12
+      + (p.propertyMgmtPA ?? 0) / 12
+      + (p.landTaxPA ?? 0) / 12
+  }, 0)
+  const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
+
+  const monthlyCashflow = monthlyIncome - monthlyExpenses
   const savingsRate      = calculateSavingsRate(incomes, expenseBudgets)
   const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
 
