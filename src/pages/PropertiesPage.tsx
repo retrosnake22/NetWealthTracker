@@ -234,7 +234,8 @@ export function PropertiesPage() {
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <Building2 className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No properties yet</h3>
-          <p className="text-muted-foreground">Add your home, investment properties, and more.</p>
+          <p className="text-muted-foreground mb-4">Add your home, investment properties, and more.</p>
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Add Your First Property</Button>
         </div>
       ) : (
         <div className="space-y-4">

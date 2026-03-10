@@ -137,7 +137,8 @@ export function ExpensesPage() {
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <TrendingDown className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
-          <p className="text-muted-foreground">Set your monthly budget for each category.</p>
+          <p className="text-muted-foreground mb-4">Set your monthly budget for each category.</p>
+          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Expense</Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

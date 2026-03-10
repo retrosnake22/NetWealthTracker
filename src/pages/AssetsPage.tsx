@@ -164,7 +164,8 @@ export function AssetsPage() {
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <Wallet className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No assets yet</h3>
-          <p className="text-muted-foreground">Add your cash, stocks, super and other assets.</p>
+          <p className="text-muted-foreground mb-4">Add your cash, stocks, super and other assets.</p>
+          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Asset</Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
