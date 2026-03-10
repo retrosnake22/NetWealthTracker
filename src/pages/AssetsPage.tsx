@@ -9,22 +9,24 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
-import type { Asset, Property, AssetCategory } from '@/models'
-import { formatCurrency } from '@/lib/utils'
+import type { Asset, Property, AssetCategory } from '@/types/models'
+import { formatCurrency } from '@/lib/format'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash & Savings',
+  property: 'Property',
   stocks: 'Stocks / ETFs',
   super: 'Superannuation',
-  vehicle: 'Vehicles',
+  vehicles: 'Vehicles',
   other: 'Other',
 }
 
 const CATEGORY_ICONS: Record<AssetCategory, string> = {
   cash: '💰',
+  property: '🏠',
   stocks: '📈',
   super: '🎯',
-  vehicle: '🚗',
+  vehicles: '🚗',
   other: '📦',
 }
 
@@ -37,14 +39,14 @@ export default function AssetsPage() {
   // Asset editing
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [showAddAsset, setShowAddAsset] = useState(false)
-  const [assetForm, setAssetForm] = useState({ name: '', value: '', growthRate: '3', category: 'cash' as AssetCategory })
+  const [assetForm, setAssetForm] = useState({ name: '', value: '', growthRatePA: '3', category: 'cash' as AssetCategory })
 
   // Property editing
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [showAddProperty, setShowAddProperty] = useState(false)
   const [propForm, setPropForm] = useState({
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    currentValue: '', growthRate: '3', weeklyRent: '',
+    currentValue: '', growthRatePA: '3', weeklyRent: '',
     councilRatesPA: '', waterRatesPA: '', insurancePA: '',
     strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
   })
@@ -62,12 +64,12 @@ export default function AssetsPage() {
 
   // --- Asset handlers ---
   function openAddAsset() {
-    setAssetForm({ name: '', value: '', growthRate: '3', category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory })
+    setAssetForm({ name: '', value: '', growthRatePA: '3', category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory })
     setEditingAsset(null)
     setShowAddAsset(true)
   }
   function openEditAsset(a: Asset) {
-    setAssetForm({ name: a.name, value: String(a.currentValue), growthRate: String((a.growthRate ?? 0) * 100), category: a.category })
+    setAssetForm({ name: a.name, value: String(a.currentValue), growthRatePA: String((a.growthRatePA ?? 0) * 100), category: a.category })
     setEditingAsset(a)
     setShowAddAsset(true)
   }
@@ -75,7 +77,7 @@ export default function AssetsPage() {
     const data = {
       name: assetForm.name,
       currentValue: parseFloat(assetForm.value) || 0,
-      growthRate: parseFloat(assetForm.growthRate) / 100 || 0,
+      growthRatePA: parseFloat(assetForm.growthRatePA) / 100 || 0,
       category: assetForm.category,
     }
     if (editingAsset) {
@@ -90,7 +92,7 @@ export default function AssetsPage() {
   // --- Property handlers ---
   function openAddProperty() {
     setPropForm({
-      name: '', type: 'primary_residence', currentValue: '', growthRate: '3', weeklyRent: '',
+      name: '', type: 'primary_residence', currentValue: '', growthRatePA: '3', weeklyRent: '',
       councilRatesPA: '', waterRatesPA: '', insurancePA: '',
       strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
     })
@@ -102,7 +104,7 @@ export default function AssetsPage() {
       name: p.name,
       type: p.type,
       currentValue: String(p.currentValue),
-      growthRate: String((p.growthRate ?? 0) * 100),
+      growthRatePA: String((p.growthRatePA ?? 0) * 100),
       weeklyRent: String(p.weeklyRent ?? ''),
       councilRatesPA: String((p.councilRatesPA ?? 0) / 4 || ''),
       waterRatesPA: String((p.waterRatesPA ?? 0) / 4 || ''),
@@ -120,7 +122,7 @@ export default function AssetsPage() {
       name: propForm.name,
       type: propForm.type,
       currentValue: parseFloat(propForm.currentValue) || 0,
-      growthRate: parseFloat(propForm.growthRate) / 100 || 0,
+      growthRatePA: parseFloat(propForm.growthRatePA) / 100 || 0,
       weeklyRent: parseFloat(propForm.weeklyRent) || 0,
       councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
       waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
@@ -178,7 +180,7 @@ export default function AssetsPage() {
                   <span className="text-xl">{CATEGORY_ICONS[a.category] ?? '📦'}</span>
                   <div>
                     <p className="font-medium">{a.name}</p>
-                    <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[a.category] ?? a.category} · {((a.growthRate ?? 0) * 100).toFixed(1)}% growth</p>
+                    <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[a.category] ?? a.category} · {((a.growthRatePA ?? 0) * 100).toFixed(1)}% growth</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -280,7 +282,7 @@ export default function AssetsPage() {
             </div>
             <div>
               <Label>Annual Growth Rate (%)</Label>
-              <Input type="number" step="0.1" value={assetForm.growthRate} onChange={e => setAssetForm(f => ({ ...f, growthRate: e.target.value }))} />
+              <Input type="number" step="0.1" value={assetForm.growthRatePA} onChange={e => setAssetForm(f => ({ ...f, growthRatePA: e.target.value }))} />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
@@ -319,7 +321,7 @@ export default function AssetsPage() {
             </div>
             <div>
               <Label>Growth Rate (% p.a.)</Label>
-              <Input type="number" step="0.1" value={propForm.growthRate} onChange={e => setPropForm(f => ({ ...f, growthRate: e.target.value }))} />
+              <Input type="number" step="0.1" value={propForm.growthRatePA} onChange={e => setPropForm(f => ({ ...f, growthRatePA: e.target.value }))} />
             </div>
             {propForm.type === 'investment' && (
               <div>
