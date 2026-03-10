@@ -20,7 +20,7 @@ export function ProjectionsPage() {
   const startPoint = data[0]
 
   return (
-    <div className="space-y-6 pt-12 md:pt-0">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Projections</h1>
         <p className="text-muted-foreground mt-1">See where your wealth is heading</p>

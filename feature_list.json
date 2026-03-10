@@ -1,4 +1,23 @@
 {
   "version": "1.0.0",
-  "features": []
+  "features": [
+    {
+      "id": "code-review-improvements",
+      "title": "Code Review & Foundational Improvements",
+      "description": "First-pass code review with bug fixes, dead code removal, dark mode, new Liabilities page, and project documentation.",
+      "status": "done",
+      "priority": "P1",
+      "changes": [
+        "Created PRODUCT.md and ARCHITECTURE.md",
+        "Removed dead Sidebar.tsx (replaced by AppLayout inline sidebar)",
+        "Fixed NavLink root route with `end` prop to prevent always-active state",
+        "Moved mobile padding (pt-12) from every page into AppLayout centralised",
+        "Added dark mode toggle (Sun/Moon) in sidebar with localStorage persistence",
+        "Created .env.example for Supabase configuration",
+        "Fixed type safety: removed `as any` casts in AssetsPage",
+        "Created LiabilitiesPage with full CRUD (mortgages, loans, credit cards, HECS)",
+        "Added Liabilities nav item to sidebar and route to App.tsx"
+      ]
+    }
+  ]
 }

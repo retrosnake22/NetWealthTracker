@@ -96,7 +96,7 @@ export function PropertiesPage() {
   }, 0)
 
   return (
-    <div className="space-y-6 pt-12 md:pt-0">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Properties</h1>

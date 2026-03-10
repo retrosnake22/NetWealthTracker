@@ -62,7 +62,7 @@ export function AssetsPage() {
     if (editId) {
       updateAsset(editId, data)
     } else {
-      addAsset(data as any)
+      addAsset(data)
     }
     resetForm()
     setOpen(false)
@@ -76,7 +76,7 @@ export function AssetsPage() {
       category: asset.category,
       currentValue: String(asset.currentValue),
       growthRatePA: String(asset.growthRatePA * 100),
-      isOffset: (asset as any).isOffset ?? false,
+      isOffset: 'isOffset' in asset ? (asset as { isOffset: boolean }).isOffset : false,
     })
     setEditId(id)
     setOpen(true)
@@ -85,7 +85,7 @@ export function AssetsPage() {
   const total = assets.reduce((s, a) => s + a.currentValue, 0)
 
   return (
-    <div className="space-y-6 pt-12 md:pt-0">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Assets</h1>

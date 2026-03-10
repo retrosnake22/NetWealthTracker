@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { AssetsPage } from '@/pages/AssetsPage'
 import { PropertiesPage } from '@/pages/PropertiesPage'
+import { LiabilitiesPage } from '@/pages/LiabilitiesPage'
 import { IncomePage } from '@/pages/IncomePage'
 import { ExpensesPage } from '@/pages/ExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
@@ -47,6 +48,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/assets" element={<AssetsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/liabilities" element={<LiabilitiesPage />} />
           <Route path="/income" element={<IncomePage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/projections" element={<ProjectionsPage />} />

@@ -48,7 +48,7 @@ export function DashboardPage() {
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0
 
   return (
-    <div className="space-y-6 pt-12 md:pt-0">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Your financial overview at a glance</p>
