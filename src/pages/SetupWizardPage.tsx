@@ -390,10 +390,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
       loanTermYears: linkedMortgage?.loanTermYears ? String(linkedMortgage.loanTermYears) : '30',
       repaymentOverridden: false,
       weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
-      councilRatesPA: prop.councilRatesPA ? String(prop.councilRatesPA) : '',
-      waterRatesPA: prop.waterRatesPA ? String(prop.waterRatesPA) : '',
+      councilRatesPA: prop.councilRatesPA ? String(prop.councilRatesPA / 4) : '',
+      waterRatesPA: prop.waterRatesPA ? String(prop.waterRatesPA / 4) : '',
       insurancePA: prop.insurancePA ? String(prop.insurancePA) : '',
-      strataPA: prop.strataPA ? String(prop.strataPA) : '',
+      strataPA: prop.strataPA ? String(prop.strataPA / 4) : '',
       propertyManagementPct: prop.propertyManagementPct ? String(prop.propertyManagementPct) : '',
       landTaxPA: prop.landTaxPA ? String(prop.landTaxPA) : '',
       maintenanceBudgetPA: prop.maintenanceBudgetPA ? String(prop.maintenanceBudgetPA) : '',
@@ -414,10 +414,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
         currentValue: parseFloat(propForm.currentValue) || 0,
         growthRatePA: pctToFraction(propForm.growthRatePA, 1),
         weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
-        councilRatesPA: parseFloat(propForm.councilRatesPA) || undefined,
-        waterRatesPA: parseFloat(propForm.waterRatesPA) || undefined,
+        councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4 || undefined,
+        waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4 || undefined,
         insurancePA: parseFloat(propForm.insurancePA) || undefined,
-        strataPA: parseFloat(propForm.strataPA) || undefined,
+        strataPA: (parseFloat(propForm.strataPA) || 0) * 4 || undefined,
         propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
         landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
         maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
@@ -480,10 +480,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
       growthRatePA: pctToFraction(propForm.growthRatePA, 1),
       mortgageId,
       weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
-      councilRatesPA: parseFloat(propForm.councilRatesPA) || undefined,
-      waterRatesPA: parseFloat(propForm.waterRatesPA) || undefined,
+      councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4 || undefined,
+      waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4 || undefined,
       insurancePA: parseFloat(propForm.insurancePA) || undefined,
-      strataPA: parseFloat(propForm.strataPA) || undefined,
+      strataPA: (parseFloat(propForm.strataPA) || 0) * 4 || undefined,
       propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
       landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
       maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
@@ -674,7 +674,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Council Rates ($ p.a.)</Label>
+                      <Label className="text-xs">Council Rates ($/quarter)</Label>
                       <CurrencyInput
                         value={propForm.councilRatesPA}
                         onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })}
@@ -682,7 +682,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Water Rates ($ p.a.)</Label>
+                      <Label className="text-xs">Water Rates ($/quarter)</Label>
                       <CurrencyInput
                         value={propForm.waterRatesPA}
                         onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })}
@@ -698,7 +698,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Strata / Body Corp ($ p.a.)</Label>
+                      <Label className="text-xs">Strata / Body Corp ($/quarter)</Label>
                       <CurrencyInput
                         value={propForm.strataPA}
                         onValueChange={v => setPropForm({ ...propForm, strataPA: v })}
@@ -1561,13 +1561,13 @@ function ExpensesStep({ store }: { store: FinanceState }) {
     // Property running costs
     properties.forEach((p: Property) => {
       if (p.councilRatesPA && p.councilRatesPA > 0)
-        expenses.push({ name: `${p.name} \u2014 Council Rates`, monthlyAmount: p.councilRatesPA / 12, type: 'Annual' })
+        expenses.push({ name: `${p.name} \u2014 Council Rates`, monthlyAmount: p.councilRatesPA / 12, type: 'Quarterly' })
       if (p.waterRatesPA && p.waterRatesPA > 0)
-        expenses.push({ name: `${p.name} \u2014 Water Rates`, monthlyAmount: p.waterRatesPA / 12, type: 'Annual' })
+        expenses.push({ name: `${p.name} \u2014 Water Rates`, monthlyAmount: p.waterRatesPA / 12, type: 'Quarterly' })
       if (p.insurancePA && p.insurancePA > 0)
         expenses.push({ name: `${p.name} \u2014 Insurance`, monthlyAmount: p.insurancePA / 12, type: 'Annual' })
       if (p.strataPA && p.strataPA > 0)
-        expenses.push({ name: `${p.name} \u2014 Strata`, monthlyAmount: p.strataPA / 12, type: 'Annual' })
+        expenses.push({ name: `${p.name} \u2014 Strata`, monthlyAmount: p.strataPA / 12, type: 'Quarterly' })
       if (p.maintenanceBudgetPA && p.maintenanceBudgetPA > 0)
         expenses.push({ name: `${p.name} \u2014 Maintenance`, monthlyAmount: p.maintenanceBudgetPA / 12, type: 'Annual' })
       if (p.type === 'investment' && p.propertyManagementPct && p.propertyManagementPct > 0 && p.weeklyRent && p.weeklyRent > 0)
