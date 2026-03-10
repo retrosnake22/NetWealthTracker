@@ -30,17 +30,32 @@ export function DashboardPage() {
     projectionSettings.projectionYears
   )
 
-  // Asset breakdown for pie chart
-  const categoryTotals = new Map<string, number>()
+  // Asset breakdown for pie chart — colors match badge colors on Assets page
+  const PIE_COLORS: Record<string, string> = {
+    cash: '#10b981',      // emerald-500
+    property: '#3b82f6',  // blue-500
+    stocks: '#6366f1',    // indigo-500
+    super: '#8b5cf6',     // violet-500
+    vehicles: '#f59e0b',  // amber-500
+    other: '#6b7280',     // gray-500
+  }
+  const categoryTotals = new Map<string, { value: number; color: string }>()
   assets.forEach(a => {
     const label = a.category.charAt(0).toUpperCase() + a.category.slice(1)
-    categoryTotals.set(label, (categoryTotals.get(label) ?? 0) + a.currentValue)
+    const existing = categoryTotals.get(label)
+    categoryTotals.set(label, {
+      value: (existing?.value ?? 0) + a.currentValue,
+      color: PIE_COLORS[a.category] ?? '#6b7280',
+    })
   })
   if (properties.length > 0) {
-    categoryTotals.set('Property', properties.reduce((s, p) => s + p.currentValue, 0))
+    categoryTotals.set('Property', {
+      value: properties.reduce((s, p) => s + p.currentValue, 0),
+      color: PIE_COLORS.property,
+    })
   }
-  const breakdownData = Array.from(categoryTotals.entries()).map(([name, value]) => ({
-    name, value, color: '',
+  const breakdownData = Array.from(categoryTotals.entries()).map(([name, data]) => ({
+    name, value: data.value, color: data.color,
   }))
 
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0

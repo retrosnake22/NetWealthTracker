@@ -17,6 +17,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { useFinanceStore } from '@/stores/useFinanceStore'
+import { calculateNetWealth } from '@/lib/calculations'
+import { formatCurrency } from '@/lib/format'
 
 // ─── Nav structure with sections ───
 
@@ -112,7 +115,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               >
                 {({ isActive }) => (
                   <>
-                    {/* Active indicator bar */}
                     {isActive && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
                     )}
@@ -126,6 +128,20 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       ))}
     </nav>
+  )
+}
+
+function NetWealthMini() {
+  const { assets, properties, liabilities } = useFinanceStore()
+  const netWealth = calculateNetWealth(assets, properties, liabilities)
+
+  return (
+    <div className="mx-3 mb-2 p-3 rounded-lg bg-emerald-subtle">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Net Wealth</p>
+      <p className={`text-lg font-bold tabular-nums ${netWealth >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+        {formatCurrency(netWealth)}
+      </p>
+    </div>
   )
 }
 
@@ -165,7 +181,7 @@ function SidebarFooter() {
         Sign Out
       </Button>
       {email && (
-        <p className="text-[11px] text-muted-foreground/60 truncate px-3 pt-1">{email}</p>
+        <p className="text-[11px] text-muted-foreground/60 truncate px-3 pt-1" title={email}>{email}</p>
       )}
     </div>
   )
@@ -178,6 +194,7 @@ function DesktopSidebar() {
         <BrandLogo />
       </div>
       <SidebarNav />
+      <NetWealthMini />
       <SidebarFooter />
     </aside>
   )
@@ -192,7 +209,7 @@ function TopBar() {
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{page.title}</h1>
         {page.subtitle && (
-          <span className="text-sm text-muted-foreground hidden lg:inline">— {page.subtitle}</span>
+          <span className="text-sm text-muted-foreground hidden lg:inline">&mdash; {page.subtitle}</span>
         )}
       </div>
     </header>
@@ -219,6 +236,7 @@ function MobileHeader() {
                 <BrandLogo />
               </div>
               <SidebarNav onNavigate={() => setOpen(false)} />
+              <NetWealthMini />
               <SidebarFooter />
             </div>
           </SheetContent>

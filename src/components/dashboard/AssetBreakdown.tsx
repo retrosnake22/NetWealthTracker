@@ -6,8 +6,6 @@ interface AssetBreakdownProps {
   data: Array<{ name: string; value: number; color: string }>
 }
 
-const COLORS = ['#10b981', '#34d399', '#6ee7b7', '#3b82f6', '#8b5cf6', '#f59e0b']
-
 export function AssetBreakdown({ data }: AssetBreakdownProps) {
   const empty = data.length === 0
 
@@ -37,8 +35,8 @@ export function AssetBreakdown({ data }: AssetBreakdownProps) {
                     dataKey="value"
                     strokeWidth={0}
                   >
-                    {data.map((_, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    {data.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -58,12 +56,12 @@ export function AssetBreakdown({ data }: AssetBreakdownProps) {
 
             {/* Legend */}
             <div className="mt-4 space-y-3">
-              {data.map((item, i) => (
+              {data.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                      style={{ backgroundColor: item.color }}
                     />
                     <span className="text-muted-foreground">{item.name}</span>
                   </div>

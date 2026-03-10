@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, TrendingDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, TrendingDown, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -55,11 +55,41 @@ const EXPENSE_GROUP_COLORS: Record<string, string> = {
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 }
 
+// Super-categories for grouping
+const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
+  {
+    label: 'Housing',
+    icon: '🏠',
+    categories: ['mortgage_repayment', 'rent', 'council_rates', 'water_rates', 'strata', 'utilities'],
+  },
+  {
+    label: 'Insurance',
+    icon: '🛡️',
+    categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'],
+  },
+  {
+    label: 'Living',
+    icon: '🛒',
+    categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'],
+  },
+  {
+    label: 'Lifestyle',
+    icon: '✨',
+    categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'],
+  },
+  {
+    label: 'Financial',
+    icon: '💰',
+    categories: ['hecs_repayment', 'tax', 'other'],
+  },
+]
+
 export function ExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ExpenseBudget | null>(null)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [form, setForm] = useState({
     label: '', category: 'groceries' as ExpenseCategory, monthlyBudget: '',
   })
@@ -90,7 +120,23 @@ export function ExpensesPage() {
     setDeleteTarget(null)
   }
 
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }
+
   const total = expenseBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+
+  // Group expenses by super-category
+  const groupedExpenses = SUPER_CATEGORIES.map(group => {
+    const items = expenseBudgets.filter(b => group.categories.includes(b.category))
+    const groupTotal = items.reduce((s, b) => s + b.monthlyBudget, 0)
+    return { ...group, items, groupTotal }
+  }).filter(g => g.items.length > 0)
 
   return (
     <div className="space-y-6">
@@ -107,8 +153,13 @@ export function ExpensesPage() {
                 <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as ExpenseCategory, label: form.label || CATEGORY_LABELS[v as ExpenseCategory]})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    {SUPER_CATEGORIES.map(group => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.icon} {group.label}</div>
+                        {group.categories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{CATEGORY_LABELS[cat]}</SelectItem>
+                        ))}
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
@@ -141,26 +192,55 @@ export function ExpensesPage() {
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Expense</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {expenseBudgets.map(item => (
-            <Card key={item.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{item.label}</p>
-                    <Badge variant="outline" className={`mt-1 ${EXPENSE_GROUP_COLORS[item.category] ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
-                      {CATEGORY_LABELS[item.category]}
-                    </Badge>
-                    <p className="text-xl font-bold mt-2 text-red-500">{formatCurrency(item.monthlyBudget)}/mo</p>
+        <div className="space-y-4">
+          {groupedExpenses.map(group => {
+            const isCollapsed = collapsedGroups.has(group.label)
+            return (
+              <div key={group.label}>
+                {/* Group header */}
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className="w-full flex items-center justify-between px-1 py-2 group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-semibold">{group.icon} {group.label}</span>
+                    <Badge variant="outline" className="text-xs">{group.items.length}</Badge>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <span className="text-sm font-semibold text-red-500">{formatCurrency(group.groupTotal)}/mo</span>
+                </button>
+
+                {/* Group items */}
+                {!isCollapsed && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                    {group.items.map(item => (
+                      <Card key={item.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">{item.label}</p>
+                              <Badge variant="outline" className={`mt-1 ${EXPENSE_GROUP_COLORS[item.category] ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
+                                {CATEGORY_LABELS[item.category]}
+                              </Badge>
+                              <p className="text-xl font-bold mt-2 text-red-500">{formatCurrency(item.monthlyBudget)}/mo</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
