@@ -10,6 +10,7 @@ interface MetricCardProps {
   trend?: 'up' | 'down' | 'neutral'
   variant?: 'default' | 'hero'
   className?: string
+  breakdownItems?: Array<{ label: string; value: string; color: string }>
 }
 
 export function MetricCard({
@@ -20,18 +21,19 @@ export function MetricCard({
   trend,
   variant = 'default',
   className,
+  breakdownItems,
 }: MetricCardProps) {
   const isHero = variant === 'hero'
 
   return (
     <Card
       className={cn(
-        'relative overflow-hidden rounded-xl bg-card card-hover',
-        isHero && 'glow-emerald border-primary/20',
+        'relative overflow-hidden rounded-xl bg-card',
+        isHero && 'card-gradient-top glow-emerald border-primary/20',
+        !isHero && 'card-hover',
         className
       )}
     >
-      {/* Hero gradient orb */}
       {isHero && (
         <div
           className="absolute -top-20 -right-20 w-60 h-60 rounded-full shimmer pointer-events-none"
@@ -59,7 +61,7 @@ export function MetricCard({
             </div>
             <p
               className={cn(
-                'font-extrabold tracking-tight tabular-nums',
+                'font-extrabold tracking-tight tabular-nums animate-count',
                 isHero ? 'text-[42px] leading-none -tracking-[1.5px]' : 'text-2xl',
                 trend === 'up' && 'text-emerald-500',
                 trend === 'down' && 'text-red-500',
@@ -67,14 +69,13 @@ export function MetricCard({
             >
               {value}
             </p>
-            {subtitle && (
+            {subtitle && !breakdownItems && (
               <p className={cn('text-muted-foreground', isHero ? 'text-sm' : 'text-xs')}>
                 {subtitle}
               </p>
             )}
           </div>
 
-          {/* Icon badge */}
           <div
             className={cn(
               'shrink-0 rounded-xl p-3',
@@ -94,6 +95,18 @@ export function MetricCard({
             />
           </div>
         </div>
+
+        {/* Breakdown row for hero */}
+        {breakdownItems && breakdownItems.length > 0 && (
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-border/50">
+            {breakdownItems.map((item) => (
+              <div key={item.label}>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">{item.label}</p>
+                <p className="text-base font-bold tabular-nums mt-0.5" style={{ color: item.color }}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

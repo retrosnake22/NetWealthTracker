@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { calculateNetWealth } from '@/lib/calculations'
+import { calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities, calculateMonthlyIncome, calculateMonthlyExpenses } from '@/lib/calculations'
 import { formatCurrency } from '@/lib/format'
 
 // ─── Nav structure with sections ───
@@ -133,16 +133,55 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function NetWealthMini() {
-  const { assets, properties, liabilities } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets } = useFinanceStore()
   const netWealth = calculateNetWealth(assets, properties, liabilities)
+  const totalAssets = calculateTotalAssets(assets, properties)
+  const totalLiabilities = calculateTotalLiabilities(liabilities)
+  const monthlySurplus = calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(expenseBudgets)
+
+  // Simple sparkline points (simulate recent trend based on surplus direction)
+  const sparkPoints = Array.from({ length: 7 }, (_, i) => {
+    const base = netWealth - monthlySurplus * (6 - i)
+    return Math.max(0, base)
+  })
+  const sparkMin = Math.min(...sparkPoints)
+  const sparkMax = Math.max(...sparkPoints)
+  const sparkRange = sparkMax - sparkMin || 1
+  const sparkPath = sparkPoints
+    .map((v, i) => {
+      const x = (i / 6) * 100
+      const y = 28 - ((v - sparkMin) / sparkRange) * 24
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`
+    })
+    .join(' ')
 
   return (
     <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-emerald-subtle relative overflow-hidden">
       <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-emerald" />
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 pl-2">Net Wealth</p>
-      <p className={`text-lg font-bold tabular-nums pl-2 ${netWealth >= 0 ? 'text-primary' : 'text-red-500'}`}>
-        {formatCurrency(netWealth)}
-      </p>
+      <div className="flex items-center justify-between pl-2">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Net Wealth</p>
+          <p className={`text-lg font-bold tabular-nums ${netWealth >= 0 ? 'text-primary' : 'text-red-500'}`}>
+            {formatCurrency(netWealth)}
+          </p>
+        </div>
+        <svg width="64" height="28" viewBox="0 0 100 28" className="opacity-60">
+          <path d={sparkPath} fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="flex items-center gap-3 pl-2 mt-1.5">
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          <span className="text-emerald-500">▲</span> {formatCurrency(totalAssets)}
+        </span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          <span className="text-red-400">▼</span> {formatCurrency(totalLiabilities)}
+        </span>
+      </div>
+      {monthlySurplus !== 0 && (
+        <p className={`text-[10px] pl-2 mt-1 font-medium tabular-nums ${monthlySurplus > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+          {monthlySurplus > 0 ? '+' : ''}{formatCurrency(monthlySurplus)}/mo
+        </p>
+      )}
     </div>
   )
 }

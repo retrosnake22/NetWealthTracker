@@ -6,16 +6,27 @@ interface WealthChartProps {
   data: Array<{ label: string; netWealth: number; totalAssets: number; totalLiabilities: number }>
 }
 
-const EMERALD_HEX = '#34d399'
-const EMERALD_DARK = '#10b981'
-
 export function WealthChart({ data }: WealthChartProps) {
   const empty = data.length === 0
 
   return (
-    <Card className="rounded-xl bg-card overflow-hidden card-hover">
+    <Card className="rounded-xl bg-card overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold">Net Wealth Projection</CardTitle>
+        <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-0.5 rounded bg-emerald-500 inline-block" />
+            Assets
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-0.5 rounded bg-red-400 inline-block" />
+            Liabilities
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 rounded bg-foreground inline-block" />
+            Net Wealth
+          </span>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -28,9 +39,17 @@ export function WealthChart({ data }: WealthChartProps) {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
+                  <linearGradient id="assetGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="liabilityGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                  </linearGradient>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={EMERALD_DARK} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={EMERALD_DARK} stopOpacity={0} />
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
 
@@ -51,7 +70,14 @@ export function WealthChart({ data }: WealthChartProps) {
                 />
 
                 <Tooltip
-                  formatter={(value) => [formatCurrency(Number(value)), 'Net Wealth']}
+                  formatter={(value: number, name: string) => {
+                    const labels: Record<string, string> = {
+                      totalAssets: 'Assets',
+                      totalLiabilities: 'Liabilities',
+                      netWealth: 'Net Wealth',
+                    }
+                    return [formatCurrency(value), labels[name] || name]
+                  }}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',
                     border: '1px solid var(--border)',
@@ -59,19 +85,36 @@ export function WealthChart({ data }: WealthChartProps) {
                     fontSize: '13px',
                     color: 'var(--popover-foreground)',
                     boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                    backdropFilter: 'blur(8px)',
                   }}
-                  cursor={{ stroke: EMERALD_HEX, strokeWidth: 1, strokeDasharray: '4 2' }}
+                  cursor={{ stroke: '#34d399', strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
 
                 <Area
                   type="monotone"
+                  dataKey="totalAssets"
+                  stroke="#10b981"
+                  strokeWidth={1.5}
+                  fill="url(#assetGrad)"
+                  dot={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="totalLiabilities"
+                  stroke="#f87171"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  fill="url(#liabilityGrad)"
+                  dot={false}
+                />
+                <Area
+                  type="monotone"
                   dataKey="netWealth"
-                  stroke={EMERALD_HEX}
+                  stroke="#34d399"
                   strokeWidth={2.5}
                   fill="url(#netWealthGrad)"
-                  name="Net Wealth"
                   dot={false}
-                  activeDot={{ r: 5, fill: EMERALD_HEX, strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#34d399', strokeWidth: 0 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
