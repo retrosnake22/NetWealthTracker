@@ -45,6 +45,16 @@ function pctToFraction(pctStr: string, decimals: number): number {
   return rounded / 100
 }
 
+/** Compute monthly repayment from string form values */
+function autoCalcRepayment(balance: string, rate: string, type: MortgageType, term: string): string {
+  const bal = parseFloat(balance) || 0
+  const r = (parseFloat(rate) || 0) / 100
+  const t = parseInt(term) || 30
+  if (bal <= 0) return ''
+  const monthly = calcMortgageMonthly(bal, r, type, t)
+  return Math.round(monthly).toString()
+}
+
 // ── Step definitions ──────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -322,15 +332,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setAssetForm(f => ({ ...f, growthRatePA: (DEFAULT_GROWTH[tab] * 100).toFixed(1) }))
   }
 
-  // ── Auto-calc mortgage repayment ──
-  const autoCalcRepayment = (balance: string, rate: string, type: MortgageType, term: string): string => {
-    const bal = parseFloat(balance) || 0
-    const r = (parseFloat(rate) || 0) / 100
-    const t = parseInt(term) || 30
-    if (bal <= 0) return ''
-    const monthly = calcMortgageMonthly(bal, r, type, t)
-    return Math.round(monthly).toString()
-  }
+  // autoCalcRepayment is now at module level
 
   // Update repayment when mortgage fields change (unless user overrode)
   const updateMortgageField = (updates: Partial<typeof propForm>) => {
@@ -896,12 +898,26 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     name: '', category: 'personal_loan' as LiabilityCategory,
     currentBalance: '', interestRatePA: '', minimumRepayment: '',
     repaymentFrequency: 'monthly' as 'weekly' | 'fortnightly' | 'monthly',
+    mortgageType: 'principal_and_interest' as MortgageType,
+    loanTermYears: '30',
+    repaymentOverridden: false,
   })
 
+  const isMortgageCategory = (cat: LiabilityCategory) => cat === 'mortgage' || cat === 'home_loan'
+
   const resetForm = () => {
-    setForm({ name: '', category: 'personal_loan', currentBalance: '', interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly' })
+    setForm({ name: '', category: 'personal_loan', currentBalance: '', interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly', mortgageType: 'principal_and_interest', loanTermYears: '30', repaymentOverridden: false })
     setShowForm(false)
     setEditingId(null)
+  }
+
+  // Auto-calc repayment for mortgage/home_loan types
+  const updateLoanField = (updates: Partial<typeof form>) => {
+    const next = { ...form, ...updates }
+    if (isMortgageCategory(next.category) && !next.repaymentOverridden) {
+      next.minimumRepayment = autoCalcRepayment(next.currentBalance, next.interestRatePA, next.mortgageType, next.loanTermYears)
+    }
+    setForm(next)
   }
 
   const startEdit = (lia: typeof liabilities[0]) => {
@@ -912,6 +928,9 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
       interestRatePA: (lia.interestRatePA * 100).toFixed(2),
       minimumRepayment: String(lia.minimumRepayment),
       repaymentFrequency: lia.repaymentFrequency,
+      mortgageType: lia.mortgageType || 'principal_and_interest',
+      loanTermYears: String(lia.loanTermYears || 30),
+      repaymentOverridden: false,
     })
     setEditingId(lia.id)
     setShowForm(true)
@@ -919,24 +938,22 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 
   const handleAdd = () => {
     if (!form.name || !form.currentBalance) return
+    const base = {
+      name: form.name,
+      category: form.category,
+      currentBalance: parseFloat(form.currentBalance) || 0,
+      interestRatePA: pctToFraction(form.interestRatePA, 2),
+      minimumRepayment: parseFloat(form.minimumRepayment) || 0,
+      repaymentFrequency: form.repaymentFrequency,
+      ...(isMortgageCategory(form.category) ? {
+        mortgageType: form.mortgageType,
+        loanTermYears: parseInt(form.loanTermYears) || 30,
+      } : {}),
+    }
     if (editingId) {
-      updateLiability(editingId, {
-        name: form.name,
-        category: form.category,
-        currentBalance: parseFloat(form.currentBalance) || 0,
-        interestRatePA: pctToFraction(form.interestRatePA, 2),
-        minimumRepayment: parseFloat(form.minimumRepayment) || 0,
-        repaymentFrequency: form.repaymentFrequency,
-      })
+      updateLiability(editingId, base)
     } else {
-      addLiability({
-        name: form.name,
-        category: form.category,
-        currentBalance: parseFloat(form.currentBalance) || 0,
-        interestRatePA: pctToFraction(form.interestRatePA, 2),
-        minimumRepayment: parseFloat(form.minimumRepayment) || 0,
-        repaymentFrequency: form.repaymentFrequency,
-      })
+      addLiability(base)
     }
     resetForm()
   }
@@ -1086,14 +1103,14 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
               <div className="space-y-1.5">
                 <Label className="text-xs">Name</Label>
                 <Input
-                  placeholder="e.g. ANZ Credit Card"
+                  placeholder={isMortgageCategory(form.category) ? 'e.g. ANZ Home Loan' : 'e.g. ANZ Credit Card'}
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Type</Label>
-                <Select value={form.category} onValueChange={(v: LiabilityCategory) => setForm({ ...form, category: v })}>
+                <Select value={form.category} onValueChange={(v: LiabilityCategory) => updateLoanField({ category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(Object.entries(LIABILITY_LABELS) as [LiabilityCategory, string][])
@@ -1104,11 +1121,41 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Mortgage-specific fields */}
+              {isMortgageCategory(form.category) && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Loan Type</Label>
+                    <Select
+                      value={form.mortgageType}
+                      onValueChange={(v: MortgageType) => updateLoanField({ mortgageType: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                        <SelectItem value="interest_only">Interest Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {form.mortgageType === 'principal_and_interest' && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Loan Term (years)</Label>
+                      <Input
+                        type="number" min="1" max="40"
+                        value={form.loanTermYears}
+                        onChange={e => updateLoanField({ loanTermYears: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="space-y-1.5">
                 <Label className="text-xs">Balance Owing</Label>
                 <CurrencyInput
                   value={form.currentBalance}
-                  onValueChange={v => setForm({ ...form, currentBalance: v })}
+                  onValueChange={v => updateLoanField({ currentBalance: v })}
                   placeholder="0"
                 />
               </div>
@@ -1117,17 +1164,31 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                 <Input
                   type="number" step="0.01" min="0" max="50"
                   value={form.interestRatePA}
-                  onChange={e => setForm({ ...form, interestRatePA: e.target.value })}
-                  onBlur={e => setForm({ ...form, interestRatePA: parseFloat(e.target.value || '0').toFixed(2) })}
+                  onChange={e => updateLoanField({ interestRatePA: e.target.value })}
+                  onBlur={e => updateLoanField({ interestRatePA: parseFloat(e.target.value || '0').toFixed(2) })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Minimum Repayment</Label>
+                <Label className="text-xs">
+                  Min. Monthly Repayment
+                  {isMortgageCategory(form.category) && !form.repaymentOverridden && form.minimumRepayment ? ' (auto-calculated)' : ''}
+                </Label>
                 <CurrencyInput
                   value={form.minimumRepayment}
-                  onValueChange={v => setForm({ ...form, minimumRepayment: v })}
+                  onValueChange={v => setForm({ ...form, minimumRepayment: v, repaymentOverridden: true })}
                   placeholder="0"
                 />
+                {isMortgageCategory(form.category) && form.repaymentOverridden && form.currentBalance && form.interestRatePA && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => {
+                      const calc = autoCalcRepayment(form.currentBalance, form.interestRatePA, form.mortgageType, form.loanTermYears)
+                      setForm({ ...form, minimumRepayment: calc, repaymentOverridden: false })
+                    }}
+                  >
+                    Reset to calculated amount
+                  </button>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Frequency</Label>
