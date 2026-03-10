@@ -112,8 +112,8 @@ export function DashboardPage() {
       + (p.waterRatesPA ?? 0) / 12
       + (p.insurancePA ?? 0) / 12
       + (p.strataPA ?? 0) / 12
-      + (p.maintenanceReservePA ?? 0) / 12
-      + (p.propertyManagementPA ?? 0) / 12
+      + (p.maintenanceBudgetPA ?? 0) / 12
+      + ((p.propertyManagementPct ?? 0) / 100) * (p.weeklyRent ?? 0) * 52 / 12
       + (p.landTaxPA ?? 0) / 12
   }, 0)
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
