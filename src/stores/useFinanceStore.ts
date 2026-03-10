@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
-  Asset, CashAsset, StockAsset, SuperAsset, VehicleAsset,
+  Asset,
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
   SurplusAllocation, ProjectionSettings, AssetCategory
 } from '@/types/models'
