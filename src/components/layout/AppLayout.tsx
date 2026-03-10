@@ -100,7 +100,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.end}
+                end={'end' in item ? item.end : undefined}
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
