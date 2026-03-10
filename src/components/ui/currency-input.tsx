@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 
 interface CurrencyInputProps {
   value: string
-  onChange: (value: string) => void
+  onChange?: (value: string) => void
+  onValueChange?: (value: string) => void
   placeholder?: string
   className?: string
   prefix?: string
@@ -19,6 +20,7 @@ function formatDisplay(raw: string): string {
 export function CurrencyInput({
   value,
   onChange,
+  onValueChange,
   placeholder = '0',
   className,
   prefix = '$',
@@ -26,6 +28,12 @@ export function CurrencyInput({
   const [focused, setFocused] = useState(false)
   const [displayValue, setDisplayValue] = useState(() => formatDisplay(value))
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Support both onChange and onValueChange
+  const emitChange = (v: string) => {
+    onChange?.(v)
+    onValueChange?.(v)
+  }
 
   useEffect(() => {
     if (!focused) {
@@ -40,18 +48,16 @@ export function CurrencyInput({
 
   const handleBlur = () => {
     setFocused(false)
-    // Clean up the value
     const cleaned = displayValue.replace(/[^0-9.-]/g, '')
-    onChange(cleaned)
+    emitChange(cleaned)
     setDisplayValue(formatDisplay(cleaned))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value
     setDisplayValue(raw)
-    // Pass through cleaned numeric value
     const cleaned = raw.replace(/[^0-9.-]/g, '')
-    onChange(cleaned)
+    emitChange(cleaned)
   }
 
   return (

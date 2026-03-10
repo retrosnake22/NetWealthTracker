@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -10,6 +10,7 @@ import { LiabilitiesPage } from '@/pages/LiabilitiesPage'
 import { IncomePage } from '@/pages/IncomePage'
 import { ExpensesPage } from '@/pages/ExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
+import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 
 function App() {
@@ -41,11 +42,14 @@ function App() {
     return <LoginPage />
   }
 
+  const wizardComplete = localStorage.getItem('nwt-wizard-complete')
+
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/setup" element={<SetupWizardPage />} />
         <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
           <Route path="/assets" element={<AssetsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/liabilities" element={<LiabilitiesPage />} />

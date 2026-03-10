@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   ArrowUpRight,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -137,7 +138,6 @@ function NetWealthMini() {
 
   return (
     <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-emerald-subtle relative overflow-hidden">
-      {/* Subtle gradient accent on left edge */}
       <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-emerald" />
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 pl-2">Net Wealth</p>
       <p className={`text-lg font-bold tabular-nums pl-2 ${netWealth >= 0 ? 'text-primary' : 'text-red-500'}`}>
@@ -164,6 +164,13 @@ function SidebarFooter() {
   return (
     <div className="px-3 pb-4 space-y-1">
       <div className="h-px bg-border mb-3" />
+      <NavLink
+        to="/setup"
+        className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+      >
+        <Sparkles className="h-4 w-4" />
+        Setup Wizard
+      </NavLink>
       <Button
         variant="ghost"
         size="sm"
