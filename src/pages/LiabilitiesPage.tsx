@@ -19,11 +19,13 @@ const CATEGORY_LABELS: Record<LiabilityCategory, string> = {
   car_loan: 'Car Loan',
   credit_card: 'Credit Card',
   hecs: 'HECS-HELP',
+  home_loan: 'Home Loan',
   other: 'Other',
 }
 
 const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
   mortgage: 'bg-red-500/10 text-red-500 border-red-500/20',
+  home_loan: 'bg-red-500/10 text-red-500 border-red-500/20',
   personal_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   car_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   credit_card: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
