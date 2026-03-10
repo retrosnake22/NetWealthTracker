@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -27,13 +28,13 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   hecs_repayment: 'HECS Repayment', tax: 'Tax', other: 'Other',
 }
 
-const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Property', icon: '🏠', categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
-  { label: 'Housing', icon: '🏡', categories: ['rent', 'utilities'] },
-  { label: 'Insurance', icon: '🛡️', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
-  { label: 'Lifestyle', icon: '✨', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
-  { label: 'Financial', icon: '💰', categories: ['hecs_repayment', 'tax', 'other'] },
+const SUPER_CATEGORIES: { label: string; icon: string; color: string; categories: ExpenseCategory[] }[] = [
+  { label: 'Property', icon: '🏠', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
+  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20', categories: ['rent', 'utilities'] },
+  { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-600 border-violet-500/20', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
+  { label: 'Living', icon: '🛒', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
+  { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-600 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
+  { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'other'] },
 ]
 
 interface AutoExpenseItem {
@@ -143,17 +144,24 @@ export function ExpensesPage() {
     }))
   }, [autoPropertyExpenses])
 
+  // Find the color for a category
+  const getCategoryColor = (category: ExpenseCategory) => {
+    const group = SUPER_CATEGORIES.find(g => g.categories.includes(category))
+    return group?.color ?? 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Total Monthly Expenses</p>
           <p className="text-3xl font-extrabold tabular-nums tracking-tight">{formatCurrency(total)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(total * 12)}/year</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Expense</Button>
+            <Button><Plus className="h-4 w-4 mr-2" /> Add Expense</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editId ? 'Edit' : 'Add'} Expense</DialogTitle></DialogHeader>
@@ -193,85 +201,132 @@ export function ExpensesPage() {
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Expense</Button>
         </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            {/* Auto property expenses */}
-            {autoByProperty.length > 0 && (
-              <div className="border-b border-border last:border-b-0">
-                <button
-                  onClick={() => toggleGroup('__auto__')}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    {collapsedGroups.has('__auto__') ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                    <span className="text-sm font-semibold">🏠 Property Expenses</span>
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">auto</span>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums">{formatCurrency(autoPropertyTotal)}/mo</span>
-                </button>
-                {!collapsedGroups.has('__auto__') && (
-                  <div>
-                    {autoByProperty.map(({ name, items, total: propTotal }) => (
-                      <div key={name}>
-                        <div className="flex items-center justify-between px-4 py-1.5 bg-muted/30">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{name}</span>
-                          <span className="text-xs font-medium text-muted-foreground tabular-nums">{formatCurrency(propTotal)}/mo</span>
+        <div className="space-y-4">
+          {/* Auto property expenses */}
+          {autoByProperty.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base font-semibold">Property Expenses</h2>
+                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
+                  🔗 Auto
+                </Badge>
+              </div>
+              {autoByProperty.map(({ name, items, total: propTotal }) => (
+                <Card key={name} className="bg-muted/30 border-dashed">
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => toggleGroup(`__auto_${name}__`)}
+                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {collapsedGroups.has(`__auto_${name}__`)
+                          ? <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        }
+                        <div className="text-left">
+                          <p className="font-semibold">{name}</p>
+                          <p className="text-xs text-muted-foreground">{items.length} expense{items.length !== 1 ? 's' : ''}</p>
                         </div>
-                        {items.map(item => (
-                          <div key={item.key} className="flex items-center justify-between px-4 py-2 pl-8 hover:bg-muted/30 transition-colors">
-                            <span className="text-sm text-muted-foreground">{item.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold tabular-nums">{formatCurrency(propTotal)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(propTotal * 12)}/yr</p>
+                      </div>
+                    </button>
+                    {!collapsedGroups.has(`__auto_${name}__`) && (
+                      <div className="border-t border-border/50">
+                        {items.map((item, idx) => (
+                          <div
+                            key={item.key}
+                            className={`flex items-center justify-between px-5 py-3 pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <Badge variant="outline" className={`text-xs ${getCategoryColor(item.category)}`}>
+                                {item.label}
+                              </Badge>
+                            </div>
                             <span className="text-sm font-medium tabular-nums">{formatCurrency(item.monthlyAmount)}</span>
                           </div>
                         ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
-            {/* Manual expense groups */}
-            {groupedExpenses.map(group => {
-              const collapsed = collapsedGroups.has(group.label)
-              return (
-                <div key={group.label} className="border-b border-border last:border-b-0">
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      {collapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                      <span className="text-sm font-semibold">{group.icon} {group.label}</span>
-                      <span className="text-xs text-muted-foreground">{group.items.length}</span>
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums">{formatCurrency(group.groupTotal)}/mo</span>
-                  </button>
-                  {!collapsed && (
-                    <div>
-                      {group.items.map(item => (
-                        <div key={item.id} className="flex items-center justify-between px-4 py-2 pl-8 hover:bg-muted/30 transition-colors group">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm truncate">{item.label}</span>
-                            {item.label !== CATEGORY_LABELS[item.category] && (
-                              <span className="text-xs text-muted-foreground hidden sm:inline">{CATEGORY_LABELS[item.category]}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium tabular-nums">{formatCurrency(item.monthlyBudget)}</span>
-                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => handleEdit(item.id)} className="p-1 rounded hover:bg-muted"><Pencil className="h-3 w-3 text-muted-foreground" /></button>
-                              <button onClick={() => setDeleteTarget(item)} className="p-1 rounded hover:bg-muted"><Trash2 className="h-3 w-3 text-muted-foreground" /></button>
+          {/* Manual expense groups */}
+          {groupedExpenses.length > 0 && (
+            <div className="space-y-3">
+              {autoByProperty.length > 0 && (
+                <h2 className="text-base font-semibold">Manual Expenses</h2>
+              )}
+              {groupedExpenses.map(group => {
+                const collapsed = collapsedGroups.has(group.label)
+                return (
+                  <Card key={group.label}>
+                    <CardContent className="p-0">
+                      <button
+                        onClick={() => toggleGroup(group.label)}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {collapsed
+                            ? <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          }
+                          <div className="text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{group.icon}</span>
+                              <span className="font-semibold">{group.label}</span>
+                              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{group.items.length}</span>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
+                        <div className="text-right">
+                          <p className="text-lg font-bold tabular-nums">{formatCurrency(group.groupTotal)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                          <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
+                        </div>
+                      </button>
+                      {!collapsed && (
+                        <div className="border-t border-border/50">
+                          {group.items.map((item, idx) => (
+                            <div
+                              key={item.id}
+                              className={`flex items-center justify-between px-5 py-3.5 pl-12 hover:bg-muted/30 transition-colors group ${idx !== group.items.length - 1 ? 'border-b border-border/30' : ''}`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className="text-sm font-medium truncate">{item.label}</span>
+                                {item.label !== CATEGORY_LABELS[item.category] && (
+                                  <span className="text-xs text-muted-foreground hidden sm:inline">({CATEGORY_LABELS[item.category]})</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                  <span className="text-sm font-semibold tabular-nums">{formatCurrency(item.monthlyBudget)}</span>
+                                  <span className="text-xs text-muted-foreground ml-0.5">/mo</span>
+                                </div>
+                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item.id)}>
+                                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteTarget(item)}>
+                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Delete Confirmation */}
