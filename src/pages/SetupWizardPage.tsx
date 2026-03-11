@@ -563,8 +563,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
                           <p className="font-medium">{prop.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
-                            {prop.weeklyRent ? ` \u00B7 ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
-                            {linkedMortgage ? ` \u00B7 ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
+                            {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                            {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
                           </p>
                         </div>
                       </div>
@@ -1025,8 +1025,8 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
                     <p className="font-medium">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatPercent(m.interestRatePA)} interest &middot; {formatCurrency(m.minimumRepayment)}/month
-                      {m.mortgageType === 'interest_only' ? ' \u00B7 Interest Only' : ' \u00B7 P&I'}
-                      {m.loanTermYears ? ` \u00B7 ${m.loanTermYears}yr term` : ''}
+                      {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
+                      {m.loanTermYears ? ` · ${m.loanTermYears}yr term` : ''}
                     </p>
                   </div>
                 </div>
@@ -1339,9 +1339,9 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <Building2 className="w-5 h-5 text-sky-500" />
                   </div>
                   <div>
-                    <p className="font-medium">{ri.propertyName} \u2014 Rent</p>
+                    <p className="font-medium">{ri.propertyName} — Rent</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatCurrency(ri.weeklyRent)}/wk \u00D7 52 \u00F7 12
+                      {formatCurrency(ri.weeklyRent)}/wk × 52 ÷ 12
                     </p>
                   </div>
                 </div>
@@ -1361,7 +1361,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <PiggyBank className="w-5 h-5 text-amber-500" />
                   </div>
                   <div>
-                    <p className="font-medium">{ii.assetName} \u2014 Interest</p>
+                    <p className="font-medium">{ii.assetName} — Interest</p>
                     <p className="text-xs text-muted-foreground">Based on {formatPercent(ii.rate)} p.a.</p>
                   </div>
                 </div>
@@ -1381,7 +1381,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
                     <TrendingUp className="w-5 h-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="font-medium">{di.assetName} \u2014 Dividends</p>
+                    <p className="font-medium">{di.assetName} — Dividends</p>
                     <p className="text-xs text-muted-foreground">Based on {formatPercent(di.rate)} p.a.</p>
                   </div>
                 </div>
