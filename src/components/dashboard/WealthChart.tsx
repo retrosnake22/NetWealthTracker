@@ -99,7 +99,7 @@ export function WealthChart({ data }: WealthChartProps) {
                     dataKey="netWealth"
                     position="top"
                     offset={10}
-                    formatter={formatCompact}
+                    formatter={(v: unknown) => formatCompact(Number(v ?? 0))}
                     style={{ fill: '#93C5FD', fontSize: 11, fontWeight: 600 }}
                   />
                 </Area>
