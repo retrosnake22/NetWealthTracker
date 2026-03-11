@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronRight,
   Package,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -122,14 +123,12 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     setExpandedNav((prev) => (prev === to ? null : to))
   }
 
-  // Check if a nav item is active based on pathname + query params
   const isItemActive = (itemTo: string, end?: boolean) => {
     const [itemPath, itemSearch] = itemTo.split('?')
     const currentPath = location.pathname
 
     if (itemPath !== currentPath) return false
 
-    // For items with query params (sub-items), match the category
     if (itemSearch) {
       const itemParams = new URLSearchParams(itemSearch)
       const itemCategory = itemParams.get('category')
@@ -137,9 +136,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       return itemCategory === currentCategory
     }
 
-    // For parent items without query params: active only if NO category is selected
     if (end) return true
-    // For "/assets" parent: only active when no category filter
     if (itemPath === '/assets') {
       return !searchParams.get('category')
     }
@@ -164,7 +161,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               return (
                 <div key={item.to}>
                   {isExpandable ? (
-                    /* Expandable parent row */
                     <div className="flex items-center rounded-lg overflow-hidden">
                       <Link
                         to={item.to}
@@ -181,7 +177,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                         <item.icon className={`h-4 w-4 shrink-0 ${parentActive ? 'text-primary' : ''}`} />
                         <span className="truncate">{item.label}</span>
                       </Link>
-                      {/* Chevron toggle */}
                       <button
                         onClick={() => toggleExpand(item.to)}
                         aria-label={isExpanded ? 'Collapse' : 'Expand'}
@@ -194,7 +189,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       </button>
                     </div>
                   ) : (
-                    /* Regular nav item */
                     <NavLink
                       to={item.to}
                       end={'end' in item ? (item as any).end : undefined}
@@ -219,7 +213,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     </NavLink>
                   )}
 
-                  {/* Sub-items with smooth expand/collapse animation */}
                   {isExpandable && subItems && (
                     <div
                       className="overflow-hidden transition-all duration-200 ease-in-out"
@@ -267,7 +260,6 @@ function NetWealthMini() {
   const totalLiabilities = calculateTotalLiabilities(liabilities)
   const monthlySurplus = calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(expenseBudgets)
 
-  // Simple sparkline points (simulate recent trend based on surplus direction)
   const sparkPoints = Array.from({ length: 7 }, (_, i) => {
     const base = netWealth - monthlySurplus * (6 - i)
     return Math.max(0, base)
@@ -317,12 +309,26 @@ function NetWealthMini() {
 function SidebarFooter() {
   const [email, setEmail] = useState<string | null>(null)
   const [dark, setDark] = useDarkMode()
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const resetStore = useFinanceStore((s) => s.resetStore)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setEmail(user?.email ?? null)
     })
   }, [])
+
+  const handleResetAccount = async () => {
+    resetStore()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('user_data').delete().eq('user_id', user.id)
+      localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
+    }
+    localStorage.removeItem('nwt-finance-store')
+    setShowResetConfirm(false)
+    window.location.reload()
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -347,6 +353,29 @@ function SidebarFooter() {
         {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         {dark ? 'Light Mode' : 'Dark Mode'}
       </Button>
+      {!showResetConfirm ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2.5 text-muted-foreground hover:text-red-400 rounded-lg h-9"
+          onClick={() => setShowResetConfirm(true)}
+        >
+          <Trash2 className="h-4 w-4" />
+          Reset Account
+        </Button>
+      ) : (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 space-y-2">
+          <p className="text-xs text-red-400 font-medium">Delete all data? This cannot be undone.</p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="destructive" className="flex-1 h-7 text-xs" onClick={handleResetAccount}>
+              Confirm Reset
+            </Button>
+            <Button size="sm" variant="ghost" className="flex-1 h-7 text-xs" onClick={() => setShowResetConfirm(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       <Button
         variant="ghost"
         size="sm"
