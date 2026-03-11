@@ -20,7 +20,7 @@ export function calculatePropertyNetYield(
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
-  const grossRent = property.weeklyRent * 52 * (1 - (property.vacancyRatePA ?? 0))
+  const grossRent = property.weeklyRent * 52 * (1 - (property.vacancyRatePA ?? 0) / 100)
   const expenses =
     (property.councilRatesPA ?? 0) +
     (property.waterRatesPA ?? 0) +
@@ -28,7 +28,7 @@ export function calculatePropertyNetYield(
     (property.strataPA ?? 0) +
     (property.landTaxPA ?? 0) +
     (property.maintenanceBudgetPA ?? 0) +
-    (property.propertyManagementPct ?? 0) * grossRent
+    ((property.propertyManagementPct ?? 0) / 100) * grossRent
 
   let interestPA = 0
   if (mortgage) {
@@ -49,7 +49,7 @@ export function calculatePropertyCashflow(
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
-  const grossRent = property.weeklyRent * 52 * (1 - (property.vacancyRatePA ?? 0))
+  const grossRent = property.weeklyRent * 52 * (1 - (property.vacancyRatePA ?? 0) / 100)
   const expenses =
     (property.councilRatesPA ?? 0) +
     (property.waterRatesPA ?? 0) +
@@ -57,7 +57,7 @@ export function calculatePropertyCashflow(
     (property.strataPA ?? 0) +
     (property.landTaxPA ?? 0) +
     (property.maintenanceBudgetPA ?? 0) +
-    (property.propertyManagementPct ?? 0) * grossRent
+    ((property.propertyManagementPct ?? 0) / 100) * grossRent
 
   let repaymentPA = 0
   if (mortgage) {
@@ -118,10 +118,10 @@ export function calculateMonthlyCashflow(incomes: IncomeItem[], budgets: Expense
   return calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(budgets) - propertyExpenses
 }
 
-export function calculateSavingsRate(incomes: IncomeItem[], budgets: ExpenseBudget[]): number {
+export function calculateSavingsRate(incomes: IncomeItem[], budgets: ExpenseBudget[], properties?: Property[], liabilities?: Liability[]): number {
   const income = calculateMonthlyIncome(incomes)
   if (income === 0) return 0
-  return calculateMonthlyCashflow(incomes, budgets) / income
+  return calculateMonthlyCashflow(incomes, budgets, properties, liabilities) / income
 }
 
 export function calculateDebtToAssetRatio(

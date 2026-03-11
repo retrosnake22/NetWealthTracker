@@ -121,7 +121,7 @@ export function DashboardPage() {
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
 
   const monthlyCashflow = monthlyIncome - monthlyExpenses
-  const savingsRate      = calculateSavingsRate(incomes, expenseBudgets)
+  const savingsRate      = calculateSavingsRate(incomes, expenseBudgets, properties, liabilities)
   const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
