@@ -58,7 +58,7 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability): 
   const netCashflowWeekly = netCashflowPA / 52
 
   const grossYield = property.currentValue > 0 ? grossRentPA / property.currentValue : 0
-  const netYield = property.currentValue > 0 ? netCashflowPA / property.currentValue : 0
+  const netYield = property.currentValue > 0 ? netRentalIncomePA / property.currentValue : 0
 
   return {
     grossRentPA, vacancyLossPA, effectiveRentPA,
