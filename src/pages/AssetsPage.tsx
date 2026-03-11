@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
 import type { Asset, Property, AssetCategory } from '@/types/models'
@@ -33,7 +34,7 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 
 export default function AssetsPage() {
   const store = useFinanceStore() as FinanceState
-  const { assets, properties, liabilities, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty } = store
+  const { assets, properties, liabilities, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability } = store
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category') as AssetCategory | 'property' | null
 
@@ -57,9 +58,10 @@ export default function AssetsPage() {
   const [showAddProperty, setShowAddProperty] = useState(false)
   const [propForm, setPropForm] = useState({
     name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    currentValue: '', weeklyRent: '',
+    currentValue: '', weeklyRent: '', vacancyRatePA: '',
     councilRatesPA: '', waterRatesPA: '', insurancePA: '',
     strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
+    linkedMortgageId: '',
   })
 
   const filteredAssets = useMemo(() => {
@@ -72,6 +74,21 @@ export default function AssetsPage() {
 
   const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
   const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
+
+  // Get mortgage-type liabilities for linking
+  const mortgageLiabilities = useMemo(() =>
+    liabilities.filter(l => l.category === 'mortgage' || l.category === 'home_loan'),
+    [liabilities]
+  )
+
+  // Find mortgage for a property (check both directions)
+  const findMortgage = (p: Property) => {
+    if (p.mortgageId) {
+      const m = liabilities.find(l => l.id === p.mortgageId)
+      if (m) return m
+    }
+    return liabilities.find(l => l.linkedPropertyId === p.id)
+  }
 
   // --- Asset handlers ---
   function openAddAsset() {
@@ -103,9 +120,10 @@ export default function AssetsPage() {
   // --- Property handlers ---
   function openAddProperty() {
     setPropForm({
-      name: '', type: 'primary_residence', currentValue: '', weeklyRent: '',
+      name: '', type: 'primary_residence', currentValue: '', weeklyRent: '', vacancyRatePA: '',
       councilRatesPA: '', waterRatesPA: '', insurancePA: '',
       strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
+      linkedMortgageId: '',
     })
     setEditingProperty(null)
     setShowAddProperty(true)
@@ -116,6 +134,7 @@ export default function AssetsPage() {
       type: p.type,
       currentValue: String(p.currentValue),
       weeklyRent: String(p.weeklyRent ?? ''),
+      vacancyRatePA: String(p.vacancyRatePA ?? ''),
       councilRatesPA: String((p.councilRatesPA ?? 0) / 4 || ''),
       waterRatesPA: String((p.waterRatesPA ?? 0) / 4 || ''),
       insurancePA: String(p.insurancePA ?? ''),
@@ -123,17 +142,20 @@ export default function AssetsPage() {
       maintenanceBudgetPA: String(p.maintenanceBudgetPA ?? ''),
       propertyManagementPct: String(p.propertyManagementPct ?? ''),
       landTaxPA: String(p.landTaxPA ?? ''),
+      linkedMortgageId: p.mortgageId ?? findMortgage(p)?.id ?? '',
     })
     setEditingProperty(p)
     setShowAddProperty(true)
   }
   function saveProperty() {
+    const selectedMortgageId = propForm.linkedMortgageId || undefined
     const data: any = {
       name: propForm.name,
       type: propForm.type,
       currentValue: parseFloat(propForm.currentValue) || 0,
       growthRatePA: editingProperty?.growthRatePA ?? 0.07,
       weeklyRent: parseFloat(propForm.weeklyRent) || 0,
+      vacancyRatePA: parseFloat(propForm.vacancyRatePA) || 0,
       councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
       waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
       insurancePA: parseFloat(propForm.insurancePA) || 0,
@@ -141,14 +163,45 @@ export default function AssetsPage() {
       maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
       propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
       landTaxPA: parseFloat(propForm.landTaxPA) || 0,
+      mortgageId: selectedMortgageId,
     }
-    if (editingProperty?.id) {
-      updateProperty(editingProperty.id, data)
+
+    let propertyId = editingProperty?.id
+    if (propertyId) {
+      updateProperty(propertyId, data)
     } else {
       addProperty(data)
+      // Get the newly added property ID
+      const newProps = useFinanceStore.getState().properties
+      propertyId = newProps[newProps.length - 1]?.id
     }
+
+    // Update the linked mortgage's linkedPropertyId (both directions)
+    if (propertyId && selectedMortgageId) {
+      updateLiability(selectedMortgageId, { linkedPropertyId: propertyId })
+    }
+
+    // If we changed the mortgage link, clear the old mortgage's linkedPropertyId
+    if (editingProperty?.id && editingProperty.mortgageId && editingProperty.mortgageId !== selectedMortgageId) {
+      updateLiability(editingProperty.mortgageId, { linkedPropertyId: undefined })
+    }
+
     setShowAddProperty(false)
     setEditingProperty(null)
+  }
+
+  // Helper to format the mortgage summary
+  const getMortgageSummary = (mortgageId: string) => {
+    const m = liabilities.find(l => l.id === mortgageId)
+    if (!m) return null
+    const freq = m.repaymentFrequency === 'weekly' ? '/wk' : m.repaymentFrequency === 'fortnightly' ? '/fn' : '/mo'
+    return {
+      name: m.name,
+      balance: m.currentBalance,
+      rate: m.interestRatePA * 100,
+      repayment: m.minimumRepayment,
+      freq,
+    }
   }
 
   return (
@@ -232,6 +285,7 @@ export default function AssetsPage() {
             {properties.map(p => {
               const isInvestment = p.type === 'investment'
               const isExpanded = expandedPnL.has(p.id)
+              const mortgage = findMortgage(p)
               return (
                 <div key={p.id} className="py-3">
                   <div className="flex items-center justify-between">
@@ -262,7 +316,7 @@ export default function AssetsPage() {
                   </div>
                   {isInvestment && isExpanded && (
                     <div className="mt-3 ml-9">
-                      <PropertyPnL property={p} mortgage={liabilities.find(l => l.linkedPropertyId === p.id)} />
+                      <PropertyPnL property={p} mortgage={mortgage} />
                     </div>
                   )}
                 </div>
@@ -356,10 +410,16 @@ export default function AssetsPage() {
               <Input type="number" value={propForm.currentValue} onChange={e => setPropForm(f => ({ ...f, currentValue: e.target.value }))} />
             </div>
             {propForm.type === 'investment' && (
-              <div>
-                <Label>Weekly Rent ($)</Label>
-                <Input type="number" value={propForm.weeklyRent} onChange={e => setPropForm(f => ({ ...f, weeklyRent: e.target.value }))} />
-              </div>
+              <>
+                <div>
+                  <Label>Weekly Rent ($)</Label>
+                  <Input type="number" value={propForm.weeklyRent} onChange={e => setPropForm(f => ({ ...f, weeklyRent: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Vacancy Rate (%)</Label>
+                  <Input type="number" step="0.1" value={propForm.vacancyRatePA} onChange={e => setPropForm(f => ({ ...f, vacancyRatePA: e.target.value }))} placeholder="e.g. 3 for 3%" />
+                </div>
+              </>
             )}
 
             {/* Running Costs */}
@@ -399,6 +459,57 @@ export default function AssetsPage() {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Linked Mortgage */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm mb-3">Linked Mortgage</h4>
+              {mortgageLiabilities.length > 0 ? (
+                <>
+                  <Select
+                    value={propForm.linkedMortgageId || '_none'}
+                    onValueChange={v => setPropForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select a mortgage..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">No mortgage linked</SelectItem>
+                      {mortgageLiabilities.map(m => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {propForm.linkedMortgageId && (() => {
+                    const info = getMortgageSummary(propForm.linkedMortgageId)
+                    if (!info) return null
+                    return (
+                      <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Balance</span>
+                          <span className="font-medium">{formatCurrency(info.balance)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Interest Rate</span>
+                          <span className="font-medium">{info.rate.toFixed(2)}% p.a.</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Repayment</span>
+                          <span className="font-medium">{formatCurrency(info.repayment)}{info.freq}</span>
+                        </div>
+                        <Separator className="my-2" />
+                        <p className="text-xs text-muted-foreground">
+                          Edit mortgage details in Liabilities
+                        </p>
+                      </div>
+                    )
+                  })()}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No mortgages found. Add one in Liabilities first.
+                </p>
+              )}
             </div>
 
             <div className="flex gap-2 justify-end pt-2">
