@@ -1,5 +1,6 @@
 // NWT Dashboard
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
@@ -163,6 +164,7 @@ function KpiCard({
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
@@ -324,7 +326,7 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="h-full animate-fade-up animate-delay-6">
-          <AssetBreakdown data={breakdownData} />
+          <AssetBreakdown data={breakdownData} onClick={() => navigate('/assets')} />
         </div>
       </div>
     ),

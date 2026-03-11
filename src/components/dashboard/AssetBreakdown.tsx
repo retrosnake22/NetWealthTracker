@@ -4,14 +4,15 @@ import { formatCurrency } from '@/lib/format'
 
 interface AssetBreakdownProps {
   data: Array<{ name: string; value: number; color: string }>
+  onClick?: () => void
 }
 
-export function AssetBreakdown({ data }: AssetBreakdownProps) {
+export function AssetBreakdown({ data, onClick }: AssetBreakdownProps) {
   const empty = data.length === 0
   const total = data.reduce((s, d) => s + d.value, 0)
 
   return (
-    <Card className="rounded-xl bg-card overflow-hidden card-hover h-full flex flex-col">
+    <Card className="rounded-xl bg-card overflow-hidden card-hover h-full flex flex-col cursor-pointer" onClick={onClick}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">Asset Breakdown</CardTitle>
       </CardHeader>
