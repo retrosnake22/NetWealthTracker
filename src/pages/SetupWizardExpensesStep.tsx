@@ -12,7 +12,7 @@ const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
   council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
   property_management: 'Property Management', land_tax: 'Land Tax',
   maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
-  insurance_home: 'Home Insurance', insurance_health: 'Health Insurance',
+  insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
   subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
@@ -24,7 +24,7 @@ const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
 
 const EXPENSE_QUICK_PICKS: { label: string; categories: ExpenseCategory[] }[] = [
   { label: '🏡 Housing', categories: ['rent', 'utilities'] },
-  { label: '🛡️ Insurance', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
+  { label: '🛡️ Insurance', categories: ['insurance_health', 'insurance_car', 'insurance_life'] },
   { label: '🛒 Living', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
   { label: '✨ Lifestyle', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
   { label: '💰 Financial', categories: ['hecs_repayment', 'tax', 'other'] },

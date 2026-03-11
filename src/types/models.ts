@@ -4,7 +4,7 @@ export type LiabilityCategory = 'mortgage' | 'home_loan' | 'personal_loan' | 'ca
 export type IncomeCategory = 'salary' | 'rental' | 'dividends' | 'interest' | 'side_hustle' | 'other'
 export type ExpenseCategory =
   | 'mortgage_repayment' | 'rent' | 'council_rates' | 'water_rates' | 'strata'
-  | 'insurance_home' | 'insurance_health' | 'insurance_car' | 'insurance_life'
+  | 'insurance_health' | 'insurance_car' | 'insurance_life'
   | 'utilities' | 'groceries' | 'transport' | 'fuel'
   | 'subscriptions' | 'entertainment' | 'dining_out'
   | 'clothing' | 'health_fitness' | 'education'
