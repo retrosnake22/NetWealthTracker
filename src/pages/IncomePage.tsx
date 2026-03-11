@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react'
+import { Plus, Pencil, Trash2, TrendingUp, Briefcase, Home, BarChart3, Landmark, Sparkles, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,15 @@ const CATEGORY_COLORS: Record<IncomeCategory, string> = {
   interest: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
   side_hustle: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
+const CATEGORY_ICONS: Record<IncomeCategory, React.ElementType> = {
+  salary: Briefcase,
+  rental: Home,
+  dividends: BarChart3,
+  interest: Landmark,
+  side_hustle: Sparkles,
+  other: HelpCircle,
 }
 
 // ─── Auto-generated item shape ────────────────────────────────────────────────
@@ -89,6 +98,19 @@ function buildAutoItems(properties: Property[], assets: Asset[]): AutoIncomeItem
   return items
 }
 
+function groupByCategory<T extends { category: IncomeCategory }>(items: T[]): Map<IncomeCategory, T[]> {
+  const map = new Map<IncomeCategory, T[]>()
+  for (const item of items) {
+    const list = map.get(item.category) ?? []
+    list.push(item)
+    map.set(item.category, list)
+  }
+  return map
+}
+
+// Category display order
+const CATEGORY_ORDER: IncomeCategory[] = ['salary', 'rental', 'dividends', 'interest', 'side_hustle', 'other']
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function IncomePage() {
@@ -104,6 +126,7 @@ export function IncomePage() {
 
   const autoItems = useMemo(() => buildAutoItems(properties, assets), [properties, assets])
   const autoTotal = useMemo(() => autoItems.reduce((s, i) => s + i.monthlyAmount, 0), [autoItems])
+  const autoGrouped = useMemo(() => groupByCategory(autoItems), [autoItems])
 
   // ── Manual income helpers ───────────────────────────────────────────────────
 
@@ -136,6 +159,7 @@ export function IncomePage() {
 
   const manualTotal = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
   const grandTotal = manualTotal + autoTotal
+  const manualGrouped = useMemo(() => groupByCategory(incomes), [incomes])
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -188,7 +212,7 @@ export function IncomePage() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Manual Income</p>
+            <p className="text-sm text-muted-foreground">Manually Entered</p>
             <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(manualTotal)}</p>
           </CardContent>
         </Card>
@@ -200,40 +224,59 @@ export function IncomePage() {
         </Card>
       </div>
 
-      {/* ── Auto-Generated Income section ── */}
+      {/* ── Auto-Generated Income section (grouped by category) ── */}
       {autoItems.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-base font-semibold">Auto-Generated Income</h2>
             <span className="text-xs text-muted-foreground">Based on your assets and properties</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {autoItems.map(item => (
-              <Card key={item.key} className="bg-muted/30 border-dashed">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                        <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                          🔗 Auto
-                        </Badge>
-                      </div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-lg font-bold tabular-nums text-blue-400">
-                        {formatCurrency(item.monthlyAmount)}/mo
-                      </p>
-                      <p className="text-xs text-muted-foreground">{item.note}</p>
+
+          {CATEGORY_ORDER.map(cat => {
+            const items = autoGrouped.get(cat)
+            if (!items || items.length === 0) return null
+            const Icon = CATEGORY_ICONS[cat]
+            const catTotal = items.reduce((s, i) => s + i.monthlyAmount, 0)
+
+            return (
+              <div key={cat} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-muted">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
                     </div>
+                    <h3 className="text-sm font-medium">{CATEGORY_LABELS[cat]}</h3>
+                    <span className="text-xs text-muted-foreground">({items.length})</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+                  {items.map(item => (
+                    <Card key={item.key} className="bg-muted/30 border-dashed">
+                      <CardContent className="p-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
+                              🔗 Auto
+                            </Badge>
+                          </div>
+                          <p className="font-semibold text-sm">{item.name}</p>
+                          <p className="text-lg font-bold tabular-nums text-blue-400">
+                            {formatCurrency(item.monthlyAmount)}/mo
+                          </p>
+                          <p className="text-xs text-muted-foreground">{item.note}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* ── Manual Income section ── */}
+      {/* ── Manually Entered Income section (grouped by category) ── */}
       {incomes.length === 0 && autoItems.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <TrendingUp className="h-12 w-12 mx-auto text-primary mb-4" />
@@ -242,32 +285,54 @@ export function IncomePage() {
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Income</Button>
         </div>
       ) : incomes.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {autoItems.length > 0 && (
-            <h2 className="text-base font-semibold">Manual Income</h2>
+            <h2 className="text-base font-semibold">Manually Entered Income</h2>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {incomes.map(item => (
-              <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                        {!item.isActive && <Badge variant="outline">Inactive</Badge>}
-                      </div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+
+          {CATEGORY_ORDER.map(cat => {
+            const items = manualGrouped.get(cat)
+            if (!items || items.length === 0) return null
+            const Icon = CATEGORY_ICONS[cat]
+            const catTotal = items.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
+
+            return (
+              <div key={cat} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-muted">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </div>
+                    <h3 className="text-sm font-medium">{CATEGORY_LABELS[cat]}</h3>
+                    <span className="text-xs text-muted-foreground">({items.length})</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+                  {items.map(item => (
+                    <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                              {!item.isActive && <Badge variant="outline">Inactive</Badge>}
+                            </div>
+                            <p className="font-semibold text-sm">{item.name}</p>
+                            <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       ) : null}
 
