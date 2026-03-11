@@ -232,7 +232,7 @@ export function projectNetWealth(
   liabilities.forEach(l => interestRates.set(l.id, l.interestRatePA))
 
   // Find gross salary for negative gearing calculation
-  const salaryIncome = incomes.find(i => i.isActive && i.source === 'salary')
+  const salaryIncome = incomes.find(i => i.isActive && i.type === 'salary')
   const grossSalary = salaryIncome ? salaryIncome.monthlyAmount * 12 : 0
   const cashAssets = (assets.filter(a => a.category === 'cash') as CashAsset[])
   const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary) / 12

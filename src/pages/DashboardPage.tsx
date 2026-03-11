@@ -220,7 +220,7 @@ export function DashboardPage() {
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
 
   // Add negative gearing tax benefit to cashflow
-  const salaryIncome = incomes.find(i => i.isActive && i.source === 'salary')
+  const salaryIncome = incomes.find(i => i.isActive && i.type === 'salary')
   const grossSalary = salaryIncome ? salaryIncome.monthlyAmount * 12 : 0
   const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
   const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
