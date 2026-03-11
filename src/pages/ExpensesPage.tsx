@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
+import { ExpenseActualsView } from '@/components/ExpenseActualsView'
 import type { ExpenseBudget, ExpenseCategory, Property } from '@/types/models'
 
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
@@ -151,7 +153,18 @@ export function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="budget" className="space-y-6">
+      <TabsList className="h-10">
+        <TabsTrigger value="budget" className="px-4">Budget</TabsTrigger>
+        <TabsTrigger value="actuals" className="px-4">Actuals</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="actuals">
+        <ExpenseActualsView />
+      </TabsContent>
+
+      <TabsContent value="budget">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
@@ -363,5 +376,7 @@ export function ExpensesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TabsContent>
+    </Tabs>
   )
 }

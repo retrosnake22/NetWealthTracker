@@ -111,8 +111,10 @@ export interface ExpenseBudget extends BaseEntity {
 
 export interface ExpenseActual extends BaseEntity {
   budgetId: string
+  /** YYYY-MM format, e.g. "2025-01" */
   month: string
   actualAmount: number
+  notes?: string
 }
 
 export interface SurplusAllocation {

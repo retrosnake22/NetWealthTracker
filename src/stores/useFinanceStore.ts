@@ -57,6 +57,9 @@ export interface FinanceState {
   // Expense Actuals
   addExpenseActual: (actual: Partial<ExpenseActual>) => void
   updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => void
+  removeExpenseActual: (id: string) => void
+  /** Upsert actuals for a given month — updates existing by budgetId+month, creates new ones */
+  bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => void
 
   // Projection Settings
   updateProjectionSettings: (settings: Partial<ProjectionSettings>) => void
@@ -213,6 +216,31 @@ export const useFinanceStore = create<FinanceState>()(
       updateExpenseActual: (id, updates) => set((state) => ({
         expenseActuals: state.expenseActuals.map(a => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
+      removeExpenseActual: (id) => set((state) => ({
+        expenseActuals: state.expenseActuals.filter(a => a.id !== id)
+      })),
+      bulkUpsertExpenseActuals: (month, entries) => set((state) => {
+        const updated = [...state.expenseActuals]
+        for (const entry of entries) {
+          if (entry.actualAmount === 0 && !entry.notes) {
+            // Remove zero entries to keep data clean
+            const idx = updated.findIndex(a => a.budgetId === entry.budgetId && a.month === month)
+            if (idx !== -1) updated.splice(idx, 1)
+            continue
+          }
+          const existing = updated.findIndex(a => a.budgetId === entry.budgetId && a.month === month)
+          if (existing !== -1) {
+            updated[existing] = { ...updated[existing], actualAmount: entry.actualAmount, notes: entry.notes, updatedAt: now() }
+          } else {
+            updated.push({
+              id: generateId(), budgetId: entry.budgetId, month,
+              actualAmount: entry.actualAmount, notes: entry.notes,
+              createdAt: now(), updatedAt: now(),
+            } as ExpenseActual)
+          }
+        }
+        return { expenseActuals: updated }
+      }),
 
       // Projection Settings
       updateProjectionSettings: (settings) => set((state) => ({

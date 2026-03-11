@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, SurplusAllocation } from '@/types/models'
+import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -206,6 +206,45 @@ export interface DashboardMetrics {
   monthlyCashflow: number
   /** monthlyCashflow / monthlyIncome × 100 (percentage, e.g. 20.7) */
   savingsRate: number
+  /** Whether actuals are being used for expenses instead of budget */
+  usingActuals: boolean
+}
+
+/**
+ * Get the current month's expense amount — uses actuals if available, otherwise budget.
+ * For each budget item, if there's an actual entry for the current month, use that instead.
+ */
+function getEffectiveMonthlyExpenses(
+  budgets: ExpenseBudget[],
+  actuals: ExpenseActual[],
+): { total: number; usingActuals: boolean } {
+  if (!actuals || actuals.length === 0) {
+    return { total: calculateMonthlyExpenses(budgets), usingActuals: false }
+  }
+
+  // Get current month in YYYY-MM format
+  const now = new Date()
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  // Build map of current month actuals by budgetId
+  const actualMap = new Map<string, number>()
+  for (const a of actuals) {
+    if (a.month === currentMonth) {
+      actualMap.set(a.budgetId, a.actualAmount)
+    }
+  }
+
+  if (actualMap.size === 0) {
+    return { total: calculateMonthlyExpenses(budgets), usingActuals: false }
+  }
+
+  // Use actual where available, budget as fallback
+  let total = 0
+  for (const b of budgets) {
+    total += actualMap.has(b.id) ? actualMap.get(b.id)! : b.monthlyBudget
+  }
+
+  return { total, usingActuals: true }
 }
 
 export function calculateDashboardMetrics(
@@ -214,6 +253,7 @@ export function calculateDashboardMetrics(
   properties: Property[],
   liabilities: Liability[],
   assets: Asset[],
+  expenseActuals?: ExpenseActual[],
 ): DashboardMetrics {
   // Income: base + rental
   const baseIncome = calculateMonthlyIncome(incomes)
@@ -222,8 +262,8 @@ export function calculateDashboardMetrics(
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
   const monthlyIncome = baseIncome + rentalIncome
 
-  // Expenses: budgets + mortgage repayments + property running costs
-  const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
+  // Expenses: budgets (or actuals if available) + mortgage repayments + property running costs
+  const { total: baseExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [])
   const mortgageExpenses = liabilities.reduce((sum, l) => {
     const repayment = l.minimumRepayment ?? 0
     if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
@@ -254,7 +294,7 @@ export function calculateDashboardMetrics(
   return {
     baseIncome, rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
-    negGearingBenefitPA, monthlyCashflow, savingsRate,
+    negGearingBenefitPA, monthlyCashflow, savingsRate, usingActuals,
   }
 }
 

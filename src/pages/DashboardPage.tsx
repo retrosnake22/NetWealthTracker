@@ -165,7 +165,7 @@ function KpiCard({
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
@@ -197,8 +197,8 @@ export function DashboardPage() {
   const netWealth         = netWealthIncSuper - superTotal
 
   // Use shared metrics so dashboard and breakdown dialogs always match
-  const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate } =
-    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets)
+  const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } =
+    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals)
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
@@ -286,7 +286,7 @@ export function DashboardPage() {
           onClick={() => setBreakdownOpen('cashflow')}
         >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Monthly Cashflow</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">Monthly Cashflow{usingActuals && <span className="text-[10px] font-medium text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Actuals</span>}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
