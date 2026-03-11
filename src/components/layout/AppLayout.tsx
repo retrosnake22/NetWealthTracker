@@ -322,7 +322,7 @@ function SidebarFooter() {
     resetStore()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('user_data').delete().eq('user_id', user.id)
+      await supabase.from('user_finance_data').delete().eq('user_id', user.id)
       localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
     }
     localStorage.removeItem('nwt-finance-store')
