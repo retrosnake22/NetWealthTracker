@@ -87,9 +87,13 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') return true
+    // If user has manually toggled, respect their choice
     const stored = localStorage.getItem('nwt-dark-mode')
     if (stored !== null) return stored === 'true'
+    // First visit: default dark on mobile, use system preference on desktop
+    const isMobile = window.innerWidth < 768
+    if (isMobile) return true
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
 
