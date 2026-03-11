@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, ShoppingCart, ChevronDown, ChevronRight } from 'lucide-react'
+import { Check, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CurrencyInput } from '@/components/ui/currency-input'

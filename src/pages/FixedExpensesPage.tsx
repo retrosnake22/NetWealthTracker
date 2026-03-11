@@ -7,17 +7,6 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
 import type { ExpenseCategory, Property } from '@/types/models'
 
-const CATEGORY_LABELS: Record<string, string> = {
-  mortgage_repayment: 'Mortgage Repayment',
-  council_rates: 'Council Rates',
-  water_rates: 'Water Rates',
-  strata: 'Strata',
-  property_management: 'Property Management',
-  land_tax: 'Land Tax',
-  maintenance: 'Maintenance',
-  building_insurance: 'Building / Landlord Insurance',
-}
-
 interface AutoExpenseItem {
   key: string
   propertyName: string
