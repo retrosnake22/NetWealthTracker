@@ -37,14 +37,14 @@ function App() {
 
     const userId = session.user.id
 
+    // Clear store before loading new user's data
+    useFinanceStore.getState().resetStore()
+
     // Load from cloud, then subscribe to changes
     setSyncing(true)
     loadFromCloud(userId).then((cloudData) => {
       if (cloudData) {
         useFinanceStore.getState().hydrateFromCloud(cloudData)
-      } else {
-        // First login — push existing localStorage data to cloud
-        debouncedSave(userId, useFinanceStore.getState())
       }
       setSyncing(false)
 
@@ -109,7 +109,7 @@ function App() {
     )
   }
 
-  const wizardComplete = localStorage.getItem('nwt-wizard-complete')
+  const wizardComplete = localStorage.getItem(`nwt-wizard-complete-${session?.user?.id}`)
 
   return (
     <BrowserRouter>

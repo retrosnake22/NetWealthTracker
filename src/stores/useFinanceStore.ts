@@ -18,6 +18,7 @@ export interface FinanceState {
   projectionSettings: ProjectionSettings
 
   // Cloud sync
+  resetStore: () => void
   hydrateFromCloud: (data: Record<string, unknown>) => void
 
   // Asset CRUD
@@ -82,7 +83,24 @@ export const useFinanceStore = create<FinanceState>()(
           stockGrowthOverride: 0.07,
       },
 
-      // Cloud sync — replaces store data with cloud data
+      // Reset store to empty state (used on user switch)
+    resetStore: () => set(() => ({
+      assets: [],
+      properties: [],
+      liabilities: [],
+      incomes: [],
+      expenseBudgets: [],
+      expenseActuals: [],
+      projectionSettings: {
+        surplusAllocations: [],
+        projectionYears: 20,
+        defaultGrowthRates: DEFAULT_GROWTH_RATES,
+        propertyGrowthOverride: 0.07,
+        stockGrowthOverride: 0.07,
+      },
+    })),
+
+    // Cloud sync — replaces store data with cloud data
       hydrateFromCloud: (data) => set(() => {
         const hydrated: Record<string, unknown> = {}
         const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings']

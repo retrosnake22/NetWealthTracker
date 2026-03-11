@@ -13,6 +13,7 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
+import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
   AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property
@@ -122,8 +123,10 @@ export function SetupWizardPage() {
     setCurrentStep(idx)
   }
 
-  const finishWizard = () => {
-    localStorage.setItem('nwt-wizard-complete', 'true')
+  const finishWizard = async () => {
+    const { data } = await supabase.auth.getSession()
+    const uid = data?.session?.user?.id ?? 'anonymous'
+    localStorage.setItem(`nwt-wizard-complete-${uid}`, 'true')
     window.location.href = '/'
   }
 
