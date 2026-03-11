@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
+import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/KpiBreakdownDialog'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
@@ -117,7 +118,7 @@ function CashflowBar({ label, amount, max, color, icon: Icon }: {
 }
 
 function KpiCard({
-  label, value, tag, tagColor, ratio, icon: Icon, accentColor,
+  label, value, tag, tagColor, ratio, icon: Icon, accentColor, onClick,
 }: {
   label: string
   value: string
@@ -126,6 +127,7 @@ function KpiCard({
   ratio: number
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
+  onClick?: () => void
 }) {
   const barColor = { blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
   const tagBg = {
@@ -136,8 +138,9 @@ function KpiCard({
 
   return (
     <Card
-      className="rounded-xl bg-card card-hover card-accent-left h-full"
+      className={`rounded-xl bg-card card-hover card-accent-left h-full ${onClick ? 'cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all' : ''}`}
       style={{ '--accent-color': accentColor } as React.CSSProperties}
+      onClick={onClick}
     >
       <CardContent className="p-5 pl-6">
         <div className="flex items-center justify-between mb-3">
@@ -164,6 +167,7 @@ function KpiCard({
 export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
+  const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
@@ -288,7 +292,7 @@ export function DashboardPage() {
             </p>
           </div>
         )}
-        <div className="animate-fade-up">
+        <div className="animate-fade-up cursor-pointer" onClick={() => setBreakdownOpen('net-wealth')}>
           <MetricCard
             variant="hero"
             title="Net Wealth (excl. Super)"
@@ -308,7 +312,10 @@ export function DashboardPage() {
 
     'cashflow-kpis': (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
-        <Card className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1 h-full flex flex-col">
+        <Card
+          className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1 h-full flex flex-col cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all"
+          onClick={() => setBreakdownOpen('cashflow')}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Monthly Cashflow</CardTitle>
           </CardHeader>
@@ -328,13 +335,13 @@ export function DashboardPage() {
 
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
           <div className="animate-fade-up animate-delay-2 h-full">
-            <KpiCard label="Savings Rate" value={formatPercent(savingsRate / 100)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate / 100} icon={PiggyBank} accentColor="#3B82F6" />
+            <KpiCard label="Savings Rate" value={formatPercent(savingsRate / 100)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate / 100} icon={PiggyBank} accentColor="#3B82F6" onClick={() => setBreakdownOpen('savings-rate')} />
           </div>
           <div className="animate-fade-up animate-delay-3 h-full">
-            <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" />
+            <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" onClick={() => setBreakdownOpen('debt-ratio')} />
           </div>
           <div className="animate-fade-up animate-delay-4 h-full">
-            <KpiCard label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} tag={surplusTag} tagColor={surplusColor} ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0} icon={TrendingUp} accentColor="#3b82f6" />
+            <KpiCard label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} tag={surplusTag} tagColor={surplusColor} ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0} icon={TrendingUp} accentColor="#3b82f6" onClick={() => setBreakdownOpen('surplus')} />
           </div>
         </div>
       </div>
@@ -357,16 +364,19 @@ export function DashboardPage() {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
-        <div className="space-y-6">
-          {widgetOrder.map(id => (
-            <SortableWidget key={id} id={id}>
-              {widgets[id]}
-            </SortableWidget>
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
+    <>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
+          <div className="space-y-6">
+            {widgetOrder.map(id => (
+              <SortableWidget key={id} id={id}>
+                {widgets[id]}
+              </SortableWidget>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+      <KpiBreakdownDialog open={breakdownOpen} onClose={() => setBreakdownOpen(null)} />
+    </>
   )
 }
