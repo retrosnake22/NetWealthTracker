@@ -11,7 +11,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
 import type { Asset, Property, AssetCategory } from '@/types/models'
 import { formatCurrency } from '@/lib/format'
-import PropertyPnL from '@/components/properties/PropertyPnL'
+import { PropertyPnL } from '@/components/properties/PropertyPnL'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash & Savings',
