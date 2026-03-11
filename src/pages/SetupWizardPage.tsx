@@ -4,7 +4,7 @@ import {
   ArrowRight, ArrowLeft, Check, Plus, Trash2, X, Pencil,
   Sparkles, Briefcase, Wallet, Building2, CreditCard,
   Receipt, Target, TrendingUp, DollarSign, PiggyBank,
-  Home, Car, Info
+  Home, Car, Info, User, Users
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,7 +16,7 @@ import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property
+  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property, ProfileType
 } from '@/types/models'
 import { ExpensesStep } from './SetupWizardExpensesStep'
 
@@ -59,6 +59,7 @@ function autoCalcRepayment(balance: string, rate: string, type: MortgageType, te
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Sparkles },
+  { id: 'profile', label: 'Profile', icon: User },
   { id: 'assets', label: 'Assets & Property', icon: Wallet },
   { id: 'liabilities', label: 'Debts', icon: CreditCard },
   { id: 'income', label: 'Income', icon: Briefcase },
@@ -191,6 +192,7 @@ export function SetupWizardPage() {
       {/* Step Content */}
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-32">
         {step.id === 'welcome' && <WelcomeStep onNext={goNext} />}
+          {step.id === 'profile' && <ProfileStep store={store} onNext={goNext} />}
         {step.id === 'assets' && <AssetsStep store={store} />}
         {step.id === 'liabilities' && <LiabilitiesStep store={store} />}
         {step.id === 'income' && <IncomeStep store={store} />}
@@ -200,7 +202,7 @@ export function SetupWizardPage() {
       </div>
 
       {/* Bottom Navigation */}
-      {step.id !== 'welcome' && step.id !== 'summary' && (
+      {step.id !== 'welcome' && step.id !== 'profile' && step.id !== 'summary' && (
         <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border/50">
           <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
             <p className="text-xs text-muted-foreground">
@@ -263,13 +265,143 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   )
 }
 
-// -- Step 2: Assets & Property (unified) --
+// -- Step 2: Profile (Individual vs Household) --
+
+function ProfileStep({ store, onNext }: { store: FinanceState; onNext: () => void }) {
+  const { userProfile, setProfileType, addHouseholdMember, updateHouseholdMember, removeHouseholdMember } = store
+  const [newMemberName, setNewMemberName] = useState('')
+
+  const handleAddMember = () => {
+    if (!newMemberName.trim()) return
+    addHouseholdMember(newMemberName.trim())
+    setNewMemberName('')
+  }
+
+  return (
+    <div className="space-y-6">
+      <StepHeader
+        title="Who is this tracker for?"
+        description="Are you tracking finances for yourself or a household?"
+        icon={Users}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={() => setProfileType('individual')}
+          className={`p-6 rounded-xl border-2 text-left transition-all ${
+            userProfile.profileType === 'individual'
+              ? 'border-primary bg-primary/10'
+              : 'border-border hover:border-primary/50 hover:bg-primary/5'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+            userProfile.profileType === 'individual' ? 'bg-primary/20' : 'bg-muted'
+          }`}>
+            <User className={`w-6 h-6 ${userProfile.profileType === 'individual' ? 'text-primary' : 'text-muted-foreground'}`} />
+          </div>
+          <h3 className="font-semibold text-lg mb-1">Individual</h3>
+          <p className="text-sm text-muted-foreground">
+            Track your personal finances — one income, one set of goals.
+          </p>
+        </button>
+
+        <button
+          onClick={() => setProfileType('household')}
+          className={`p-6 rounded-xl border-2 text-left transition-all ${
+            userProfile.profileType === 'household'
+              ? 'border-primary bg-primary/10'
+              : 'border-border hover:border-primary/50 hover:bg-primary/5'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+            userProfile.profileType === 'household' ? 'bg-primary/20' : 'bg-muted'
+          }`}>
+            <Users className={`w-6 h-6 ${userProfile.profileType === 'household' ? 'text-primary' : 'text-muted-foreground'}`} />
+          </div>
+          <h3 className="font-semibold text-lg mb-1">Household</h3>
+          <p className="text-sm text-muted-foreground">
+            Track combined finances — multiple incomes contributing to shared goals.
+          </p>
+        </button>
+      </div>
+
+      {userProfile.profileType === 'household' && (
+        <Card>
+          <CardContent className="p-5 space-y-4">
+            <div>
+              <h3 className="font-semibold mb-1">Household Members</h3>
+              <p className="text-sm text-muted-foreground">
+                Add each person in your household. You'll be able to assign salaries to each member later.
+              </p>
+            </div>
+
+            {userProfile.householdMembers.length > 0 && (
+              <div className="space-y-2">
+                {userProfile.householdMembers.map((member) => (
+                  <div key={member.id} className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <Input
+                      value={member.name}
+                      onChange={(e) => updateHouseholdMember(member.id, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive shrink-0"
+                      onClick={() => removeHouseholdMember(member.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g. Sarah"
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddMember() }}
+                className="flex-1"
+              />
+              <Button onClick={handleAddMember} disabled={!newMemberName.trim()}>
+                <Plus className="w-4 h-4 mr-1" /> Add
+              </Button>
+            </div>
+
+            {userProfile.householdMembers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center">
+                Add at least one household member to get started.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Button
+        size="lg"
+        onClick={onNext}
+        className="w-full gap-2"
+        disabled={userProfile.profileType === 'household' && userProfile.householdMembers.length === 0}
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </Button>
+    </div>
+  )
+}
+
+// -- Step 3: Assets & Property (unified) --
 
 function AssetsStep({ store }: { store: FinanceState }) {
   const {
     assets, addAsset, removeAsset, updateAsset,
     properties, addProperty, removeProperty, addLiability, updateProperty,
     liabilities, updateLiability, removeLiability,
+    addExpenseBudget,
   } = store
 
   const [activeTab, setActiveTab] = useState<AssetTab>('cash')
@@ -278,6 +410,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
   const [assetForm, setAssetForm] = useState({
     name: '', currentValue: '', growthRatePA: '4.5',
+    vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
+    loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
   })
 
   const [propForm, setPropForm] = useState({
@@ -293,7 +427,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
   })
 
   const resetForm = () => {
-    setAssetForm({ name: '', currentValue: '', growthRatePA: String((DEFAULT_GROWTH[activeTab] * 100).toFixed(1)) })
+    setAssetForm({
+      name: '', currentValue: '', growthRatePA: String((DEFAULT_GROWTH[activeTab] * 100).toFixed(1)),
+      vehicleFinancing: 'owned', loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
+    })
     setPropForm({
       name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7.0',
       hasMortgage: false, mortgageBalance: '', interestRate: '', repayment: '',
@@ -322,10 +459,13 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
   // -- Asset CRUD --
   const startEditAsset = (asset: typeof assets[0]) => {
+    const va = asset as any
     setAssetForm({
       name: asset.name,
       currentValue: String(asset.currentValue),
       growthRatePA: (asset.growthRatePA * 100).toFixed(1),
+      vehicleFinancing: va.financingType ?? 'owned',
+      loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
     })
     setEditingId(asset.id)
     setShowForm(true)
@@ -339,14 +479,56 @@ function AssetsStep({ store }: { store: FinanceState }) {
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
-      })
+        ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
+      } as any)
     } else {
       addAsset({
         name: assetForm.name,
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
-      })
+        ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
+      } as any)
+
+      // Handle vehicle financing side-effects
+      if (activeTab === 'vehicles' && assetForm.vehicleFinancing !== 'owned') {
+        const latestAssets = useFinanceStore.getState().assets
+        const newAssetId = latestAssets[latestAssets.length - 1]?.id
+
+        if (assetForm.vehicleFinancing === 'car_loan' && assetForm.loanBalance) {
+          addLiability({
+            name: `${assetForm.name} Car Loan`,
+            category: 'car_loan' as const,
+            currentBalance: parseFloat(assetForm.loanBalance) || 0,
+            interestRatePA: pctToFraction(assetForm.loanRate, 2),
+            minimumRepayment: parseFloat(assetForm.loanRepayment) || 0,
+            repaymentFrequency: 'monthly' as const,
+          })
+          if (newAssetId) {
+            const latestLiabs = useFinanceStore.getState().liabilities
+            const newLiabId = latestLiabs[latestLiabs.length - 1]?.id
+            if (newLiabId) {
+              updateAsset(newAssetId, { linkedLiabilityId: newLiabId } as any)
+            }
+          }
+        } else if (assetForm.vehicleFinancing === 'lease' && assetForm.leasePayment) {
+          addExpenseBudget({
+            label: `${assetForm.name} Lease`,
+            category: 'transport' as const,
+            monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
+          })
+          if (newAssetId) {
+            const latestBudgets = useFinanceStore.getState().expenseBudgets
+            const newBudgetId = latestBudgets[latestBudgets.length - 1]?.id
+            if (newBudgetId) {
+              updateAsset(newAssetId, {
+                linkedExpenseId: newBudgetId,
+                leaseMonthlyPayment: parseFloat(assetForm.leasePayment) || 0,
+              } as any)
+            }
+          }
+        }
+      }
     }
     resetForm()
   }

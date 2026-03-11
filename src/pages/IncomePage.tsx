@@ -115,13 +115,14 @@ const CATEGORY_ORDER: IncomeCategory[] = ['salary', 'rental', 'dividends', 'inte
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function IncomePage() {
-  const { incomes, addIncome, updateIncome, removeIncome, assets, properties } = useFinanceStore()
+  const { incomes, addIncome, updateIncome, removeIncome, assets, properties, userProfile } = useFinanceStore()
+  const isHousehold = userProfile.profileType === 'household' && userProfile.householdMembers.length > 0
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<IncomeItem | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '', isActive: true,
-    grossAnnualSalary: '', includesSuper: false,
+    grossAnnualSalary: '', includesSuper: false, memberId: '',
   })
 
   // ── Salary tax calculation ──────────────────────────────────────────────────
@@ -141,7 +142,12 @@ export function IncomePage() {
 
   // ── Manual income helpers ───────────────────────────────────────────────────
 
-  const resetForm = () => { setForm({ name: '', category: 'salary', monthlyAmount: '', isActive: true, grossAnnualSalary: '', includesSuper: false }); setEditId(null) }
+  const resetForm = () => { setForm({ name: '', category: 'salary', monthlyAmount: '', isActive: true, grossAnnualSalary: '', includesSuper: false, memberId: '' }); setEditId(null) }
+
+  const getMemberName = (memberId?: string) => {
+    if (!memberId) return null
+    return userProfile.householdMembers.find(m => m.id === memberId)?.name ?? null
+  }
 
   const handleSave = () => {
     const isSalary = form.category === 'salary' && taxBreakdown
@@ -158,6 +164,12 @@ export function IncomePage() {
       data.grossAnnualSalary = undefined
       data.includesSuper = undefined
     }
+    // Associate with household member
+    if (isHousehold && form.category === 'salary' && form.memberId) {
+      data.memberId = form.memberId
+    } else {
+      data.memberId = undefined
+    }
     if (editId) updateIncome(editId, data)
     else addIncome(data)
     resetForm(); setOpen(false)
@@ -173,6 +185,7 @@ export function IncomePage() {
       isActive: item.isActive,
       grossAnnualSalary: item.grossAnnualSalary ? String(item.grossAnnualSalary) : '',
       includesSuper: item.includesSuper ?? false,
+      memberId: item.memberId ?? '',
     })
     setEditId(id); setOpen(true)
   }
@@ -213,6 +226,21 @@ export function IncomePage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* ── Household member selector for salary ── */}
+              {isHousehold && form.category === 'salary' && (
+                <div>
+                  <Label>Household Member</Label>
+                  <Select value={form.memberId} onValueChange={(v) => setForm({...form, memberId: v})}>
+                    <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
+                    <SelectContent>
+                      {userProfile.householdMembers.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* ── Salary-specific: gross input + super toggle + tax breakdown ── */}
               {form.category === 'salary' ? (
@@ -393,31 +421,37 @@ export function IncomePage() {
                   <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
-                  {items.map(item => (
-                    <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                              {!item.isActive && <Badge variant="outline">Inactive</Badge>}
-                            </div>
-                            <p className="font-semibold text-sm">{item.name}</p>
-                            <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                  {items.map(item => {
+                    const memberName = getMemberName(item.memberId)
+                    return (
+                      <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                                {!item.isActive && <Badge variant="outline">Inactive</Badge>}
+                                {memberName && (
+                                  <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
+                                )}
+                              </div>
+                              <p className="font-semibold text-sm">{item.name}</p>
+                              <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
                               {item.grossAnnualSalary && (
                                 <p className="text-xs text-muted-foreground">
                                   {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
                                 </p>
                               )}
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                 </div>
               </div>
             )

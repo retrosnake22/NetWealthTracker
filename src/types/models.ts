@@ -45,11 +45,17 @@ export interface SuperAsset extends Asset {
   fund?: string
 }
 
+export type VehicleFinancingType = 'owned' | 'car_loan' | 'lease'
+
 export interface VehicleAsset extends Asset {
   category: 'vehicles'
   year?: number
   make?: string
   model?: string
+  financingType?: VehicleFinancingType
+  linkedLiabilityId?: string    // for car_loan: linked Liability id
+  linkedExpenseId?: string      // for lease: linked ExpenseBudget id
+  leaseMonthlyPayment?: number  // for lease: monthly payment amount
 }
 
 export interface Property extends BaseEntity {
@@ -93,6 +99,7 @@ export interface IncomeItem extends BaseEntity {
   isActive: boolean
   grossAnnualSalary?: number    // for salary items: gross annual amount entered
   includesSuper?: boolean       // for salary items: whether gross includes super
+  memberId?: string             // for household mode: which member this income belongs to
 }
 
 export interface ExpenseBudget extends BaseEntity {
@@ -121,6 +128,18 @@ export interface ProjectionSettings {
   defaultGrowthRates: Record<AssetCategory, number>
   propertyGrowthOverride?: number   // annual %, e.g. 0.05 = 5%
   stockGrowthOverride?: number      // annual %, e.g. 0.08 = 8%
+}
+
+export type ProfileType = 'individual' | 'household'
+
+export interface HouseholdMember {
+  id: string
+  name: string
+}
+
+export interface UserProfile {
+  profileType: ProfileType
+  householdMembers: HouseholdMember[]
 }
 
 export interface MonthlySnapshot {

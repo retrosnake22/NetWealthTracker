@@ -85,6 +85,25 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/projections': { title: 'Projections', subtitle: 'Model your future wealth' },
 }
 
+// ─── User profile hook ───
+
+function useFirstName() {
+  const [firstName, setFirstName] = useState<string>('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const displayName =
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        user?.email?.split('@')[0] ||
+        ''
+      setFirstName(displayName.split(' ')[0])
+    })
+  }, [])
+
+  return firstName
+}
+
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return true
@@ -456,13 +475,23 @@ function DesktopSidebar() {
 function TopBar() {
   const location = useLocation()
   const page = pageTitles[location.pathname] ?? { title: '', subtitle: '' }
+  const firstName = useFirstName()
+  const isDashboard = location.pathname === '/'
+
+  const title = isDashboard && firstName
+    ? `Welcome back, ${firstName}`
+    : page.title
+
+  const subtitle = isDashboard && firstName
+    ? 'Your financial overview at a glance'
+    : page.subtitle
 
   return (
     <header className="sticky top-0 z-40 hidden md:flex items-center h-14 border-b border-border/50 bg-background/80 backdrop-blur-md px-8">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{page.title}</h1>
-        {page.subtitle && (
-          <span className="text-sm text-muted-foreground hidden lg:inline">&mdash; {page.subtitle}</span>
+        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+        {subtitle && (
+          <span className="text-sm text-muted-foreground hidden lg:inline">&mdash; {subtitle}</span>
         )}
       </div>
     </header>
@@ -473,6 +502,12 @@ function MobileHeader() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
   const page = pageTitles[location.pathname] ?? { title: 'NWT', subtitle: '' }
+  const firstName = useFirstName()
+  const isDashboard = location.pathname === '/'
+
+  const title = isDashboard && firstName
+    ? `Welcome back, ${firstName}`
+    : page.title
 
   return (
     <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
@@ -494,7 +529,7 @@ function MobileHeader() {
             </div>
           </SheetContent>
         </Sheet>
-        <h1 className="text-base font-semibold">{page.title}</h1>
+        <h1 className="text-base font-semibold">{title}</h1>
       </div>
     </div>
   )

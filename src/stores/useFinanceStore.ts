@@ -3,7 +3,8 @@ import { persist } from 'zustand/middleware'
 import type {
   Asset,
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
-  SurplusAllocation, ProjectionSettings, AssetCategory
+  SurplusAllocation, ProjectionSettings, AssetCategory,
+  UserProfile, ProfileType,
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
@@ -16,10 +17,17 @@ export interface FinanceState {
   expenseBudgets: ExpenseBudget[]
   expenseActuals: ExpenseActual[]
   projectionSettings: ProjectionSettings
+  userProfile: UserProfile
 
   // Cloud sync
   resetStore: () => void
   hydrateFromCloud: (data: Record<string, unknown>) => void
+
+  // Profile
+  setProfileType: (type: ProfileType) => void
+  addHouseholdMember: (name: string) => void
+  updateHouseholdMember: (id: string, name: string) => void
+  removeHouseholdMember: (id: string) => void
 
   // Asset CRUD
   addAsset: (asset: Partial<Asset>) => void
@@ -66,6 +74,19 @@ const DEFAULT_GROWTH_RATES: Record<AssetCategory, number> = {
   other: 0.03,
 }
 
+const DEFAULT_PROFILE: UserProfile = {
+  profileType: 'individual',
+  householdMembers: [],
+}
+
+const DEFAULT_PROJECTION_SETTINGS: ProjectionSettings = {
+  surplusAllocations: [],
+  projectionYears: 20,
+  defaultGrowthRates: DEFAULT_GROWTH_RATES,
+  propertyGrowthOverride: 0.07,
+  stockGrowthOverride: 0.07,
+}
+
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set) => ({
@@ -75,35 +96,25 @@ export const useFinanceStore = create<FinanceState>()(
       incomes: [],
       expenseBudgets: [],
       expenseActuals: [],
-      projectionSettings: {
-        surplusAllocations: [],
-        projectionYears: 20,
-        defaultGrowthRates: DEFAULT_GROWTH_RATES,
-          propertyGrowthOverride: 0.07,
-          stockGrowthOverride: 0.07,
-      },
+      projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
+      userProfile: { ...DEFAULT_PROFILE },
 
       // Reset store to empty state (used on user switch)
-    resetStore: () => set(() => ({
-      assets: [],
-      properties: [],
-      liabilities: [],
-      incomes: [],
-      expenseBudgets: [],
-      expenseActuals: [],
-      projectionSettings: {
-        surplusAllocations: [],
-        projectionYears: 20,
-        defaultGrowthRates: DEFAULT_GROWTH_RATES,
-        propertyGrowthOverride: 0.07,
-        stockGrowthOverride: 0.07,
-      },
-    })),
+      resetStore: () => set(() => ({
+        assets: [],
+        properties: [],
+        liabilities: [],
+        incomes: [],
+        expenseBudgets: [],
+        expenseActuals: [],
+        projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
+        userProfile: { ...DEFAULT_PROFILE },
+      })),
 
-    // Cloud sync — replaces store data with cloud data
+      // Cloud sync — replaces store data with cloud data
       hydrateFromCloud: (data) => set(() => {
         const hydrated: Record<string, unknown> = {}
-        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings']
+        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile']
         for (const key of keys) {
           if (data[key] !== undefined) {
             hydrated[key] = data[key]
@@ -111,6 +122,34 @@ export const useFinanceStore = create<FinanceState>()(
         }
         return hydrated as Partial<FinanceState>
       }),
+
+      // Profile
+      setProfileType: (type) => set((state) => ({
+        userProfile: { ...state.userProfile, profileType: type },
+      })),
+      addHouseholdMember: (name) => set((state) => ({
+        userProfile: {
+          ...state.userProfile,
+          householdMembers: [
+            ...state.userProfile.householdMembers,
+            { id: generateId(), name },
+          ],
+        },
+      })),
+      updateHouseholdMember: (id, name) => set((state) => ({
+        userProfile: {
+          ...state.userProfile,
+          householdMembers: state.userProfile.householdMembers.map(m =>
+            m.id === id ? { ...m, name } : m
+          ),
+        },
+      })),
+      removeHouseholdMember: (id) => set((state) => ({
+        userProfile: {
+          ...state.userProfile,
+          householdMembers: state.userProfile.householdMembers.filter(m => m.id !== id),
+        },
+      })),
 
       // Assets
       addAsset: (asset) => set((state) => ({

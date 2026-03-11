@@ -33,6 +33,17 @@ const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 }
 
+// Bar accent colour that matches each category badge — used for the progress bar fill
+const CATEGORY_BAR_COLORS: Record<LiabilityCategory, string> = {
+  mortgage: 'bg-red-500',
+  home_loan: 'bg-red-500',
+  personal_loan: 'bg-orange-500',
+  car_loan: 'bg-orange-500',
+  credit_card: 'bg-pink-500',
+  hecs: 'bg-violet-500',
+  other: 'bg-gray-500',
+}
+
 const CATEGORY_GROUPS = [
   {
     key: 'mortgages',
@@ -242,7 +253,8 @@ export function LiabilitiesPage() {
         <Card>
           <CardContent className='p-4'>
             <p className='text-sm text-muted-foreground'>Total Liabilities</p>
-            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-amber-400'>{formatCurrency(total)}</p>
+            {/* Red for liabilities — debts carry negative weight, matches how liabilities appear elsewhere */}
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-red-400'>{formatCurrency(total)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -283,7 +295,8 @@ export function LiabilitiesPage() {
                     <span className="text-xs text-muted-foreground">({group.items.length})</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold tabular-nums text-amber-400">{formatCurrency(group.subtotal)}</p>
+                    {/* Use text-foreground — no amber, no garish colour for subtotals */}
+                    <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(group.subtotal)}</p>
                     <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.monthlyRepay)}/mo repayments</p>
                   </div>
                 </div>
@@ -292,11 +305,18 @@ export function LiabilitiesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {group.items.map(item => {
                     const linkedProperty = getLinkedProperty(item.id)
+                    // Share of this liability within its group — drives the progress bar width
+                    const groupShare = group.subtotal > 0
+                      ? Math.round((item.currentBalance / group.subtotal) * 100)
+                      : 0
+                    const barColor = CATEGORY_BAR_COLORS[item.category]
+
                     return (
-                      <Card key={item.id} className="card-hover group">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
+                      <Card key={item.id} className="card-hover group overflow-hidden">
+                        <CardContent className="p-4 pb-3">
+                          <div className="flex items-start justify-between gap-2">
                             <div className="space-y-1.5 min-w-0 flex-1">
+                              {/* Badge row */}
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
                                 <span className="text-xs text-muted-foreground">
@@ -306,13 +326,23 @@ export function LiabilitiesPage() {
                                   <Badge variant="outline">🏠 {linkedProperty.name}</Badge>
                                 )}
                               </div>
+
+                              {/* Name */}
                               <p className="font-semibold truncate">{item.name}</p>
-                              <p className="text-lg font-bold tabular-nums text-amber-400">{formatCurrency(item.currentBalance)}</p>
+
+                              {/* Balance — text-foreground, clean and prominent via font weight alone */}
+                              <p className="text-lg font-bold tabular-nums text-foreground">
+                                {formatCurrency(item.currentBalance)}
+                              </p>
+
+                              {/* Repayment detail */}
                               <p className="text-xs text-muted-foreground">
                                 Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
                               </p>
                             </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+
+                            {/* Action buttons — appear on hover */}
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -321,6 +351,21 @@ export function LiabilitiesPage() {
                               </Button>
                             </div>
                           </div>
+
+                          {/* Progress bar — share of group subtotal this liability represents */}
+                          {group.items.length > 1 && (
+                            <div className="mt-3 space-y-1">
+                              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 opacity-60 ${barColor}`}
+                                  style={{ width: `${groupShare}%` }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground tabular-nums">
+                                {groupShare}% of {group.label.toLowerCase()} total
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     )
