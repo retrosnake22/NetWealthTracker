@@ -11,12 +11,12 @@ export function AssetBreakdown({ data }: AssetBreakdownProps) {
   const total = data.reduce((s, d) => s + d.value, 0)
 
   return (
-    <Card className="rounded-xl bg-card overflow-hidden card-hover">
+    <Card className="rounded-xl bg-card overflow-hidden card-hover h-full flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">Asset Breakdown</CardTitle>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1">
         {empty ? (
           <div className="h-[250px] flex items-center justify-center text-sm text-muted-foreground">
             Add assets to see your breakdown

@@ -20,7 +20,7 @@ export function WealthChart({ data }: WealthChartProps) {
   const empty = data.length === 0
 
   return (
-    <Card className="rounded-xl bg-card overflow-hidden">
+    <Card className="rounded-xl bg-card overflow-hidden h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -39,7 +39,7 @@ export function WealthChart({ data }: WealthChartProps) {
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1">
         {empty ? (
           <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">
             Add assets and income to see your wealth projection

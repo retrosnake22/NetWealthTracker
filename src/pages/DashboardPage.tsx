@@ -273,10 +273,10 @@ export function DashboardPage() {
 
       {/* ── Charts — 2/3 + 1/3 ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        <div className="lg:col-span-2 animate-fade-up animate-delay-5">
+        <div className="lg:col-span-2 h-full animate-fade-up animate-delay-5">
           <WealthChart data={projectionData} />
         </div>
-        <div className="animate-fade-up animate-delay-6">
+        <div className="h-full animate-fade-up animate-delay-6">
           <AssetBreakdown data={breakdownData} />
         </div>
       </div>
