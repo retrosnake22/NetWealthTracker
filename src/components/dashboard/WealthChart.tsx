@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LabelList } from 'recharts'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 interface WealthChartProps {
@@ -47,7 +47,7 @@ export function WealthChart({ data }: WealthChartProps) {
         ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <ComposedChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3} />
@@ -85,16 +85,24 @@ export function WealthChart({ data }: WealthChartProps) {
                   cursor={{ stroke: '#60A5FA', strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
 
-                {/* Net Wealth — primary, filled area */}
+                {/* Net Wealth — primary, filled area with value labels */}
                 <Area
                   type="monotone"
                   dataKey="netWealth"
                   stroke="#3B82F6"
                   strokeWidth={3}
                   fill="url(#netWealthGrad)"
-                  dot={false}
+                  dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }}
                   activeDot={{ r: 5, fill: '#60A5FA', strokeWidth: 0 }}
-                />
+                >
+                  <LabelList
+                    dataKey="netWealth"
+                    position="top"
+                    offset={10}
+                    formatter={formatCompact}
+                    style={{ fill: '#93C5FD', fontSize: 11, fontWeight: 600 }}
+                  />
+                </Area>
 
                 {/* Assets — subtle secondary line */}
                 <Line
