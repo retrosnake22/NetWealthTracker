@@ -581,7 +581,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         <div>
                           <p className="font-medium">{prop.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'} &middot; {formatPercent(prop.growthRatePA)} p.a.
+                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
                             {prop.weeklyRent ? ` \u00B7 ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
                             {linkedMortgage ? ` \u00B7 ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
                           </p>
@@ -639,15 +639,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       value={propForm.currentValue}
                       onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
                       placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Growth Rate (% p.a.)</Label>
-                    <Input
-                      type="number" step="0.1" min="-50" max="50"
-                      value={propForm.growthRatePA}
-                      onChange={e => setPropForm({ ...propForm, growthRatePA: e.target.value })}
-                      onBlur={e => setPropForm({ ...propForm, growthRatePA: parseFloat(e.target.value || '0').toFixed(1) })}
                     />
                   </div>
 
@@ -880,7 +871,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
                         <div>
                           <p className="font-medium">{asset.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {ASSET_LABELS[asset.category]} &middot; {formatPercent(asset.growthRatePA)} p.a.
+                            {ASSET_LABELS[asset.category]}
                           </p>
                         </div>
                       </div>
@@ -925,15 +916,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       value={assetForm.currentValue}
                       onValueChange={v => setAssetForm({ ...assetForm, currentValue: v })}
                       placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Growth Rate (% p.a.)</Label>
-                    <Input
-                      type="number" step="0.1" min="-50" max="50"
-                      value={assetForm.growthRatePA}
-                      onChange={e => setAssetForm({ ...assetForm, growthRatePA: e.target.value })}
-                      onBlur={e => setAssetForm({ ...assetForm, growthRatePA: parseFloat(e.target.value || '0').toFixed(1) })}
                     />
                   </div>
                 </div>
