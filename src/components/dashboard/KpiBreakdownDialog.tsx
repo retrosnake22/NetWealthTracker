@@ -8,7 +8,7 @@ import {
   calculateMonthlyIncome, calculateMonthlyExpenses,
   calculateTotalNegativeGearingBenefit,
 } from '@/lib/calculations'
-import type { CashAsset } from '@/types/models'
+import type { CashAsset, Liability } from '@/types/models'
 import { useNavigate } from 'react-router-dom'
 
 export type BreakdownType = 'net-wealth' | 'cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | null
@@ -39,6 +39,16 @@ function NavLink({ to, label }: { to: string; label: string }) {
   )
 }
 
+function getMonthlyRepayment(l: Liability): number {
+  const repayment = l.minimumRepayment ?? 0
+  switch (l.repaymentFrequency) {
+    case 'weekly': return repayment * 52 / 12
+    case 'fortnightly': return repayment * 26 / 12
+    case 'monthly': return repayment
+    default: return repayment
+  }
+}
+
 export function KpiBreakdownDialog({ open, onClose }: Props) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = useFinanceStore()
 
@@ -52,13 +62,13 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
 
   // Mortgage repayments
-  const mortgageExpenses = liabilities.reduce((sum, l) => sum + (l.monthlyRepayment ?? 0), 0)
+  const mortgageExpenses = liabilities.reduce((sum, l) => sum + getMonthlyRepayment(l), 0)
 
   // Property running costs
   const propertyRunningCosts = properties.reduce((sum, p) => {
     return sum
-      + (p.councilRates ?? 0) / 12
-      + (p.waterRates ?? 0) / 12
+      + (p.councilRatesPA ?? 0) / 12
+      + (p.waterRatesPA ?? 0) / 12
       + (p.insurancePA ?? 0) / 12
       + (p.strataPA ?? 0) / 12
       + (p.maintenanceBudgetPA ?? 0) / 12
@@ -112,9 +122,9 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
 
   // Expense breakdown (top categories)
   const expensesByCategory = new Map<string, number>()
-  expenseBudgets.filter(e => e.monthlyAmount > 0).forEach(e => {
-    const label = e.name ?? e.category
-    expensesByCategory.set(label, (expensesByCategory.get(label) ?? 0) + e.monthlyAmount)
+  expenseBudgets.filter(e => e.monthlyBudget > 0).forEach(e => {
+    const label = e.label ?? e.category
+    expensesByCategory.set(label, (expensesByCategory.get(label) ?? 0) + e.monthlyBudget)
   })
 
   const titles: Record<string, string> = {
