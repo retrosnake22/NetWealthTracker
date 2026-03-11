@@ -139,7 +139,7 @@ export function DashboardPage() {
   }
   const categoryTotals = new Map<string, { value: number; color: string }>()
   assets.forEach(a => {
-    const label = a.category.charAt(0).toUpperCase() + a.category.slice(1)
+    const label = ({ cash: 'Cash & Savings', stocks: 'Shares / Stocks', super: 'Super', vehicles: 'Vehicles', other: 'Other' } as Record<string, string>)[a.category] ?? a.category.charAt(0).toUpperCase() + a.category.slice(1)
     const existing = categoryTotals.get(label)
     categoryTotals.set(label, {
       value: (existing?.value ?? 0) + a.currentValue,

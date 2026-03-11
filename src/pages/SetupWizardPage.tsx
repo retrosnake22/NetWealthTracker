@@ -75,7 +75,7 @@ const INCOME_LABELS: Record<IncomeCategory, string> = {
 }
 
 const ASSET_LABELS: Record<AssetCategory, string> = {
-  cash: 'Cash & Savings', property: 'Property', stocks: 'Stocks / ETFs',
+  cash: 'Cash & Savings', property: 'Property', stocks: 'Shares / Stocks',
   super: 'Superannuation', vehicles: 'Vehicles', other: 'Other',
 }
 
@@ -93,7 +93,7 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 type AssetTab = AssetCategory
 const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: string }[] = [
   { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-amber-500 bg-amber-500/10' },
-  { id: 'stocks', label: 'Stocks / ETFs', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
+  { id: 'stocks', label: 'Shares / Stocks', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
   { id: 'super', label: 'Super', icon: Target, color: 'text-violet-500 bg-violet-500/10' },
   { id: 'vehicles', label: 'Vehicles', icon: Car, color: 'text-amber-500 bg-amber-500/10' },
   { id: 'property', label: 'Property', icon: Home, color: 'text-sky-500 bg-sky-500/10' },
@@ -1007,7 +1007,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you owe?"
-        description="Add any debts \u2014 home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
+        description="Add any debts — home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
         icon={CreditCard}
       />
 
@@ -1227,7 +1227,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 
       {liabilities.length === 0 && !showForm && (
         <p className="text-center text-sm text-muted-foreground">
-          Debt-free? Amazing \u2014 hit <strong>Continue</strong> to keep going.
+          Debt-free? Amazing — hit <strong>Continue</strong> to keep going.
         </p>
       )}
     </div>
@@ -1320,7 +1320,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you earn?"
-        description="Add your income sources. Rental income, savings interest and stock dividends are calculated automatically from your assets."
+        description="Add your income sources. Rental income, savings interest and share dividends are calculated automatically from your assets."
         icon={Briefcase}
       />
 

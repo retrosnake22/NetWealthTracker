@@ -49,7 +49,7 @@ const navSections = [
         expandable: true,
         subItems: [
           { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', icon: PiggyBank },
-          { to: '/assets?category=stocks', category: 'stocks', label: 'Stocks / ETFs', icon: TrendingUp },
+          { to: '/assets?category=stocks', category: 'stocks', label: 'Shares / Stocks', icon: TrendingUp },
           { to: '/assets?category=super', category: 'super', label: 'Superannuation', icon: Target },
           { to: '/assets?category=vehicles', category: 'vehicles', label: 'Vehicles', icon: Car },
           { to: '/assets?category=property', category: 'property', label: 'Property', icon: Home },
@@ -78,7 +78,7 @@ const navSections = [
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Your financial overview at a glance' },
-  '/assets': { title: 'Assets', subtitle: 'Manage your cash, stocks, super, vehicles & property' },
+  '/assets': { title: 'Assets', subtitle: 'Manage your cash, shares, super, vehicles & property' },
   '/liabilities': { title: 'Liabilities', subtitle: 'Mortgages, loans and debts' },
   '/income': { title: 'Income', subtitle: 'Your income sources' },
   '/expenses': { title: 'Expenses', subtitle: 'Budget and track spending' },

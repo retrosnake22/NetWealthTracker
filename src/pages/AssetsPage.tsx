@@ -16,7 +16,7 @@ import { PropertyPnL } from '@/components/properties/PropertyPnL'
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash & Savings',
   property: 'Property',
-  stocks: 'Stocks / ETFs',
+  stocks: 'Shares / Stocks',
   super: 'Superannuation',
   vehicles: 'Vehicles',
   other: 'Other',
