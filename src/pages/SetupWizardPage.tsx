@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, ExpenseCategory, MortgageType, Property
+  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property
 } from '@/types/models'
 import { ExpensesStep } from './SetupWizardExpensesStep'
 
@@ -83,29 +83,6 @@ const LIABILITY_LABELS: Record<LiabilityCategory, string> = {
   car_loan: 'Car Loan', credit_card: 'Credit Card', hecs: 'HECS-HELP', other: 'Other',
 }
 
-const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
-  mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
-  council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
-  property_management: 'Property Management', land_tax: 'Land Tax',
-  maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
-  insurance_home: 'Home Insurance', insurance_health: 'Health Insurance',
-  insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
-  utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
-  subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
-  clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
-  childcare: 'Childcare', pet_expenses: 'Pet Expenses', phone_internet: 'Phone & Internet',
-  personal_care: 'Personal Care', gifts_donations: 'Gifts & Donations',
-  hecs_repayment: 'HECS Repayment', tax: 'Tax', other: 'Other',
-}
-
-const EXPENSE_QUICK_PICKS: { label: string; categories: ExpenseCategory[] }[] = [
-  { label: '\u{1F3E0} Property', categories: ['council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
-  { label: '\u{1F3E1} Housing', categories: ['mortgage_repayment', 'rent'] },
-  { label: '\u{1F6E1}\uFE0F Insurance', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: '\u{1F6D2} Living', categories: ['groceries', 'utilities', 'transport', 'fuel', 'phone_internet'] },
-  { label: '\u{1F389} Lifestyle', categories: ['subscriptions', 'entertainment', 'dining_out', 'clothing', 'health_fitness', 'personal_care'] },
-  { label: '\u{1F4DA} Other', categories: ['education', 'childcare', 'pet_expenses', 'gifts_donations', 'hecs_repayment', 'tax', 'other'] },
-]
 
 const DEFAULT_GROWTH: Record<AssetCategory, number> = {
   cash: 0.045, property: 0.07, stocks: 0.08, super: 0.07, vehicles: -0.10, other: 0.03,
