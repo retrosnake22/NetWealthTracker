@@ -31,10 +31,10 @@ export interface PnLResult {
 
 export function calculatePropertyPnL(property: Property, mortgage?: Liability): PnLResult {
   const grossRentPA = (property.weeklyRent ?? 0) * 52
-  const vacancyLossPA = grossRentPA * (property.vacancyRatePA ?? 0)
+  const vacancyLossPA = grossRentPA * ((property.vacancyRatePA ?? 0) / 100)
   const netRentPA = grossRentPA - vacancyLossPA
 
-  const managementFeePA = netRentPA * (property.propertyManagementPct ?? 0)
+  const managementFeePA = netRentPA * ((property.propertyManagementPct ?? 0) / 100)
   const councilRatesPA = property.councilRatesPA ?? 0
   const waterRatesPA = property.waterRatesPA ?? 0
   const insurancePA = property.insurancePA ?? 0
