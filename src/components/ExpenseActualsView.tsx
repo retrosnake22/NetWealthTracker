@@ -7,21 +7,6 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
 import type { ExpenseCategory } from '@/types/models'
 
-const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
-  council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
-  property_management: 'Property Management', land_tax: 'Land Tax',
-  maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
-  insurance_health: 'Health Insurance',
-  insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
-  utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
-  subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
-  clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
-  childcare: 'Childcare', pet_expenses: 'Pet Expenses', phone_internet: 'Phone & Internet',
-  personal_care: 'Personal Care', gifts_donations: 'Gifts & Donations',
-  hecs_repayment: 'HECS Repayment', tax: 'Tax', other: 'Other',
-}
-
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
   { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life'] },
   { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
