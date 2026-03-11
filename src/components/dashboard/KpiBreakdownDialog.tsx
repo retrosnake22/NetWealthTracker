@@ -5,10 +5,8 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateTotalAssets, calculateTotalLiabilities,
-  calculateMonthlyIncome, calculateMonthlyExpenses,
-  calculateTotalNegativeGearingBenefit,
+  calculateDashboardMetrics,
 } from '@/lib/calculations'
-import type { CashAsset, Liability } from '@/types/models'
 import { useNavigate } from 'react-router-dom'
 
 export type BreakdownType = 'net-wealth' | 'cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | null
@@ -39,16 +37,6 @@ function NavLink({ to, label }: { to: string; label: string }) {
   )
 }
 
-function getMonthlyRepayment(l: Liability): number {
-  const repayment = l.minimumRepayment ?? 0
-  switch (l.repaymentFrequency) {
-    case 'weekly': return repayment * 52 / 12
-    case 'fortnightly': return repayment * 26 / 12
-    case 'monthly': return repayment
-    default: return repayment
-  }
-}
-
 export function KpiBreakdownDialog({ open, onClose }: Props) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = useFinanceStore()
 
@@ -58,34 +46,13 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   const superAssets = assets.filter(a => a.category === 'super').reduce((s, a) => s + a.currentValue, 0)
   const netWealthExclSuper = netWealth - superAssets
 
-  const monthlyIncome = calculateMonthlyIncome(incomes)
-  const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
-
-  // Mortgage repayments
-  const mortgageExpenses = liabilities.reduce((sum, l) => sum + getMonthlyRepayment(l), 0)
-
-  // Property running costs
-  const propertyRunningCosts = properties.reduce((sum, p) => {
-    return sum
-      + (p.councilRatesPA ?? 0) / 12
-      + (p.waterRatesPA ?? 0) / 12
-      + (p.insurancePA ?? 0) / 12
-      + (p.strataPA ?? 0) / 12
-      + (p.maintenanceBudgetPA ?? 0) / 12
-      + ((p.propertyManagementPct ?? 0) / 100) * (p.weeklyRent ?? 0) * 52 / 12
-      + (p.landTaxPA ?? 0) / 12
-  }, 0)
-
-  const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
-
-  // Negative gearing
-  const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
-  const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
-  const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
-  const negGearingPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
-
-  const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingPA / 12
-  const savingsRate = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
+  // Use shared metrics so figures always match the dashboard
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets)
+  const {
+    rentalIncome, monthlyIncome,
+    baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
+    negGearingBenefitPA: negGearingPA, monthlyCashflow, savingsRate,
+  } = metrics
   const debtRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0
 
   // Asset breakdown by category
@@ -114,11 +81,22 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
     liabByCategory.set(label, (liabByCategory.get(label) ?? 0) + l.currentBalance)
   })
 
-  // Income breakdown
-  const incomeBySource = incomes.filter(i => i.isActive).map(i => ({
+  // Income breakdown (include rental income from investment properties)
+  const incomeBySource: { label: string; amount: number }[] = incomes.filter(i => i.isActive).map(i => ({
     label: i.name,
     amount: i.monthlyAmount,
   }))
+  if (rentalIncome > 0) {
+    // Add individual property rental lines
+    properties
+      .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
+      .forEach(p => {
+        incomeBySource.push({
+          label: `${p.address ?? 'Investment Property'} (rent)`,
+          amount: ((p.weeklyRent ?? 0) * 52) / 12,
+        })
+      })
+  }
 
   // Expense breakdown (top categories)
   const expensesByCategory = new Map<string, number>()

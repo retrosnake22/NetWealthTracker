@@ -10,11 +10,9 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
-  calculateMonthlyIncome, calculateMonthlyExpenses,
   calculateDebtToAssetRatio, projectNetWealth,
-  calculateTotalNegativeGearingBenefit
+  calculateDashboardMetrics,
 } from '@/lib/calculations'
-import type { CashAsset } from '@/types/models'
 import {
   DndContext,
   closestCenter,
@@ -196,41 +194,10 @@ export function DashboardPage() {
   const superTotal        = assets.filter(a => a.category === 'super').reduce((s, a) => s + a.currentValue, 0)
   const netWealth         = netWealthIncSuper - superTotal
 
-  // Base income + rental income from investment properties
-  const baseIncome = calculateMonthlyIncome(incomes)
-  const rentalIncome = properties
-    .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
-    .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
-  const monthlyIncome = baseIncome + rentalIncome
-
-  // Base expenses + mortgage repayments + property running costs
-  const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
-  const mortgageExpenses = liabilities.reduce((sum, l) => {
-    const repayment = l.minimumRepayment ?? 0
-    if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
-    if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
-    return sum + repayment
-  }, 0)
-  const propertyRunningCosts = properties.reduce((sum, p) => {
-    return sum
-      + (p.councilRatesPA ?? 0) / 12
-      + (p.waterRatesPA ?? 0) / 12
-      + (p.insurancePA ?? 0) / 12
-      + (p.strataPA ?? 0) / 12
-      + (p.maintenanceBudgetPA ?? 0) / 12
-      + ((p.propertyManagementPct ?? 0) / 100) * (p.weeklyRent ?? 0) * 52 / 12
-      + (p.landTaxPA ?? 0) / 12
-  }, 0)
-  const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
-
-  // Add negative gearing tax benefit to cashflow
-  const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
-  const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
-  const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
-  const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
-  const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
-  const savingsRate      = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
-  const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
+  // Use shared metrics so dashboard and breakdown dialogs always match
+  const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate } =
+    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets)
+  const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,

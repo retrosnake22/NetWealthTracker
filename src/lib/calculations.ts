@@ -181,6 +181,83 @@ export function calculateTotalNegativeGearingBenefit(
   return totalBenefit
 }
 
+// --- Shared Dashboard Metrics ---
+// Single source of truth for income/expense/cashflow/savings figures.
+// Used by both DashboardPage and KpiBreakdownDialog so figures always match.
+
+export interface DashboardMetrics {
+  /** Income from IncomeItem entries (salary, dividends, etc.) */
+  baseIncome: number
+  /** Rental income from investment properties */
+  rentalIncome: number
+  /** baseIncome + rentalIncome */
+  monthlyIncome: number
+  /** Budget-based expenses (ExpenseBudget entries) */
+  baseExpenses: number
+  /** Total mortgage / liability repayments */
+  mortgageExpenses: number
+  /** Council rates, water, insurance, strata, etc. */
+  propertyRunningCosts: number
+  /** baseExpenses + mortgageExpenses + propertyRunningCosts */
+  monthlyExpenses: number
+  /** Annual negative-gearing tax benefit */
+  negGearingBenefitPA: number
+  /** monthlyIncome - monthlyExpenses + negGearing/12 */
+  monthlyCashflow: number
+  /** monthlyCashflow / monthlyIncome × 100 (percentage, e.g. 20.7) */
+  savingsRate: number
+}
+
+export function calculateDashboardMetrics(
+  incomes: IncomeItem[],
+  expenseBudgets: ExpenseBudget[],
+  properties: Property[],
+  liabilities: Liability[],
+  assets: Asset[],
+): DashboardMetrics {
+  // Income: base + rental
+  const baseIncome = calculateMonthlyIncome(incomes)
+  const rentalIncome = properties
+    .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
+    .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
+  const monthlyIncome = baseIncome + rentalIncome
+
+  // Expenses: budgets + mortgage repayments + property running costs
+  const baseExpenses = calculateMonthlyExpenses(expenseBudgets)
+  const mortgageExpenses = liabilities.reduce((sum, l) => {
+    const repayment = l.minimumRepayment ?? 0
+    if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
+    if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
+    return sum + repayment
+  }, 0)
+  const propertyRunningCosts = properties.reduce((sum, p) => {
+    return sum
+      + (p.councilRatesPA ?? 0) / 12
+      + (p.waterRatesPA ?? 0) / 12
+      + (p.insurancePA ?? 0) / 12
+      + (p.strataPA ?? 0) / 12
+      + (p.maintenanceBudgetPA ?? 0) / 12
+      + ((p.propertyManagementPct ?? 0) / 100) * (p.weeklyRent ?? 0) * 52 / 12
+      + (p.landTaxPA ?? 0) / 12
+  }, 0)
+  const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
+
+  // Negative gearing benefit
+  const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
+  const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
+  const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
+  const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
+
+  const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
+  const savingsRate = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
+
+  return {
+    baseIncome, rentalIncome, monthlyIncome,
+    baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
+    negGearingBenefitPA, monthlyCashflow, savingsRate,
+  }
+}
+
 // --- Projection Engine ---
 export interface ProjectionPoint {
   month: number
