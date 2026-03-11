@@ -321,26 +321,52 @@ function SidebarFooter() {
 
   const handleResetAccount = async () => {
     // 1. Stop all cloud sync BEFORE touching the store
-    //    This sets _syncPaused = true (so any in-flight saveToCloud becomes a no-op),
-    //    cancels any pending debounced save, and unsubscribes from store changes
+    //    Sets _syncPaused = true, cancels pending debounced save, unsubscribes from store
     syncController.pauseSync()
 
-    // 2. Wait briefly for any already-in-flight HTTP save to complete
-    //    (the _syncPaused flag will prevent it from writing, but we want
-    //    to ensure the request finishes before we delete)
-    await new Promise((r) => setTimeout(r, 500))
+    // 2. Wait for any in-flight HTTP save to finish
+    await new Promise((r) => setTimeout(r, 600))
 
-    // 3. Delete cloud data
+    // 3. Overwrite cloud data with empty state (upsert, NOT delete)
+    //    Supabase RLS may silently block DELETE but INSERT/UPDATE works fine
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { error } = await supabase.from('user_finance_data').delete().eq('user_id', user.id)
+      const emptyData = {
+        assets: [],
+        properties: [],
+        liabilities: [],
+        incomes: [],
+        expenseBudgets: [],
+        expenseActuals: [],
+        projectionSettings: {
+          surplusAllocations: [],
+          projectionYears: 20,
+          defaultGrowthRates: {
+            cash: 0.045,
+            property: 0.07,
+            stocks: 0.08,
+            super: 0.07,
+            vehicles: -0.10,
+            other: 0.03,
+          },
+          propertyGrowthOverride: 0.07,
+          stockGrowthOverride: 0.07,
+        },
+      }
+      const { error } = await supabase
+        .from('user_finance_data')
+        .upsert({
+          user_id: user.id,
+          data: emptyData,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' })
       if (error) {
-        console.error('[reset] Failed to delete cloud data:', error.message)
+        console.error('[reset] Failed to clear cloud data:', error.message)
       }
       localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
     }
 
-    // 4. Now reset the local store (sync is paused, so this won't re-upload)
+    // 4. Reset local store (sync is paused, so this won't re-upload)
     resetStore()
     localStorage.removeItem('nwt-finance-store')
 
