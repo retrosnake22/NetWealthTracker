@@ -264,12 +264,15 @@ export function calculateDashboardMetrics(
 
   // Expenses: budgets (or actuals if available) + mortgage repayments + property running costs
   const { total: baseExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [])
-  const mortgageExpenses = liabilities.reduce((sum, l) => {
-    const repayment = l.minimumRepayment ?? 0
-    if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
-    if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
-    return sum + repayment
-  }, 0)
+  // Exclude car_loan liabilities — their repayments are tracked as ExpenseBudget items
+  const mortgageExpenses = liabilities
+    .filter(l => l.category !== 'car_loan')
+    .reduce((sum, l) => {
+      const repayment = l.minimumRepayment ?? 0
+      if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
+      if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
+      return sum + repayment
+    }, 0)
   const propertyRunningCosts = properties.reduce((sum, p) => {
     return sum
       + (p.councilRatesPA ?? 0) / 12

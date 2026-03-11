@@ -15,778 +15,904 @@ import { formatCurrency } from '@/lib/format'
 import { PropertyPnL } from '@/components/properties/PropertyPnL'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
-	cash: 'Cash & Savings',
-	property: 'Property',
-	stocks: 'Shares / Stocks',
-	super: 'Superannuation',
-	vehicles: 'Vehicles',
-	other: 'Other',
+  cash: 'Cash & Savings',
+  property: 'Property',
+  stocks: 'Shares / Stocks',
+  super: 'Superannuation',
+  vehicles: 'Vehicles',
+  other: 'Other',
 }
 
 const CATEGORY_ICONS: Record<AssetCategory, string> = {
-	cash: '💰',
-	property: '🏠',
-	stocks: '📈',
-	super: '🎯',
-	vehicles: '🚗',
-	other: '📦',
+  cash: '💰',
+  property: '🏠',
+  stocks: '📈',
+  super: '🎯',
+  vehicles: '🚗',
+  other: '📦',
 }
 
 export default function AssetsPage() {
-	const store = useFinanceStore() as FinanceState
-	const { assets, properties, liabilities, incomes, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, addExpenseBudget, } = store
+  const store = useFinanceStore() as FinanceState
+  const { assets, properties, liabilities, incomes, expenseBudgets, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, removeLiability, addExpenseBudget, removeExpenseBudget, } = store
 
-	// Find gross salary for negative gearing calc
-	const grossSalary = useMemo(() => {
-		const salaryItem = incomes.find(i => i.category === 'salary' && i.isActive)
-		return salaryItem ? salaryItem.monthlyAmount * 12 : 0
-	}, [incomes])
-	const [searchParams] = useSearchParams()
-	const categoryFilter = searchParams.get('category') as AssetCategory | 'property' | null
+  // Find gross salary for negative gearing calc
+  const grossSalary = useMemo(() => {
+    const salaryItem = incomes.find(i => i.category === 'salary' && i.isActive)
+    return salaryItem ? salaryItem.monthlyAmount * 12 : 0
+  }, [incomes])
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category') as AssetCategory | 'property' | null
 
-	// P&L expand state
-	const [expandedPnL, setExpandedPnL] = useState<Set<string>>(new Set())
-	const togglePnL = (id: string) => {
-		setExpandedPnL(prev => {
-			const next = new Set(prev)
-			next.has(id) ? next.delete(id) : next.add(id)
-			return next
-		})
-	}
+  // P&L expand state
+  const [expandedPnL, setExpandedPnL] = useState<Set<string>>(new Set())
+  const togglePnL = (id: string) => {
+    setExpandedPnL(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
-	// Asset editing
-	const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
-	const [showAddAsset, setShowAddAsset] = useState(false)
-	const [assetForm, setAssetForm] = useState({
-		name: '', value: '', category: 'cash' as AssetCategory,
-		isOffset: false, linkedMortgageId: '',
-		vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
-		loanBalance: '', loanRate: '', loanRepayment: '',
-		leasePayment: '',
-	})
+  // Asset editing
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
+  const [showAddAsset, setShowAddAsset] = useState(false)
+  const [assetForm, setAssetForm] = useState({
+    name: '', value: '', category: 'cash' as AssetCategory,
+    isOffset: false, linkedMortgageId: '',
+    vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
+    loanBalance: '', loanRate: '', loanRepayment: '', loanTerm: '5',
+    leasePayment: '',
+  })
 
-	// Property editing
-	const [editingProperty, setEditingProperty] = useState<Property | null>(null)
-	const [showAddProperty, setShowAddProperty] = useState(false)
-	const [propForm, setPropForm] = useState({
-		name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-		currentValue: '', weeklyRent: '', vacancyRatePA: '',
-		councilRatesPA: '', waterRatesPA: '', insurancePA: '',
-		strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
-		linkedMortgageId: '',
-	})
+  // Property editing
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null)
+  const [showAddProperty, setShowAddProperty] = useState(false)
+  const [propForm, setPropForm] = useState({
+    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
+    currentValue: '', weeklyRent: '', vacancyRatePA: '',
+    councilRatesPA: '', waterRatesPA: '', insurancePA: '',
+    strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
+    linkedMortgageId: '',
+  })
 
-	const filteredAssets = useMemo(() => {
-		if (!categoryFilter || categoryFilter === 'property') return assets
-		return assets.filter(a => a.category === categoryFilter)
-	}, [assets, categoryFilter])
+  const filteredAssets = useMemo(() => {
+    if (!categoryFilter || categoryFilter === 'property') return assets
+    return assets.filter(a => a.category === categoryFilter)
+  }, [assets, categoryFilter])
 
-	const showProperties = !categoryFilter || categoryFilter === 'property'
-	const showAssets = categoryFilter !== 'property'
+  const showProperties = !categoryFilter || categoryFilter === 'property'
+  const showAssets = categoryFilter !== 'property'
 
-	const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
-	const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
+  const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
+  const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
 
-	// Get mortgage-type liabilities for linking
-	const mortgageLiabilities = useMemo(() =>
-		liabilities.filter(l => l.category === 'mortgage' || l.category === 'home_loan'),
-		[liabilities]
-	)
+  // Get mortgage-type liabilities for linking
+  const mortgageLiabilities = useMemo(() =>
+    liabilities.filter(l => l.category === 'mortgage' || l.category === 'home_loan'),
+    [liabilities]
+  )
 
-	// Find mortgage for a property (check both directions)
-	const findMortgage = (p: Property) => {
-		if (p.mortgageId) {
-			const m = liabilities.find(l => l.id === p.mortgageId)
-			if (m) return m
-		}
-		return liabilities.find(l => l.linkedPropertyId === p.id)
-	}
+  // Find mortgage for a property (check both directions)
+  const findMortgage = (p: Property) => {
+    if (p.mortgageId) {
+      const m = liabilities.find(l => l.id === p.mortgageId)
+      if (m) return m
+    }
+    return liabilities.find(l => l.linkedPropertyId === p.id)
+  }
 
-	// Calculate total offset balance for a mortgage
-	const getOffsetBalance = (mortgageId: string): number => {
-		return assets
-			.filter(a => a.category === 'cash' && (a as any).isOffset && (a as any).linkedMortgageId === mortgageId)
-			.reduce((sum, a) => sum + a.currentValue, 0)
-	}
+  // Calculate total offset balance for a mortgage
+  const getOffsetBalance = (mortgageId: string): number => {
+    return assets
+      .filter(a => a.category === 'cash' && (a as any).isOffset && (a as any).linkedMortgageId === mortgageId)
+      .reduce((sum, a) => sum + a.currentValue, 0)
+  }
 
-	// --- Asset handlers ---
-	function openAddAsset() {
-		setAssetForm({
-			name: '', value: '',
-			category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory,
-			isOffset: false, linkedMortgageId: '',
-			vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
-			loanBalance: '', loanRate: '', loanRepayment: '',
-			leasePayment: '',
-		})
-		setEditingAsset(null)
-		setShowAddAsset(true)
-	}
-	function openEditAsset(a: Asset) {
-		setAssetForm({
-			name: a.name, value: String(a.currentValue), category: a.category,
-			isOffset: (a as any).isOffset ?? false,
-			linkedMortgageId: (a as any).linkedMortgageId ?? '',
-			vehicleFinancing: (a as any).financingType ?? 'owned',
-			loanBalance: '',
-			loanRate: '',
-			loanRepayment: '',
-			leasePayment: String((a as any).leaseMonthlyPayment ?? ''),
-		})
-		setEditingAsset(a)
-		setShowAddAsset(true)
-	}
-	function saveAsset() {
-		const data: any = {
-			name: assetForm.name,
-			currentValue: parseFloat(assetForm.value) || 0,
-			growthRatePA: editingAsset?.growthRatePA ?? 0,
-			category: assetForm.category,
-		}
-		// Add offset fields for cash assets
-		if (assetForm.category === 'cash') {
-			data.isOffset = assetForm.isOffset
-			data.linkedMortgageId = assetForm.isOffset ? (assetForm.linkedMortgageId || undefined) : undefined
-		} else {
-			data.isOffset = false
-			data.linkedMortgageId = undefined
-		}
+  // Auto-calculate monthly repayment using standard amortization formula
+  function calcMonthlyRepayment(balance: number, annualRate: number, termYears: number): number {
+    if (balance <= 0 || termYears <= 0) return 0
+    if (annualRate <= 0) return balance / (termYears * 12) // No interest — just principal / months
+    const monthlyRate = annualRate / 12
+    const numPayments = termYears * 12
+    return balance * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+  }
 
-		// Save the asset first
-		let assetId = editingAsset?.id
-		if (editingAsset) {
-			updateAsset(editingAsset.id, data)
-		} else {
-			addAsset(data)
-			const newAssets = useFinanceStore.getState().assets
-			assetId = newAssets[newAssets.length - 1]?.id
-		}
+  // --- Asset handlers ---
+  function openAddAsset() {
+    setAssetForm({
+      name: '', value: '',
+      category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory,
+      isOffset: false, linkedMortgageId: '',
+      vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
+      loanBalance: '', loanRate: '', loanRepayment: '', loanTerm: '5',
+      leasePayment: '',
+    })
+    setEditingAsset(null)
+    setShowAddAsset(true)
+  }
+  function openEditAsset(a: Asset) {
+    // Populate loan fields from linked liability if it's a car loan
+    const linkedLiabilityId = (a as any).linkedLiabilityId
+    const linkedLiability = linkedLiabilityId ? liabilities.find(l => l.id === linkedLiabilityId) : null
+    setAssetForm({
+      name: a.name, value: String(a.currentValue), category: a.category,
+      isOffset: (a as any).isOffset ?? false,
+      linkedMortgageId: (a as any).linkedMortgageId ?? '',
+      vehicleFinancing: (a as any).financingType ?? 'owned',
+      loanBalance: linkedLiability ? String(linkedLiability.currentBalance) : '',
+      loanRate: linkedLiability ? String(linkedLiability.interestRatePA * 100) : '',
+      loanRepayment: linkedLiability ? String(linkedLiability.minimumRepayment) : '',
+      loanTerm: linkedLiability?.loanTermYears ? String(linkedLiability.loanTermYears) : '5',
+      leasePayment: String((a as any).leaseMonthlyPayment ?? ''),
+    })
+    setEditingAsset(a)
+    setShowAddAsset(true)
+  }
+  function saveAsset() {
+    const data: any = {
+      name: assetForm.name,
+      currentValue: parseFloat(assetForm.value) || 0,
+      growthRatePA: editingAsset?.growthRatePA ?? 0,
+      category: assetForm.category,
+    }
+    // Add offset fields for cash assets
+    if (assetForm.category === 'cash') {
+      data.isOffset = assetForm.isOffset
+      data.linkedMortgageId = assetForm.isOffset ? (assetForm.linkedMortgageId || undefined) : undefined
+    } else {
+      data.isOffset = false
+      data.linkedMortgageId = undefined
+    }
 
-		// Handle vehicle financing
-		if (assetForm.category === 'vehicles' && assetId) {
-			const financing = assetForm.vehicleFinancing
+    // Save the asset first
+    let assetId = editingAsset?.id
+    if (editingAsset) {
+      updateAsset(editingAsset.id, data)
+    } else {
+      addAsset(data)
+      const newAssets = useFinanceStore.getState().assets
+      assetId = newAssets[newAssets.length - 1]?.id
+    }
 
-			if (financing === 'car_loan') {
-				// Create a new car loan liability
-				addLiability({
-					name: `${assetForm.name} Car Loan`,
-					category: 'car_loan',
-					currentBalance: parseFloat(assetForm.loanBalance) || 0,
-					interestRatePA: (parseFloat(assetForm.loanRate) || 0) / 100,
-					minimumRepayment: parseFloat(assetForm.loanRepayment) || 0,
-					repaymentFrequency: 'monthly',
-				})
-				const newLiabilities = useFinanceStore.getState().liabilities
-				const newLiability = newLiabilities[newLiabilities.length - 1]
-				if (newLiability) {
-					updateAsset(assetId, {
-						financingType: 'car_loan',
-						linkedLiabilityId: newLiability.id,
-					} as any)
-				}
-			} else if (financing === 'lease') {
-				// Create a new expense budget for the lease payment
-				addExpenseBudget({
-					category: 'other',
-					label: `${assetForm.name} Lease Payment`,
-					monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
-				})
-				const newBudgets = useFinanceStore.getState().expenseBudgets
-				const newBudget = newBudgets[newBudgets.length - 1]
-				if (newBudget) {
-					updateAsset(assetId, {
-						financingType: 'lease',
-						linkedExpenseId: newBudget.id,
-						leaseMonthlyPayment: parseFloat(assetForm.leasePayment) || 0,
-					} as any)
-				}
-			} else {
-				// Owned — just save the financing type
-				updateAsset(assetId, { financingType: 'owned' } as any)
-			}
-		}
+    // Handle vehicle financing
+    if (assetForm.category === 'vehicles' && assetId) {
+      const financing = assetForm.vehicleFinancing
+      const oldFinancingType = editingAsset ? (editingAsset as any).financingType : undefined
+      const oldLinkedLiabilityId = editingAsset ? (editingAsset as any).linkedLiabilityId : undefined
+      const oldLinkedExpenseId = editingAsset ? (editingAsset as any).linkedExpenseId : undefined
 
-		setShowAddAsset(false)
-		setEditingAsset(null)
-	}
+      // --- Clean up old linked entities when switching financing type ---
+      if (oldFinancingType === 'car_loan' && financing !== 'car_loan' && oldLinkedLiabilityId) {
+        // Remove the linked car loan liability
+        removeLiability(oldLinkedLiabilityId)
+        // Also remove the linked expense budget for the car loan repayment
+        const linkedExpense = expenseBudgets.find(b => b.label === `${editingAsset!.name} Car Loan Repayment`)
+        if (linkedExpense) removeExpenseBudget(linkedExpense.id)
+        // Also check by linked expense id on the asset
+        if (oldLinkedExpenseId) removeExpenseBudget(oldLinkedExpenseId)
+      }
+      if (oldFinancingType === 'lease' && financing !== 'lease' && oldLinkedExpenseId) {
+        // Remove the linked lease expense budget
+        removeExpenseBudget(oldLinkedExpenseId)
+      }
 
-	// --- Property handlers ---
-	function openAddProperty() {
-		setPropForm({
-			name: '', type: 'primary_residence', currentValue: '', weeklyRent: '', vacancyRatePA: '',
-			councilRatesPA: '', waterRatesPA: '', insurancePA: '',
-			strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
-			linkedMortgageId: '',
-		})
-		setEditingProperty(null)
-		setShowAddProperty(true)
-	}
-	function openEditProperty(p: Property) {
-		setPropForm({
-			name: p.name,
-			type: p.type,
-			currentValue: String(p.currentValue),
-			weeklyRent: String(p.weeklyRent ?? ''),
-			vacancyRatePA: String(p.vacancyRatePA ?? ''),
-			councilRatesPA: String((p.councilRatesPA ?? 0) / 4 || ''),
-			waterRatesPA: String((p.waterRatesPA ?? 0) / 4 || ''),
-			insurancePA: String(p.insurancePA ?? ''),
-			strataPA: String((p.strataPA ?? 0) / 4 || ''),
-			maintenanceBudgetPA: String(p.maintenanceBudgetPA ?? ''),
-			propertyManagementPct: String(p.propertyManagementPct ?? ''),
-			landTaxPA: String(p.landTaxPA ?? ''),
-			linkedMortgageId: p.mortgageId ?? findMortgage(p)?.id ?? '',
-		})
-		setEditingProperty(p)
-		setShowAddProperty(true)
-	}
-	function saveProperty() {
-		const selectedMortgageId = propForm.linkedMortgageId || undefined
-		const data: any = {
-			name: propForm.name,
-			type: propForm.type,
-			currentValue: parseFloat(propForm.currentValue) || 0,
-			growthRatePA: editingProperty?.growthRatePA ?? 0.07,
-			weeklyRent: parseFloat(propForm.weeklyRent) || 0,
-			vacancyRatePA: parseFloat(propForm.vacancyRatePA) || 0,
-			councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
-			waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
-			insurancePA: parseFloat(propForm.insurancePA) || 0,
-			strataPA: (parseFloat(propForm.strataPA) || 0) * 4,
-			maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
-			propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
-			landTaxPA: parseFloat(propForm.landTaxPA) || 0,
-			mortgageId: selectedMortgageId,
-		}
+      if (financing === 'car_loan') {
+        const loanBalance = parseFloat(assetForm.loanBalance) || 0
+        const loanRateDecimal = (parseFloat(assetForm.loanRate) || 0) / 100
+        const loanTermYears = parseFloat(assetForm.loanTerm) || 5
+        const monthlyRepayment = calcMonthlyRepayment(loanBalance, loanRateDecimal, loanTermYears)
 
-		let propertyId = editingProperty?.id
-		if (propertyId) {
-			updateProperty(propertyId, data)
-		} else {
-			addProperty(data)
-			const newProps = useFinanceStore.getState().properties
-			propertyId = newProps[newProps.length - 1]?.id
-		}
+        if (oldFinancingType === 'car_loan' && oldLinkedLiabilityId) {
+          // Update existing liability instead of creating a new one
+          updateLiability(oldLinkedLiabilityId, {
+            name: `${assetForm.name} Car Loan`,
+            currentBalance: loanBalance,
+            interestRatePA: loanRateDecimal,
+            minimumRepayment: Math.round(monthlyRepayment * 100) / 100,
+            loanTermYears: loanTermYears,
+          })
+          // Update or create linked expense budget
+          const existingExpense = expenseBudgets.find(b =>
+            b.label === `${editingAsset!.name} Car Loan Repayment` ||
+            b.id === oldLinkedExpenseId
+          )
+          if (existingExpense) {
+            store.updateExpenseBudget(existingExpense.id, {
+              label: `${assetForm.name} Car Loan Repayment`,
+              monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+            })
+          } else {
+            addExpenseBudget({
+              category: 'transport',
+              label: `${assetForm.name} Car Loan Repayment`,
+              monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+            })
+            const newBudgets = useFinanceStore.getState().expenseBudgets
+            const newExpense = newBudgets[newBudgets.length - 1]
+            if (newExpense) {
+              updateAsset(assetId, { linkedExpenseId: newExpense.id } as any)
+            }
+          }
+          updateAsset(assetId, {
+            financingType: 'car_loan',
+            linkedLiabilityId: oldLinkedLiabilityId,
+          } as any)
+        } else {
+          // Create a new car loan liability
+          addLiability({
+            name: `${assetForm.name} Car Loan`,
+            category: 'car_loan',
+            currentBalance: loanBalance,
+            interestRatePA: loanRateDecimal,
+            minimumRepayment: Math.round(monthlyRepayment * 100) / 100,
+            repaymentFrequency: 'monthly',
+            loanTermYears: loanTermYears,
+          })
+          const newLiabilities = useFinanceStore.getState().liabilities
+          const newLiability = newLiabilities[newLiabilities.length - 1]
 
-		// Update the linked mortgage's linkedPropertyId (both directions)
-		if (propertyId && selectedMortgageId) {
-			updateLiability(selectedMortgageId, { linkedPropertyId: propertyId })
-		}
+          // Create expense budget for the car loan repayment
+          addExpenseBudget({
+            category: 'transport',
+            label: `${assetForm.name} Car Loan Repayment`,
+            monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+          })
+          const newBudgets = useFinanceStore.getState().expenseBudgets
+          const newExpense = newBudgets[newBudgets.length - 1]
 
-		// If we changed the mortgage link, clear the old mortgage's linkedPropertyId
-		if (editingProperty?.id && editingProperty.mortgageId && editingProperty.mortgageId !== selectedMortgageId) {
-			updateLiability(editingProperty.mortgageId, { linkedPropertyId: undefined })
-		}
+          if (newLiability) {
+            updateAsset(assetId, {
+              financingType: 'car_loan',
+              linkedLiabilityId: newLiability.id,
+              linkedExpenseId: newExpense?.id,
+            } as any)
+          }
+        }
+      } else if (financing === 'lease') {
+        if (oldFinancingType === 'lease' && oldLinkedExpenseId) {
+          // Update existing expense budget
+          store.updateExpenseBudget(oldLinkedExpenseId, {
+            label: `${assetForm.name} Lease Payment`,
+            monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
+          })
+          updateAsset(assetId, {
+            financingType: 'lease',
+            linkedExpenseId: oldLinkedExpenseId,
+            leaseMonthlyPayment: parseFloat(assetForm.leasePayment) || 0,
+          } as any)
+        } else {
+          // Create a new expense budget for the lease payment
+          addExpenseBudget({
+            category: 'other',
+            label: `${assetForm.name} Lease Payment`,
+            monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
+          })
+          const newBudgets = useFinanceStore.getState().expenseBudgets
+          const newBudget = newBudgets[newBudgets.length - 1]
+          if (newBudget) {
+            updateAsset(assetId, {
+              financingType: 'lease',
+              linkedExpenseId: newBudget.id,
+              leaseMonthlyPayment: parseFloat(assetForm.leasePayment) || 0,
+            } as any)
+          }
+        }
+      } else {
+        // Owned — clear all financing links
+        updateAsset(assetId, {
+          financingType: 'owned',
+          linkedLiabilityId: undefined,
+          linkedExpenseId: undefined,
+          leaseMonthlyPayment: undefined,
+        } as any)
+      }
+    }
 
-		setShowAddProperty(false)
-		setEditingProperty(null)
-	}
+    setShowAddAsset(false)
+    setEditingAsset(null)
+  }
 
-	// Helper to format the mortgage summary
-	const getMortgageSummary = (mortgageId: string) => {
-		const m = liabilities.find(l => l.id === mortgageId)
-		if (!m) return null
-		const freq = m.repaymentFrequency === 'weekly' ? '/wk' : m.repaymentFrequency === 'fortnightly' ? '/fn' : '/mo'
-		return {
-			name: m.name,
-			balance: m.currentBalance,
-			rate: m.interestRatePA * 100,
-			repayment: m.minimumRepayment,
-			freq,
-		}
-	}
+  // --- Property handlers ---
+  function openAddProperty() {
+    setPropForm({
+      name: '', type: 'primary_residence', currentValue: '', weeklyRent: '', vacancyRatePA: '',
+      councilRatesPA: '', waterRatesPA: '', insurancePA: '',
+      strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
+      linkedMortgageId: '',
+    })
+    setEditingProperty(null)
+    setShowAddProperty(true)
+  }
+  function openEditProperty(p: Property) {
+    setPropForm({
+      name: p.name,
+      type: p.type,
+      currentValue: String(p.currentValue),
+      weeklyRent: String(p.weeklyRent ?? ''),
+      vacancyRatePA: String(p.vacancyRatePA ?? ''),
+      councilRatesPA: String((p.councilRatesPA ?? 0) / 4 || ''),
+      waterRatesPA: String((p.waterRatesPA ?? 0) / 4 || ''),
+      insurancePA: String(p.insurancePA ?? ''),
+      strataPA: String((p.strataPA ?? 0) / 4 || ''),
+      maintenanceBudgetPA: String(p.maintenanceBudgetPA ?? ''),
+      propertyManagementPct: String(p.propertyManagementPct ?? ''),
+      landTaxPA: String(p.landTaxPA ?? ''),
+      linkedMortgageId: p.mortgageId ?? findMortgage(p)?.id ?? '',
+    })
+    setEditingProperty(p)
+    setShowAddProperty(true)
+  }
+  function saveProperty() {
+    const selectedMortgageId = propForm.linkedMortgageId || undefined
+    const data: any = {
+      name: propForm.name,
+      type: propForm.type,
+      currentValue: parseFloat(propForm.currentValue) || 0,
+      growthRatePA: editingProperty?.growthRatePA ?? 0.07,
+      weeklyRent: parseFloat(propForm.weeklyRent) || 0,
+      vacancyRatePA: parseFloat(propForm.vacancyRatePA) || 0,
+      councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
+      waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
+      insurancePA: parseFloat(propForm.insurancePA) || 0,
+      strataPA: (parseFloat(propForm.strataPA) || 0) * 4,
+      maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
+      propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
+      landTaxPA: parseFloat(propForm.landTaxPA) || 0,
+      mortgageId: selectedMortgageId,
+    }
 
-	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className='flex items-center justify-end gap-2'>
-				{showAssets && (
-					<Button onClick={openAddAsset} size="sm">
-						<Plus className="h-4 w-4 mr-1" /> Add Asset
-					</Button>
-				)}
-				{showProperties && (
-					<Button onClick={openAddProperty} size="sm" variant="outline">
-						<Home className="h-4 w-4 mr-1" /> Add Property
-					</Button>
-				)}
-			</div>
+    let propertyId = editingProperty?.id
+    if (propertyId) {
+      updateProperty(propertyId, data)
+    } else {
+      addProperty(data)
+      const newProps = useFinanceStore.getState().properties
+      propertyId = newProps[newProps.length - 1]?.id
+    }
 
-			{/* Summary Strip */}
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Total Assets</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight text-blue-400'>
-							{formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
-						</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Financial Assets</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalAssets)}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Properties</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalProperties)}</p>
-					</CardContent>
-				</Card>
-			</div>
+    // Update the linked mortgage's linkedPropertyId (both directions)
+    if (propertyId && selectedMortgageId) {
+      updateLiability(selectedMortgageId, { linkedPropertyId: propertyId })
+    }
 
-			{/* Financial Assets */}
-			{showAssets && filteredAssets.length > 0 && (
-				<Card className="card-hover">
-					<CardHeader className="pb-2">
-						<CardTitle className="text-lg">Financial Assets</CardTitle>
-					</CardHeader>
-					<CardContent className="divide-y">
-						{filteredAssets.map(a => {
-							const isOffset = a.category === 'cash' && (a as any).isOffset
-							const offsetMortgage = isOffset && (a as any).linkedMortgageId
-								? liabilities.find(l => l.id === (a as any).linkedMortgageId)
-								: null
-							return (
-								<div key={a.id} className="flex items-center justify-between py-3">
-									<div className="flex items-center gap-3">
-										<span className="text-xl">{CATEGORY_ICONS[a.category] ?? '📦'}</span>
-										<div>
-											<p className="font-medium">
-												{a.name}
-												{isOffset && (
-													<Shield className="inline h-3.5 w-3.5 ml-1.5 text-blue-400" />
-												)}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{CATEGORY_LABELS[a.category] ?? a.category}
-												{isOffset && offsetMortgage && (
-													<span className="text-blue-400"> · Offset on {offsetMortgage.name}</span>
-												)}
-											</p>
-										</div>
-									</div>
-									<div className="flex items-center gap-2">
-										<span className="font-semibold tabular-nums">{formatCurrency(a.currentValue)}</span>
-										<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
-											<Pencil className="h-3.5 w-3.5" />
-										</Button>
-										<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeAsset(a.id)}>
-											<Trash2 className="h-3.5 w-3.5" />
-										</Button>
-									</div>
-								</div>
-							)
-						})}
-					</CardContent>
-				</Card>
-			)}
+    // If we changed the mortgage link, clear the old mortgage's linkedPropertyId
+    if (editingProperty?.id && editingProperty.mortgageId && editingProperty.mortgageId !== selectedMortgageId) {
+      updateLiability(editingProperty.mortgageId, { linkedPropertyId: undefined })
+    }
 
-			{/* Properties */}
-			{showProperties && properties.length > 0 && (
-				<Card className="card-hover">
-					<CardHeader className="pb-2">
-						<CardTitle className="text-lg">Properties</CardTitle>
-					</CardHeader>
-					<CardContent className="divide-y">
-						{properties.map(p => {
-							const isInvestment = p.type === 'investment'
-							const isExpanded = expandedPnL.has(p.id)
-							const mortgage = findMortgage(p)
-							const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
-							return (
-								<div key={p.id} className="py-3">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<span className="text-xl">🏠</span>
-											<div>
-												<p className="font-medium">{p.name}</p>
-												<p className="text-xs text-muted-foreground">
-													{isInvestment ? 'Investment' : 'Primary Residence'}
-													{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
-												</p>
-											</div>
-										</div>
-										<div className="flex items-center gap-2">
-											<span className="font-semibold tabular-nums">{formatCurrency(p.currentValue)}</span>
-											{isInvestment && (
-												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
-													{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-												</Button>
-											)}
-											<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
-												<Pencil className="h-3.5 w-3.5" />
-											</Button>
-											<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
-												<Trash2 className="h-3.5 w-3.5" />
-											</Button>
-										</div>
-									</div>
-									{isInvestment && isExpanded && (
-										<div className="mt-3 ml-9">
-											<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
-										</div>
-									)}
-								</div>
-							)
-						})}
-					</CardContent>
-				</Card>
-			)}
+    setShowAddProperty(false)
+    setEditingProperty(null)
+  }
 
-			{/* Empty states */}
-			{showAssets && filteredAssets.length === 0 && (
-				<Card className="border-dashed">
-					<CardContent className="py-8 text-center text-muted-foreground">
-						<p>No assets yet</p>
-						<Button onClick={openAddAsset} variant="outline" size="sm" className="mt-3">
-							<Plus className="h-4 w-4 mr-1" /> Add Your First Asset
-						</Button>
-					</CardContent>
-				</Card>
-			)}
-			{showProperties && properties.length === 0 && (
-				<Card className="border-dashed">
-					<CardContent className="py-8 text-center text-muted-foreground">
-						<p>No properties yet</p>
-						<Button onClick={openAddProperty} variant="outline" size="sm" className="mt-3">
-							<Home className="h-4 w-4 mr-1" /> Add Your First Property
-						</Button>
-					</CardContent>
-				</Card>
-			)}
+  // Helper to format the mortgage summary
+  const getMortgageSummary = (mortgageId: string) => {
+    const m = liabilities.find(l => l.id === mortgageId)
+    if (!m) return null
+    const freq = m.repaymentFrequency === 'weekly' ? '/wk' : m.repaymentFrequency === 'fortnightly' ? '/fn' : '/mo'
+    return {
+      name: m.name,
+      balance: m.currentBalance,
+      rate: m.interestRatePA * 100,
+      repayment: m.minimumRepayment,
+      freq,
+    }
+  }
 
-			{/* Add/Edit Asset Dialog */}
-			<Dialog open={showAddAsset} onOpenChange={setShowAddAsset}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{editingAsset ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div>
-							<Label>Name</Label>
-							<Input value={assetForm.name} onChange={e => setAssetForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Savings Account" />
-						</div>
-						<div>
-							<Label>Category</Label>
-							<Select value={assetForm.category} onValueChange={v => setAssetForm(f => ({ ...f, category: v as AssetCategory, isOffset: v !== 'cash' ? false : f.isOffset, linkedMortgageId: v !== 'cash' ? '' : f.linkedMortgageId }))}>
-								<SelectTrigger><SelectValue /></SelectTrigger>
-								<SelectContent>
-									{Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-										<SelectItem key={k} value={k}>{CATEGORY_ICONS[k as AssetCategory]} {v}</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div>
-							<Label>Current Value ($)</Label>
-							<Input type="number" value={assetForm.value} onChange={e => setAssetForm(f => ({ ...f, value: e.target.value }))} />
-						</div>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className='flex items-center justify-end gap-2'>
+        {showAssets && (
+          <Button onClick={openAddAsset} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Asset
+          </Button>
+        )}
+        {showProperties && (
+          <Button onClick={openAddProperty} size="sm" variant="outline">
+            <Home className="h-4 w-4 mr-1" /> Add Property
+          </Button>
+        )}
+      </div>
 
-						{/* Offset Account Section — only for cash assets */}
-						{assetForm.category === 'cash' && (
-							<div className="border-t pt-4">
-								<div className="flex items-center justify-between mb-3">
-									<div>
-										<h4 className="font-semibold text-sm">Offset Account</h4>
-										<p className="text-xs text-muted-foreground">Reduces interest on a linked mortgage</p>
-									</div>
-									<button
-										type="button"
-										role="switch"
-										aria-checked={assetForm.isOffset}
-										onClick={() => setAssetForm(f => ({ ...f, isOffset: !f.isOffset, linkedMortgageId: !f.isOffset ? f.linkedMortgageId : '' }))}
-										className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.isOffset ? 'bg-blue-500' : 'bg-muted'}`}
-									>
-										<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.isOffset ? 'translate-x-5' : 'translate-x-0'}`} />
-									</button>
-								</div>
+      {/* Summary Strip */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Total Assets</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-blue-400'>
+              {formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Financial Assets</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalAssets)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Properties</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalProperties)}</p>
+          </CardContent>
+        </Card>
+      </div>
 
-								{assetForm.isOffset && (
-									<div className="space-y-3">
-										{mortgageLiabilities.length > 0 ? (
-											<>
-												<Select
-													value={assetForm.linkedMortgageId || '_none'}
-													onValueChange={v => setAssetForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
-												>
-													<SelectTrigger><SelectValue placeholder="Select mortgage to offset..." /></SelectTrigger>
-													<SelectContent>
-														<SelectItem value="_none">Select a mortgage...</SelectItem>
-														{mortgageLiabilities.map(m => (
-															<SelectItem key={m.id} value={m.id}>
-																{m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+      {/* Financial Assets */}
+      {showAssets && filteredAssets.length > 0 && (
+        <Card className="card-hover">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Financial Assets</CardTitle>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {filteredAssets.map(a => {
+              const isOffset = a.category === 'cash' && (a as any).isOffset
+              const offsetMortgage = isOffset && (a as any).linkedMortgageId
+                ? liabilities.find(l => l.id === (a as any).linkedMortgageId)
+                : null
+              return (
+                <div key={a.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{CATEGORY_ICONS[a.category] ?? '📦'}</span>
+                    <div>
+                      <p className="font-medium">
+                        {a.name}
+                        {isOffset && (
+                          <Shield className="inline h-3.5 w-3.5 ml-1.5 text-blue-400" />
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {CATEGORY_LABELS[a.category] ?? a.category}
+                        {isOffset && offsetMortgage && (
+                          <span className="text-blue-400"> · Offset on {offsetMortgage.name}</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">{formatCurrency(a.currentValue)}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeAsset(a.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
-												{assetForm.linkedMortgageId && (() => {
-													const m = liabilities.find(l => l.id === assetForm.linkedMortgageId)
-													if (!m) return null
-													const offsetAmount = parseFloat(assetForm.value) || 0
-													const effectiveBalance = Math.max(0, m.currentBalance - offsetAmount)
-													const interestWithout = m.currentBalance * m.interestRatePA
-													const interestWith = effectiveBalance * m.interestRatePA
-													const annualSaving = interestWithout - interestWith
-													return (
-														<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-															<div className="flex justify-between">
-																<span className="text-muted-foreground">Mortgage Balance</span>
-																<span className="font-medium">{formatCurrency(m.currentBalance)}</span>
-															</div>
-															<div className="flex justify-between">
-																<span className="text-muted-foreground">Less Offset</span>
-																<span className="font-medium text-blue-400">-{formatCurrency(offsetAmount)}</span>
-															</div>
-															<Separator className="my-2" />
-															<div className="flex justify-between">
-																<span className="text-muted-foreground">Effective Balance</span>
-																<span className="font-semibold">{formatCurrency(effectiveBalance)}</span>
-															</div>
-															<div className="flex justify-between">
-																<span className="text-muted-foreground">Interest Saving</span>
-																<span className="font-semibold text-emerald-400">{formatCurrency(annualSaving)}/yr</span>
-															</div>
-														</div>
-													)
-												})()}
-											</>
-										) : (
-											<p className="text-sm text-muted-foreground">
-												No mortgages found. Add one in Liabilities first.
-											</p>
-										)}
-									</div>
-								)}
-							</div>
-						)}
+      {/* Properties */}
+      {showProperties && properties.length > 0 && (
+        <Card className="card-hover">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Properties</CardTitle>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {properties.map(p => {
+              const isInvestment = p.type === 'investment'
+              const isExpanded = expandedPnL.has(p.id)
+              const mortgage = findMortgage(p)
+              const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
+              return (
+                <div key={p.id} className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🏠</span>
+                      <div>
+                        <p className="font-medium">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isInvestment ? 'Investment' : 'Primary Residence'}
+                          {(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold tabular-nums">{formatCurrency(p.currentValue)}</span>
+                      {isInvestment && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  {isInvestment && isExpanded && (
+                    <div className="mt-3 ml-9">
+                      <PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
-						{/* Vehicle Financing Section — only for vehicle assets */}
-						{assetForm.category === 'vehicles' && (
-							<div className="border-t pt-4">
-								<div className="mb-3">
-									<h4 className="font-semibold text-sm">Vehicle Financing</h4>
-									<p className="text-xs text-muted-foreground">How is this vehicle financed?</p>
-								</div>
+      {/* Empty states */}
+      {showAssets && filteredAssets.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <p>No assets yet</p>
+            <Button onClick={openAddAsset} variant="outline" size="sm" className="mt-3">
+              <Plus className="h-4 w-4 mr-1" /> Add Your First Asset
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      {showProperties && properties.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <p>No properties yet</p>
+            <Button onClick={openAddProperty} variant="outline" size="sm" className="mt-3">
+              <Home className="h-4 w-4 mr-1" /> Add Your First Property
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-								{/* Financing type selector — radio-style buttons */}
-								<div className="flex gap-2 mb-4">
-									{(['owned', 'car_loan', 'lease'] as const).map(option => (
-										<button
-											key={option}
-											type="button"
-											onClick={() => setAssetForm(f => ({ ...f, vehicleFinancing: option }))}
-											className={`flex-1 py-2 px-3 rounded-md border text-sm font-medium transition-colors ${
-												assetForm.vehicleFinancing === option
-													? 'bg-blue-500 border-blue-500 text-white'
-													: 'border-input bg-background text-foreground hover:bg-muted'
-											}`}
-										>
-											{option === 'owned' ? 'Owned' : option === 'car_loan' ? 'Car Loan' : 'Lease'}
-										</button>
-									))}
-								</div>
+      {/* Add/Edit Asset Dialog */}
+      <Dialog open={showAddAsset} onOpenChange={setShowAddAsset}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Name</Label>
+              <Input value={assetForm.name} onChange={e => setAssetForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Savings Account" />
+            </div>
+            <div>
+              <Label>Category</Label>
+              <Select value={assetForm.category} onValueChange={v => setAssetForm(f => ({ ...f, category: v as AssetCategory, isOffset: v !== 'cash' ? false : f.isOffset, linkedMortgageId: v !== 'cash' ? '' : f.linkedMortgageId }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{CATEGORY_ICONS[k as AssetCategory]} {v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Current Value ($)</Label>
+              <Input type="number" value={assetForm.value} onChange={e => setAssetForm(f => ({ ...f, value: e.target.value }))} />
+            </div>
 
-								{/* Car Loan fields */}
-								{assetForm.vehicleFinancing === 'car_loan' && (
-									<div className="space-y-3">
-										<div>
-											<Label>Loan Balance ($)</Label>
-											<Input
-												type="number"
-												value={assetForm.loanBalance}
-												onChange={e => setAssetForm(f => ({ ...f, loanBalance: e.target.value }))}
-												placeholder="e.g. 25000"
-											/>
-										</div>
-										<div>
-											<Label>Interest Rate (% p.a.)</Label>
-											<Input
-												type="number"
-												step="0.01"
-												value={assetForm.loanRate}
-												onChange={e => setAssetForm(f => ({ ...f, loanRate: e.target.value }))}
-												placeholder="e.g. 6.5"
-											/>
-										</div>
-										<div>
-											<Label>Monthly Repayment ($)</Label>
-											<Input
-												type="number"
-												value={assetForm.loanRepayment}
-												onChange={e => setAssetForm(f => ({ ...f, loanRepayment: e.target.value }))}
-												placeholder="e.g. 500"
-											/>
-										</div>
-									</div>
-								)}
+            {/* Offset Account Section — only for cash assets */}
+            {assetForm.category === 'cash' && (
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold text-sm">Offset Account</h4>
+                    <p className="text-xs text-muted-foreground">Reduces interest on a linked mortgage</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={assetForm.isOffset}
+                    onClick={() => setAssetForm(f => ({ ...f, isOffset: !f.isOffset, linkedMortgageId: !f.isOffset ? f.linkedMortgageId : '' }))}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.isOffset ? 'bg-blue-500' : 'bg-muted'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.isOffset ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
 
-								{/* Lease fields */}
-								{assetForm.vehicleFinancing === 'lease' && (
-									<div className="space-y-3">
-										<div>
-											<Label>Monthly Lease Payment ($)</Label>
-											<Input
-												type="number"
-												value={assetForm.leasePayment}
-												onChange={e => setAssetForm(f => ({ ...f, leasePayment: e.target.value }))}
-												placeholder="e.g. 650"
-											/>
-										</div>
-									</div>
-								)}
-							</div>
-						)}
+                {assetForm.isOffset && (
+                  <div className="space-y-3">
+                    {mortgageLiabilities.length > 0 ? (
+                      <>
+                        <Select
+                          value={assetForm.linkedMortgageId || '_none'}
+                          onValueChange={v => setAssetForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select mortgage to offset..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">Select a mortgage...</SelectItem>
+                            {mortgageLiabilities.map(m => (
+                              <SelectItem key={m.id} value={m.id}>
+                                {m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-						<div className="flex gap-2 justify-end">
-							<Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
-							<Button onClick={saveAsset} disabled={!assetForm.name || !assetForm.value}>
-								{editingAsset ? 'Save Changes' : 'Add Asset'}
-							</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
+                        {assetForm.linkedMortgageId && (() => {
+                          const m = liabilities.find(l => l.id === assetForm.linkedMortgageId)
+                          if (!m) return null
+                          const offsetAmount = parseFloat(assetForm.value) || 0
+                          const effectiveBalance = Math.max(0, m.currentBalance - offsetAmount)
+                          const interestWithout = m.currentBalance * m.interestRatePA
+                          const interestWith = effectiveBalance * m.interestRatePA
+                          const annualSaving = interestWithout - interestWith
+                          return (
+                            <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Mortgage Balance</span>
+                                <span className="font-medium">{formatCurrency(m.currentBalance)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Less Offset</span>
+                                <span className="font-medium text-blue-400">-{formatCurrency(offsetAmount)}</span>
+                              </div>
+                              <Separator className="my-2" />
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Effective Balance</span>
+                                <span className="font-semibold">{formatCurrency(effectiveBalance)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Interest Saving</span>
+                                <span className="font-semibold text-emerald-400">{formatCurrency(annualSaving)}/yr</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No mortgages found. Add one in Liabilities first.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
-			{/* Add/Edit Property Dialog */}
-			<Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
-				<DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>{editingProperty?.id ? 'Edit Property' : 'Add Property'}</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div>
-							<Label>Property Name</Label>
-							<Input value={propForm.name} onChange={e => setPropForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. 123 Main Street" />
-						</div>
-						<div>
-							<Label>Type</Label>
-							<Select value={propForm.type} onValueChange={v => setPropForm(f => ({ ...f, type: v as any }))}>
-								<SelectTrigger><SelectValue /></SelectTrigger>
-								<SelectContent>
-									<SelectItem value="primary_residence">Primary Residence</SelectItem>
-									<SelectItem value="investment">Investment Property</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div>
-							<Label>Estimated Value ($)</Label>
-							<Input type="number" value={propForm.currentValue} onChange={e => setPropForm(f => ({ ...f, currentValue: e.target.value }))} />
-						</div>
-						{propForm.type === 'investment' && (
-							<>
-								<div>
-									<Label>Weekly Rent ($)</Label>
-									<Input type="number" value={propForm.weeklyRent} onChange={e => setPropForm(f => ({ ...f, weeklyRent: e.target.value }))} />
-								</div>
-								<div>
-									<Label>Vacancy Rate (%)</Label>
-									<Input type="number" step="0.1" value={propForm.vacancyRatePA} onChange={e => setPropForm(f => ({ ...f, vacancyRatePA: e.target.value }))} placeholder="e.g. 3 for 3%" />
-								</div>
-							</>
-						)}
+            {/* Vehicle Financing Section — only for vehicle assets */}
+            {assetForm.category === 'vehicles' && (
+              <div className="border-t pt-4">
+                <div className="mb-3">
+                  <h4 className="font-semibold text-sm">Vehicle Financing</h4>
+                  <p className="text-xs text-muted-foreground">How is this vehicle financed?</p>
+                </div>
 
-						{/* Running Costs */}
-						<div className="border-t pt-4">
-							<h4 className="font-semibold text-sm mb-3">Running Costs</h4>
-							<div className="grid grid-cols-2 gap-3">
-								<div>
-									<Label className="text-xs">Council Rates ($/qtr)</Label>
-									<Input type="number" value={propForm.councilRatesPA} onChange={e => setPropForm(f => ({ ...f, councilRatesPA: e.target.value }))} />
-								</div>
-								<div>
-									<Label className="text-xs">Water Rates ($/qtr)</Label>
-									<Input type="number" value={propForm.waterRatesPA} onChange={e => setPropForm(f => ({ ...f, waterRatesPA: e.target.value }))} />
-								</div>
-								<div>
-									<Label className="text-xs">Strata / Body Corp ($/qtr)</Label>
-									<Input type="number" value={propForm.strataPA} onChange={e => setPropForm(f => ({ ...f, strataPA: e.target.value }))} />
-								</div>
-								<div>
-									<Label className="text-xs">Building Insurance ($/yr)</Label>
-									<Input type="number" value={propForm.insurancePA} onChange={e => setPropForm(f => ({ ...f, insurancePA: e.target.value }))} />
-								</div>
-								<div>
-									<Label className="text-xs">Maintenance ($/yr)</Label>
-									<Input type="number" value={propForm.maintenanceBudgetPA} onChange={e => setPropForm(f => ({ ...f, maintenanceBudgetPA: e.target.value }))} />
-								</div>
-								{propForm.type === 'investment' && (
-									<>
-										<div>
-											<Label className="text-xs">Property Mgmt (%)</Label>
-											<Input type="number" step="0.1" value={propForm.propertyManagementPct} onChange={e => setPropForm(f => ({ ...f, propertyManagementPct: e.target.value }))} />
-										</div>
-										<div>
-											<Label className="text-xs">Land Tax ($/yr)</Label>
-											<Input type="number" value={propForm.landTaxPA} onChange={e => setPropForm(f => ({ ...f, landTaxPA: e.target.value }))} />
-										</div>
-									</>
-								)}
-							</div>
-						</div>
+                {/* Financing type selector — radio-style buttons */}
+                <div className="flex gap-2 mb-4">
+                  {(['owned', 'car_loan', 'lease'] as const).map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setAssetForm(f => ({ ...f, vehicleFinancing: option }))}
+                      className={`flex-1 py-2 px-3 rounded-md border text-sm font-medium transition-colors ${
+                        assetForm.vehicleFinancing === option
+                          ? 'bg-blue-500 border-blue-500 text-white'
+                          : 'border-input bg-background text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {option === 'owned' ? 'Owned' : option === 'car_loan' ? 'Car Loan' : 'Lease'}
+                    </button>
+                  ))}
+                </div>
 
-						{/* Linked Mortgage */}
-						<div className="border-t pt-4">
-							<h4 className="font-semibold text-sm mb-3">Linked Mortgage</h4>
-							{mortgageLiabilities.length > 0 ? (
-								<>
-									<Select
-										value={propForm.linkedMortgageId || '_none'}
-										onValueChange={v => setPropForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
-									>
-										<SelectTrigger><SelectValue placeholder="Select a mortgage..." /></SelectTrigger>
-										<SelectContent>
-											<SelectItem value="_none">No mortgage linked</SelectItem>
-											{mortgageLiabilities.map(m => (
-												<SelectItem key={m.id} value={m.id}>
-													{m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									{propForm.linkedMortgageId && (() => {
-										const info = getMortgageSummary(propForm.linkedMortgageId)
-										if (!info) return null
-										return (
-											<div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Balance</span>
-													<span className="font-medium">{formatCurrency(info.balance)}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Interest Rate</span>
-													<span className="font-medium">{info.rate.toFixed(2)}% p.a.</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Repayment</span>
-													<span className="font-medium">{formatCurrency(info.repayment)}{info.freq}</span>
-												</div>
-												<Separator className="my-2" />
-												<p className="text-xs text-muted-foreground">
-													Edit mortgage details in Liabilities
-												</p>
-											</div>
-										)
-									})()}
-								</>
-							) : (
-								<p className="text-sm text-muted-foreground">
-									No mortgages found. Add one in Liabilities first.
-								</p>
-							)}
-						</div>
+                {/* Car Loan fields */}
+                {assetForm.vehicleFinancing === 'car_loan' && (() => {
+                  const bal = parseFloat(assetForm.loanBalance) || 0
+                  const rate = (parseFloat(assetForm.loanRate) || 0) / 100
+                  const term = parseFloat(assetForm.loanTerm) || 5
+                  const autoRepayment = calcMonthlyRepayment(bal, rate, term)
+                  return (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        A car loan liability and monthly expense will be created automatically
+                      </p>
+                      <div>
+                        <Label>Loan Balance ($)</Label>
+                        <Input
+                          type="number"
+                          value={assetForm.loanBalance}
+                          onChange={e => setAssetForm(f => ({ ...f, loanBalance: e.target.value }))}
+                          placeholder="e.g. 25000"
+                        />
+                      </div>
+                      <div>
+                        <Label>Interest Rate (% p.a.)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={assetForm.loanRate}
+                          onChange={e => setAssetForm(f => ({ ...f, loanRate: e.target.value }))}
+                          placeholder="e.g. 6.5"
+                        />
+                      </div>
+                      <div>
+                        <Label>Loan Term (years)</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          min="1"
+                          max="10"
+                          value={assetForm.loanTerm}
+                          onChange={e => setAssetForm(f => ({ ...f, loanTerm: e.target.value }))}
+                          placeholder="e.g. 5"
+                        />
+                      </div>
+                      {autoRepayment > 0 && (
+                        <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Calculated Monthly Repayment</span>
+                            <span className="font-semibold text-blue-400">{formatCurrency(autoRepayment)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Based on {formatCurrency(bal)} over {term} years at {(rate * 100).toFixed(1)}% p.a.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
 
-						<div className="flex gap-2 justify-end pt-2">
-							<Button variant="outline" onClick={() => setShowAddProperty(false)}>Cancel</Button>
-							<Button onClick={saveProperty} disabled={!propForm.name || !propForm.currentValue}>
-								{editingProperty?.id ? 'Save Changes' : 'Add Property'}
-							</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
-		</div>
-	)
+                {/* Lease fields */}
+                {assetForm.vehicleFinancing === 'lease' && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Monthly Lease Payment ($)</Label>
+                      <Input
+                        type="number"
+                        value={assetForm.leasePayment}
+                        onChange={e => setAssetForm(f => ({ ...f, leasePayment: e.target.value }))}
+                        placeholder="e.g. 650"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
+              <Button onClick={saveAsset} disabled={!assetForm.name || !assetForm.value}>
+                {editingAsset ? 'Save Changes' : 'Add Asset'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Property Dialog */}
+      <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingProperty?.id ? 'Edit Property' : 'Add Property'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Property Name</Label>
+              <Input value={propForm.name} onChange={e => setPropForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. 123 Main Street" />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Select value={propForm.type} onValueChange={v => setPropForm(f => ({ ...f, type: v as any }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="primary_residence">Primary Residence</SelectItem>
+                  <SelectItem value="investment">Investment Property</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Estimated Value ($)</Label>
+              <Input type="number" value={propForm.currentValue} onChange={e => setPropForm(f => ({ ...f, currentValue: e.target.value }))} />
+            </div>
+            {propForm.type === 'investment' && (
+              <>
+                <div>
+                  <Label>Weekly Rent ($)</Label>
+                  <Input type="number" value={propForm.weeklyRent} onChange={e => setPropForm(f => ({ ...f, weeklyRent: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Vacancy Rate (%)</Label>
+                  <Input type="number" step="0.1" value={propForm.vacancyRatePA} onChange={e => setPropForm(f => ({ ...f, vacancyRatePA: e.target.value }))} placeholder="e.g. 3 for 3%" />
+                </div>
+              </>
+            )}
+
+            {/* Running Costs */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm mb-3">Running Costs</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Council Rates ($/qtr)</Label>
+                  <Input type="number" value={propForm.councilRatesPA} onChange={e => setPropForm(f => ({ ...f, councilRatesPA: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Water Rates ($/qtr)</Label>
+                  <Input type="number" value={propForm.waterRatesPA} onChange={e => setPropForm(f => ({ ...f, waterRatesPA: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Strata / Body Corp ($/qtr)</Label>
+                  <Input type="number" value={propForm.strataPA} onChange={e => setPropForm(f => ({ ...f, strataPA: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Building Insurance ($/yr)</Label>
+                  <Input type="number" value={propForm.insurancePA} onChange={e => setPropForm(f => ({ ...f, insurancePA: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs">Maintenance ($/yr)</Label>
+                  <Input type="number" value={propForm.maintenanceBudgetPA} onChange={e => setPropForm(f => ({ ...f, maintenanceBudgetPA: e.target.value }))} />
+                </div>
+                {propForm.type === 'investment' && (
+                  <>
+                    <div>
+                      <Label className="text-xs">Property Mgmt (%)</Label>
+                      <Input type="number" step="0.1" value={propForm.propertyManagementPct} onChange={e => setPropForm(f => ({ ...f, propertyManagementPct: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Land Tax ($/yr)</Label>
+                      <Input type="number" value={propForm.landTaxPA} onChange={e => setPropForm(f => ({ ...f, landTaxPA: e.target.value }))} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Linked Mortgage */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm mb-3">Linked Mortgage</h4>
+              {mortgageLiabilities.length > 0 ? (
+                <>
+                  <Select
+                    value={propForm.linkedMortgageId || '_none'}
+                    onValueChange={v => setPropForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select a mortgage..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">No mortgage linked</SelectItem>
+                      {mortgageLiabilities.map(m => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {propForm.linkedMortgageId && (() => {
+                    const info = getMortgageSummary(propForm.linkedMortgageId)
+                    if (!info) return null
+                    return (
+                      <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Balance</span>
+                          <span className="font-medium">{formatCurrency(info.balance)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Interest Rate</span>
+                          <span className="font-medium">{info.rate.toFixed(2)}% p.a.</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Repayment</span>
+                          <span className="font-medium">{formatCurrency(info.repayment)}{info.freq}</span>
+                        </div>
+                        <Separator className="my-2" />
+                        <p className="text-xs text-muted-foreground">
+                          Edit mortgage details in Liabilities
+                        </p>
+                      </div>
+                    )
+                  })()}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No mortgages found. Add one in Liabilities first.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setShowAddProperty(false)}>Cancel</Button>
+              <Button onClick={saveProperty} disabled={!propForm.name || !propForm.currentValue}>
+                {editingProperty?.id ? 'Save Changes' : 'Add Property'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
 }
