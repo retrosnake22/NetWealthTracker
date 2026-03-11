@@ -69,8 +69,8 @@ export function MetricCard({
             >
               {value}
             </p>
-            {subtitle && !breakdownItems && (
-              <p className={cn('text-muted-foreground', isHero ? 'text-sm' : 'text-xs')}>
+            {subtitle && (
+              <p className={cn('text-muted-foreground', isHero ? 'text-sm font-medium tabular-nums' : 'text-xs')}>
                 {subtitle}
               </p>
             )}

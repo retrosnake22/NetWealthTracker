@@ -87,9 +87,11 @@ function KpiCard({
 export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
 
-  const netWealth        = calculateNetWealth(assets, properties, liabilities)
-  const totalAssets      = calculateTotalAssets(assets, properties)
-  const totalLiabilities = calculateTotalLiabilities(liabilities)
+  const netWealthIncSuper = calculateNetWealth(assets, properties, liabilities)
+  const totalAssets       = calculateTotalAssets(assets, properties)
+  const totalLiabilities  = calculateTotalLiabilities(liabilities)
+  const superTotal        = assets.filter(a => a.category === 'super').reduce((s, a) => s + a.currentValue, 0)
+  const netWealth         = netWealthIncSuper - superTotal
 
   // Base income + rental income from investment properties
   const baseIncome = calculateMonthlyIncome(incomes)
@@ -184,8 +186,9 @@ export function DashboardPage() {
       <div className="animate-fade-up">
         <MetricCard
           variant="hero"
-          title="Net Wealth"
+          title="Net Wealth (excl. Super)"
           value={formatCurrency(netWealth)}
+          subtitle={`Incl. Super: ${formatCurrency(netWealthIncSuper)}`}
           icon={DollarSign}
           trend={netWealth >= 0 ? 'up' : 'down'}
           breakdownItems={[
