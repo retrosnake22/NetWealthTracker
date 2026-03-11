@@ -16,7 +16,7 @@ import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
 import type {
-  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property, ProfileType
+  AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property
 } from '@/types/models'
 import { ExpensesStep } from './SetupWizardExpensesStep'
 

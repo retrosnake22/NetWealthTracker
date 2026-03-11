@@ -34,7 +34,7 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 
 export default function AssetsPage() {
 	const store = useFinanceStore() as FinanceState
-	const { assets, properties, liabilities, incomes, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, addExpenseBudget, removeLiability, removeExpenseBudget } = store
+	const { assets, properties, liabilities, incomes, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, addExpenseBudget, } = store
 
 	// Find gross salary for negative gearing calc
 	const grossSalary = useMemo(() => {
