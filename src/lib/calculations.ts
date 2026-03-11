@@ -1,4 +1,5 @@
 import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, SurplusAllocation } from '@/types/models'
+import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
   if (!mortgage) return property.currentValue
@@ -134,6 +135,59 @@ export function calculateDebtToAssetRatio(
   return calculateTotalLiabilities(liabilities) / totalAssets
 }
 
+/**
+ * Calculate total annual negative gearing tax benefit across all investment properties.
+ * For each property with a loss (rent < expenses + interest), the loss reduces
+ * taxable income at the investor's marginal rate.
+ */
+export function calculateTotalNegativeGearingBenefit(
+  properties: Property[],
+  liabilities: Liability[],
+  assets: CashAsset[],
+  grossSalary: number
+): number {
+  if (grossSalary <= 0) return 0
+  const marginalRate = getMarginalTaxRate(grossSalary)
+
+  let totalBenefit = 0
+  for (const prop of properties) {
+    if (prop.type !== 'investment' || !prop.weeklyRent) continue
+
+    const grossRentPA = prop.weeklyRent * 52
+    const vacancyLoss = grossRentPA * (prop.vacancyRatePA ?? 0) / 100
+    const netRentPA = grossRentPA - vacancyLoss
+    const managementFee = netRentPA * (prop.propertyManagementPct ?? 0) / 100
+    const expenses =
+      managementFee +
+      (prop.councilRatesPA ?? 0) +
+      (prop.waterRatesPA ?? 0) +
+      (prop.insurancePA ?? 0) +
+      (prop.strataPA ?? 0) +
+      (prop.landTaxPA ?? 0) +
+      (prop.maintenanceBudgetPA ?? 0)
+
+    // Find linked mortgage
+    const mortgage = liabilities.find(l =>
+      l.linkedPropertyId === prop.id || l.id === prop.mortgageId
+    )
+    let interestPA = 0
+    if (mortgage) {
+      // Account for offset
+      const offsetAccounts = assets.filter(a => a.isOffset && a.linkedMortgageId === mortgage.id)
+      const totalOffset = offsetAccounts.reduce((sum, a) => sum + a.currentValue, 0)
+      const effectiveBalance = Math.max(0, mortgage.currentBalance - totalOffset)
+      interestPA = effectiveBalance * mortgage.interestRatePA
+    }
+
+    const netCashflow = netRentPA - expenses - interestPA
+    if (netCashflow < 0) {
+      totalBenefit += Math.abs(netCashflow) * marginalRate
+    }
+  }
+
+  return totalBenefit
+}
+
 // --- Projection Engine ---
 export interface ProjectionPoint {
   month: number
@@ -177,7 +231,12 @@ export function projectNetWealth(
   const interestRates = new Map<string, number>()
   liabilities.forEach(l => interestRates.set(l.id, l.interestRatePA))
 
-  const monthlySurplus = calculateMonthlyCashflow(incomes, budgets, properties, liabilities)
+  // Find gross salary for negative gearing calculation
+  const salaryIncome = incomes.find(i => i.isActive && i.source === 'salary')
+  const grossSalary = salaryIncome ? salaryIncome.monthlyAmount * 12 : 0
+  const cashAssets = (assets.filter(a => a.category === 'cash') as CashAsset[])
+  const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary) / 12
+  const monthlySurplus = calculateMonthlyCashflow(incomes, budgets, properties, liabilities) + negGearingBenefitMonthly
 
   for (let m = 0; m <= months; m++) {
     if (m % 12 === 0) {

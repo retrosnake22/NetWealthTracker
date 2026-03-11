@@ -10,8 +10,10 @@ import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
   calculateMonthlyIncome, calculateMonthlyExpenses,
-  calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth
+  calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth,
+  calculateTotalNegativeGearingBenefit
 } from '@/lib/calculations'
+import type { CashAsset } from '@/types/models'
 import {
   DndContext,
   closestCenter,
@@ -217,7 +219,12 @@ export function DashboardPage() {
   }, 0)
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
 
-  const monthlyCashflow = monthlyIncome - monthlyExpenses
+  // Add negative gearing tax benefit to cashflow
+  const salaryIncome = incomes.find(i => i.isActive && i.source === 'salary')
+  const grossSalary = salaryIncome ? salaryIncome.monthlyAmount * 12 : 0
+  const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
+  const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
+  const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
   const savingsRate      = calculateSavingsRate(incomes, expenseBudgets, properties, liabilities)
   const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
 
