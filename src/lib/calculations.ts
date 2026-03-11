@@ -92,23 +92,16 @@ export function calculateMonthlyExpenses(budgets: ExpenseBudget[]): number {
 }
 
 export function calculateMonthlyPropertyExpenses(properties: Property[], liabilities: Liability[]): number {
+  // Only include mortgage interest (not principal — that's debt reduction, not spending).
+  // Running costs (council rates, water, insurance, etc.) are already captured
+  // as auto-generated expenses in the budgets array, so we don't add them here.
   let total = 0
   for (const prop of properties) {
     if (prop.mortgageId) {
       const lia = liabilities.find(l => l.id === prop.mortgageId)
-      if (lia && lia.minimumRepayment > 0) {
-        const freq = lia.repaymentFrequency === 'weekly' ? 52 : lia.repaymentFrequency === 'fortnightly' ? 26 : 12
-        total += (lia.minimumRepayment * freq) / 12
+      if (lia && lia.interestRatePA > 0) {
+        total += (lia.currentBalance * lia.interestRatePA) / 12
       }
-    }
-    total += (prop.councilRatesPA ?? 0) / 12
-    total += (prop.waterRatesPA ?? 0) / 12
-    total += (prop.insurancePA ?? 0) / 12
-    total += (prop.strataPA ?? 0) / 12
-    total += (prop.landTaxPA ?? 0) / 12
-    total += (prop.maintenanceBudgetPA ?? 0) / 12
-    if (prop.weeklyRent && prop.weeklyRent > 0 && prop.propertyManagementPct && prop.propertyManagementPct > 0) {
-      total += (prop.weeklyRent * 52 * prop.propertyManagementPct) / 100 / 12
     }
   }
   return total
