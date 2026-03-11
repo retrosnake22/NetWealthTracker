@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Home } from 'lucide-react'
+import { Plus, Pencil, Trash2, Home, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -11,6 +11,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
 import type { Asset, Property, AssetCategory } from '@/types/models'
 import { formatCurrency } from '@/lib/format'
+import PropertyPnL from '@/components/properties/PropertyPnL'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
   cash: 'Cash & Savings',
@@ -32,9 +33,19 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 
 export default function AssetsPage() {
   const store = useFinanceStore() as FinanceState
-  const { assets, properties, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty } = store
+  const { assets, properties, liabilities, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty } = store
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category') as AssetCategory | 'property' | null
+
+  // P&L expand state
+  const [expandedPnL, setExpandedPnL] = useState<Set<string>>(new Set())
+  const togglePnL = (id: string) => {
+    setExpandedPnL(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   // Asset editing
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
@@ -218,29 +229,45 @@ export default function AssetsPage() {
             <CardTitle className="text-lg">Properties</CardTitle>
           </CardHeader>
           <CardContent className="divide-y">
-            {properties.map(p => (
-              <div key={p.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🏠</span>
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {p.type === 'investment' ? 'Investment' : 'Primary Residence'}
-                      {(p.weeklyRent ?? 0) > 0 && ` · $${p.weeklyRent}/wk rent`}
-                    </p>
+            {properties.map(p => {
+              const isInvestment = p.type === 'investment'
+              const isExpanded = expandedPnL.has(p.id)
+              return (
+                <div key={p.id} className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🏠</span>
+                      <div>
+                        <p className="font-medium">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isInvestment ? 'Investment' : 'Primary Residence'}
+                          {(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold tabular-nums">{formatCurrency(p.currentValue)}</span>
+                      {isInvestment && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
+                  {isInvestment && isExpanded && (
+                    <div className="mt-3 ml-9">
+                      <PropertyPnL property={p} mortgage={liabilities.find(l => l.linkedPropertyId === p.id)} />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums">{formatCurrency(p.currentValue)}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </CardContent>
         </Card>
       )}
