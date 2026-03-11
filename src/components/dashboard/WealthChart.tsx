@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LabelList } from 'recharts'
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 interface WealthChartProps {
@@ -21,21 +21,23 @@ export function WealthChart({ data }: WealthChartProps) {
 
   return (
     <Card className="rounded-xl bg-card overflow-hidden h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-1 rounded bg-blue-400 inline-block" />
-            <span className="font-medium text-foreground">Net Wealth</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 rounded bg-blue-800/60 inline-block" />
-            Assets
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 rounded bg-red-400/60 inline-block border border-dashed border-red-400/40" />
-            Liabilities
-          </span>
+      <CardHeader className="pb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-1 rounded bg-blue-400 inline-block" />
+              <span className="font-medium text-foreground">Net Wealth</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-0.5 rounded bg-blue-800/60 inline-block" />
+              Assets
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-0.5 rounded bg-red-400/60 inline-block border border-dashed border-red-400/40" />
+              Liabilities
+            </span>
+          </div>
         </div>
       </CardHeader>
 
@@ -47,7 +49,7 @@ export function WealthChart({ data }: WealthChartProps) {
         ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 5 }}>
+              <ComposedChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3} />
@@ -59,16 +61,17 @@ export function WealthChart({ data }: WealthChartProps) {
 
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: '#71717a', fontSize: 12 }}
+                  tick={{ fill: '#71717a', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   tickFormatter={formatCompact}
-                  tick={{ fill: '#71717a', fontSize: 12 }}
+                  tick={{ fill: '#71717a', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  width={60}
+                  width={55}
                 />
 
                 <Tooltip
@@ -85,7 +88,7 @@ export function WealthChart({ data }: WealthChartProps) {
                   cursor={{ stroke: '#60A5FA', strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
 
-                {/* Net Wealth — primary, filled area with value labels */}
+                {/* Net Wealth — primary, filled area */}
                 <Area
                   type="monotone"
                   dataKey="netWealth"
@@ -94,15 +97,7 @@ export function WealthChart({ data }: WealthChartProps) {
                   fill="url(#netWealthGrad)"
                   dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }}
                   activeDot={{ r: 5, fill: '#60A5FA', strokeWidth: 0 }}
-                >
-                  <LabelList
-                    dataKey="netWealth"
-                    position="top"
-                    offset={10}
-                    formatter={(v: unknown) => formatCompact(Number(v ?? 0))}
-                    style={{ fill: '#93C5FD', fontSize: 11, fontWeight: 600 }}
-                  />
-                </Area>
+                />
 
                 {/* Assets — subtle secondary line */}
                 <Line
