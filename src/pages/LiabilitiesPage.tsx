@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, CreditCard } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, Pencil, Trash2, CreditCard, Home, GraduationCap, Wallet, CircleDot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,44 @@ const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
   hecs: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 }
+
+const CATEGORY_GROUPS = [
+  {
+    key: 'mortgages',
+    label: 'Mortgages & Home Loans',
+    icon: Home,
+    color: 'text-red-400',
+    categories: ['mortgage', 'home_loan'] as LiabilityCategory[],
+  },
+  {
+    key: 'personal',
+    label: 'Personal & Car Loans',
+    icon: Wallet,
+    color: 'text-orange-400',
+    categories: ['personal_loan', 'car_loan'] as LiabilityCategory[],
+  },
+  {
+    key: 'credit',
+    label: 'Credit Cards',
+    icon: CreditCard,
+    color: 'text-pink-400',
+    categories: ['credit_card'] as LiabilityCategory[],
+  },
+  {
+    key: 'hecs',
+    label: 'HECS-HELP',
+    icon: GraduationCap,
+    color: 'text-violet-400',
+    categories: ['hecs'] as LiabilityCategory[],
+  },
+  {
+    key: 'other',
+    label: 'Other',
+    icon: CircleDot,
+    color: 'text-gray-400',
+    categories: ['other'] as LiabilityCategory[],
+  },
+]
 
 export function LiabilitiesPage() {
   const { liabilities, addLiability, updateLiability, removeLiability, properties } = useFinanceStore()
@@ -118,6 +156,26 @@ export function LiabilitiesPage() {
     }
   }
 
+  const groupedLiabilities = useMemo(() => {
+    return CATEGORY_GROUPS
+      .map(group => ({
+        ...group,
+        items: liabilities.filter(l => group.categories.includes(l.category)),
+        subtotal: liabilities
+          .filter(l => group.categories.includes(l.category))
+          .reduce((s, l) => s + l.currentBalance, 0),
+        monthlyRepay: liabilities
+          .filter(l => group.categories.includes(l.category))
+          .reduce((s, l) => {
+            const r = l.minimumRepayment ?? 0
+            if (l.repaymentFrequency === 'weekly') return s + (r * 52) / 12
+            if (l.repaymentFrequency === 'fortnightly') return s + (r * 26) / 12
+            return s + r
+          }, 0),
+      }))
+      .filter(group => group.items.length > 0)
+  }, [liabilities])
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end">
@@ -179,6 +237,7 @@ export function LiabilitiesPage() {
         </Dialog>
       </div>
 
+      {/* Summary Strip */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
         <Card>
           <CardContent className='p-4'>
@@ -200,6 +259,7 @@ export function LiabilitiesPage() {
         </Card>
       </div>
 
+      {/* Grouped Liabilities */}
       {liabilities.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <CreditCard className="h-12 w-12 mx-auto text-primary mb-4" />
@@ -208,40 +268,65 @@ export function LiabilitiesPage() {
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Liability</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {liabilities.map(item => {
-            const linkedProperty = getLinkedProperty(item.id)
+        <div className="space-y-6">
+          {groupedLiabilities.map(group => {
+            const Icon = group.icon
             return (
-              <Card key={item.id} className="card-hover group">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatPercent(item.interestRatePA)} p.a.
-                        </span>
-                        {linkedProperty && (
-                          <Badge variant="outline">🏠 {linkedProperty.name}</Badge>
-                        )}
-                      </div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-lg font-bold tabular-nums text-amber-400">{formatCurrency(item.currentBalance)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
-                      </p>
+              <div key={group.key} className="space-y-3">
+                {/* Group Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-card border border-border ${group.color}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    <h3 className="font-semibold text-sm">{group.label}</h3>
+                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="text-right">
+                    <p className="text-sm font-bold tabular-nums text-amber-400">{formatCurrency(group.subtotal)}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.monthlyRepay)}/mo repayments</p>
+                  </div>
+                </div>
+
+                {/* Group Items */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {group.items.map(item => {
+                    const linkedProperty = getLinkedProperty(item.id)
+                    return (
+                      <Card key={item.id} className="card-hover group">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1.5 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatPercent(item.interestRatePA)} p.a.
+                                </span>
+                                {linkedProperty && (
+                                  <Badge variant="outline">🏠 {linkedProperty.name}</Badge>
+                                )}
+                              </div>
+                              <p className="font-semibold truncate">{item.name}</p>
+                              <p className="text-lg font-bold tabular-nums text-amber-400">{formatCurrency(item.currentBalance)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
+                              </p>
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </div>
