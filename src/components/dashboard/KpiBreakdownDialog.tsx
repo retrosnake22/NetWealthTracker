@@ -92,7 +92,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
       .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
       .forEach(p => {
         incomeBySource.push({
-          label: `${p.address ?? 'Investment Property'} (rent)`,
+          label: `${p.name} (rent)`,
           amount: ((p.weeklyRent ?? 0) * 52) / 12,
         })
       })
