@@ -91,6 +91,8 @@ export interface IncomeItem extends BaseEntity {
   monthlyAmount: number
   linkedPropertyId?: string
   isActive: boolean
+  grossAnnualSalary?: number    // for salary items: gross annual amount entered
+  includesSuper?: boolean       // for salary items: whether gross includes super
 }
 
 export interface ExpenseBudget extends BaseEntity {

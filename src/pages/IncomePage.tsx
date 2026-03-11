@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, TrendingUp, Briefcase, Home, BarChart3, Landmark, Sparkles, HelpCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, TrendingUp, Briefcase, Home, BarChart3, Landmark, Sparkles, HelpCircle, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
+import { calculateTaxBreakdown } from '@/lib/ausTax'
 import type { IncomeItem, IncomeCategory, Property, Asset } from '@/types/models'
 
 const CATEGORY_LABELS: Record<IncomeCategory, string> = {
@@ -120,7 +121,17 @@ export function IncomePage() {
   const [deleteTarget, setDeleteTarget] = useState<IncomeItem | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '', isActive: true,
+    grossAnnualSalary: '', includesSuper: false,
   })
+
+  // ── Salary tax calculation ──────────────────────────────────────────────────
+
+  const taxBreakdown = useMemo(() => {
+    if (form.category !== 'salary') return null
+    const gross = parseFloat(form.grossAnnualSalary) || 0
+    if (gross <= 0) return null
+    return calculateTaxBreakdown(gross, form.includesSuper)
+  }, [form.category, form.grossAnnualSalary, form.includesSuper])
 
   // ── Auto-generated items ────────────────────────────────────────────────────
 
@@ -130,14 +141,22 @@ export function IncomePage() {
 
   // ── Manual income helpers ───────────────────────────────────────────────────
 
-  const resetForm = () => { setForm({ name: '', category: 'salary', monthlyAmount: '', isActive: true }); setEditId(null) }
+  const resetForm = () => { setForm({ name: '', category: 'salary', monthlyAmount: '', isActive: true, grossAnnualSalary: '', includesSuper: false }); setEditId(null) }
 
   const handleSave = () => {
-    const data = {
+    const isSalary = form.category === 'salary' && taxBreakdown
+    const data: Partial<IncomeItem> = {
       name: form.name,
       category: form.category,
-      monthlyAmount: parseFloat(form.monthlyAmount) || 0,
+      monthlyAmount: isSalary ? taxBreakdown.netMonthly : (parseFloat(form.monthlyAmount) || 0),
       isActive: form.isActive,
+    }
+    if (isSalary) {
+      data.grossAnnualSalary = parseFloat(form.grossAnnualSalary) || 0
+      data.includesSuper = form.includesSuper
+    } else {
+      data.grossAnnualSalary = undefined
+      data.includesSuper = undefined
     }
     if (editId) updateIncome(editId, data)
     else addIncome(data)
@@ -147,7 +166,14 @@ export function IncomePage() {
   const handleEdit = (id: string) => {
     const item = incomes.find(i => i.id === id)
     if (!item) return
-    setForm({ name: item.name, category: item.category, monthlyAmount: String(item.monthlyAmount), isActive: item.isActive })
+    setForm({
+      name: item.name,
+      category: item.category,
+      monthlyAmount: String(item.monthlyAmount),
+      isActive: item.isActive,
+      grossAnnualSalary: item.grossAnnualSalary ? String(item.grossAnnualSalary) : '',
+      includesSuper: item.includesSuper ?? false,
+    })
     setEditId(id); setOpen(true)
   }
 
@@ -178,7 +204,7 @@ export function IncomePage() {
               <div><Label>Name</Label><Input placeholder="e.g. Full-time Salary" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
               <div>
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as IncomeCategory})}>
+                <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as IncomeCategory, grossAnnualSalary: '', includesSuper: false})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -187,7 +213,65 @@ export function IncomePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Monthly Amount (AUD)</Label><CurrencyInput value={form.monthlyAmount} onChange={v => setForm({...form, monthlyAmount: v})} /></div>
+
+              {/* ── Salary-specific: gross input + super toggle + tax breakdown ── */}
+              {form.category === 'salary' ? (
+                <>
+                  <div>
+                    <Label>Gross Annual Salary (AUD)</Label>
+                    <CurrencyInput
+                      placeholder="e.g. 120000"
+                      value={form.grossAnnualSalary}
+                      onChange={v => setForm({...form, grossAnnualSalary: v})}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="includesSuper"
+                      checked={form.includesSuper}
+                      onChange={e => setForm({...form, includesSuper: e.target.checked})}
+                      className="rounded accent-blue-500"
+                    />
+                    <Label htmlFor="includesSuper">This amount includes superannuation</Label>
+                  </div>
+
+                  {taxBreakdown && (
+                    <div className="rounded-lg bg-muted/50 border border-border p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <Calculator className="h-4 w-4 text-blue-400" />
+                        Tax Breakdown (FY 2024-25)
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                        <span className="text-muted-foreground">Base Salary</span>
+                        <span className="text-right tabular-nums">{formatCurrency(taxBreakdown.grossSalary)}</span>
+                        <span className="text-muted-foreground">Super (11.5%)</span>
+                        <span className="text-right tabular-nums">{formatCurrency(taxBreakdown.superAmount)}</span>
+                        {form.includesSuper && (
+                          <>
+                            <span className="text-muted-foreground">Total Package</span>
+                            <span className="text-right tabular-nums">{formatCurrency(taxBreakdown.totalPackage)}</span>
+                          </>
+                        )}
+                        <div className="col-span-2 border-t border-border my-1" />
+                        <span className="text-muted-foreground">Income Tax</span>
+                        <span className="text-right tabular-nums text-red-400">−{formatCurrency(taxBreakdown.incomeTax)}</span>
+                        <span className="text-muted-foreground">Medicare Levy (2%)</span>
+                        <span className="text-right tabular-nums text-red-400">−{formatCurrency(taxBreakdown.medicareLevy)}</span>
+                        <div className="col-span-2 border-t border-border my-1" />
+                        <span className="font-semibold">Net Annual</span>
+                        <span className="text-right tabular-nums font-semibold text-blue-400">{formatCurrency(taxBreakdown.netAnnual)}</span>
+                        <span className="font-semibold">Net Monthly</span>
+                        <span className="text-right tabular-nums font-bold text-lg text-blue-400">{formatCurrency(taxBreakdown.netMonthly)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">This is the amount that will be saved as your monthly income.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div><Label>Monthly Amount (AUD)</Label><CurrencyInput value={form.monthlyAmount} onChange={v => setForm({...form, monthlyAmount: v})} /></div>
+              )}
+
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} className="rounded" />
                 <Label htmlFor="isActive">Currently active</Label>
@@ -195,7 +279,7 @@ export function IncomePage() {
             </div>
             <DialogFooter>
               <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleSave} disabled={!form.name || !form.monthlyAmount}>Save</Button>
+              <Button onClick={handleSave} disabled={!form.name || (form.category === 'salary' ? !form.grossAnnualSalary : !form.monthlyAmount)}>Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -320,6 +404,11 @@ export function IncomePage() {
                             </div>
                             <p className="font-semibold text-sm">{item.name}</p>
                             <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                              {item.grossAnnualSalary && (
+                                <p className="text-xs text-muted-foreground">
+                                  {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
+                                </p>
+                              )}
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
