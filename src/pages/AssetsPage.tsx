@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Home, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Pencil, Trash2, Home, ChevronDown, ChevronUp, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -51,7 +51,10 @@ export default function AssetsPage() {
   // Asset editing
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
   const [showAddAsset, setShowAddAsset] = useState(false)
-  const [assetForm, setAssetForm] = useState({ name: '', value: '', category: 'cash' as AssetCategory })
+  const [assetForm, setAssetForm] = useState({
+    name: '', value: '', category: 'cash' as AssetCategory,
+    isOffset: false, linkedMortgageId: '',
+  })
 
   // Property editing
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
@@ -90,28 +93,51 @@ export default function AssetsPage() {
     return liabilities.find(l => l.linkedPropertyId === p.id)
   }
 
+  // Calculate total offset balance for a mortgage
+  const getOffsetBalance = (mortgageId: string): number => {
+    return assets
+      .filter(a => a.category === 'cash' && (a as any).isOffset && (a as any).linkedMortgageId === mortgageId)
+      .reduce((sum, a) => sum + a.currentValue, 0)
+  }
+
   // --- Asset handlers ---
   function openAddAsset() {
-    setAssetForm({ name: '', value: '', category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory })
+    setAssetForm({
+      name: '', value: '',
+      category: (categoryFilter && categoryFilter !== 'property' ? categoryFilter : 'cash') as AssetCategory,
+      isOffset: false, linkedMortgageId: '',
+    })
     setEditingAsset(null)
     setShowAddAsset(true)
   }
   function openEditAsset(a: Asset) {
-    setAssetForm({ name: a.name, value: String(a.currentValue), category: a.category })
+    setAssetForm({
+      name: a.name, value: String(a.currentValue), category: a.category,
+      isOffset: (a as any).isOffset ?? false,
+      linkedMortgageId: (a as any).linkedMortgageId ?? '',
+    })
     setEditingAsset(a)
     setShowAddAsset(true)
   }
   function saveAsset() {
-    const data = {
+    const data: any = {
       name: assetForm.name,
       currentValue: parseFloat(assetForm.value) || 0,
       growthRatePA: editingAsset?.growthRatePA ?? 0,
       category: assetForm.category,
     }
+    // Add offset fields for cash assets
+    if (assetForm.category === 'cash') {
+      data.isOffset = assetForm.isOffset
+      data.linkedMortgageId = assetForm.isOffset ? (assetForm.linkedMortgageId || undefined) : undefined
+    } else {
+      data.isOffset = false
+      data.linkedMortgageId = undefined
+    }
     if (editingAsset) {
       updateAsset(editingAsset.id, data)
     } else {
-      addAsset(data as any)
+      addAsset(data)
     }
     setShowAddAsset(false)
     setEditingAsset(null)
@@ -171,7 +197,6 @@ export default function AssetsPage() {
       updateProperty(propertyId, data)
     } else {
       addProperty(data)
-      // Get the newly added property ID
       const newProps = useFinanceStore.getState().properties
       propertyId = newProps[newProps.length - 1]?.id
     }
@@ -251,26 +276,42 @@ export default function AssetsPage() {
             <CardTitle className="text-lg">Financial Assets</CardTitle>
           </CardHeader>
           <CardContent className="divide-y">
-            {filteredAssets.map(a => (
-              <div key={a.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{CATEGORY_ICONS[a.category] ?? '📦'}</span>
-                  <div>
-                    <p className="font-medium">{a.name}</p>
-                    <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[a.category] ?? a.category}</p>
+            {filteredAssets.map(a => {
+              const isOffset = a.category === 'cash' && (a as any).isOffset
+              const offsetMortgage = isOffset && (a as any).linkedMortgageId
+                ? liabilities.find(l => l.id === (a as any).linkedMortgageId)
+                : null
+              return (
+                <div key={a.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{CATEGORY_ICONS[a.category] ?? '📦'}</span>
+                    <div>
+                      <p className="font-medium">
+                        {a.name}
+                        {isOffset && (
+                          <Shield className="inline h-3.5 w-3.5 ml-1.5 text-blue-400" />
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {CATEGORY_LABELS[a.category] ?? a.category}
+                        {isOffset && offsetMortgage && (
+                          <span className="text-blue-400"> · Offset on {offsetMortgage.name}</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">{formatCurrency(a.currentValue)}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeAsset(a.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums">{formatCurrency(a.currentValue)}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeAsset(a.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </CardContent>
         </Card>
       )}
@@ -286,6 +327,7 @@ export default function AssetsPage() {
               const isInvestment = p.type === 'investment'
               const isExpanded = expandedPnL.has(p.id)
               const mortgage = findMortgage(p)
+              const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
               return (
                 <div key={p.id} className="py-3">
                   <div className="flex items-center justify-between">
@@ -316,7 +358,7 @@ export default function AssetsPage() {
                   </div>
                   {isInvestment && isExpanded && (
                     <div className="mt-3 ml-9">
-                      <PropertyPnL property={p} mortgage={mortgage} />
+                      <PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} />
                     </div>
                   )}
                 </div>
@@ -361,7 +403,7 @@ export default function AssetsPage() {
             </div>
             <div>
               <Label>Category</Label>
-              <Select value={assetForm.category} onValueChange={v => setAssetForm(f => ({ ...f, category: v as AssetCategory }))}>
+              <Select value={assetForm.category} onValueChange={v => setAssetForm(f => ({ ...f, category: v as AssetCategory, isOffset: v !== 'cash' ? false : f.isOffset, linkedMortgageId: v !== 'cash' ? '' : f.linkedMortgageId }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -374,6 +416,86 @@ export default function AssetsPage() {
               <Label>Current Value ($)</Label>
               <Input type="number" value={assetForm.value} onChange={e => setAssetForm(f => ({ ...f, value: e.target.value }))} />
             </div>
+
+            {/* Offset Account Section — only for cash assets */}
+            {assetForm.category === 'cash' && (
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold text-sm">Offset Account</h4>
+                    <p className="text-xs text-muted-foreground">Reduces interest on a linked mortgage</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={assetForm.isOffset}
+                    onClick={() => setAssetForm(f => ({ ...f, isOffset: !f.isOffset, linkedMortgageId: !f.isOffset ? f.linkedMortgageId : '' }))}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.isOffset ? 'bg-blue-500' : 'bg-muted'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.isOffset ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                {assetForm.isOffset && (
+                  <div className="space-y-3">
+                    {mortgageLiabilities.length > 0 ? (
+                      <>
+                        <Select
+                          value={assetForm.linkedMortgageId || '_none'}
+                          onValueChange={v => setAssetForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select mortgage to offset..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">Select a mortgage...</SelectItem>
+                            {mortgageLiabilities.map(m => (
+                              <SelectItem key={m.id} value={m.id}>
+                                {m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {assetForm.linkedMortgageId && (() => {
+                          const m = liabilities.find(l => l.id === assetForm.linkedMortgageId)
+                          if (!m) return null
+                          const offsetAmount = parseFloat(assetForm.value) || 0
+                          const effectiveBalance = Math.max(0, m.currentBalance - offsetAmount)
+                          const interestWithout = m.currentBalance * m.interestRatePA
+                          const interestWith = effectiveBalance * m.interestRatePA
+                          const annualSaving = interestWithout - interestWith
+                          return (
+                            <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Mortgage Balance</span>
+                                <span className="font-medium">{formatCurrency(m.currentBalance)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Less Offset</span>
+                                <span className="font-medium text-blue-400">-{formatCurrency(offsetAmount)}</span>
+                              </div>
+                              <Separator className="my-2" />
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Effective Balance</span>
+                                <span className="font-semibold">{formatCurrency(effectiveBalance)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Interest Saving</span>
+                                <span className="font-semibold text-emerald-400">{formatCurrency(annualSaving)}/yr</span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No mortgages found. Add one in Liabilities first.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
               <Button onClick={saveAsset} disabled={!assetForm.name || !assetForm.value}>

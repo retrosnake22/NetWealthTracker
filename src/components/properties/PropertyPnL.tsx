@@ -8,6 +8,7 @@ import type { Property, Liability } from '@/types/models'
 interface PropertyPnLProps {
   property: Property
   mortgage?: Liability
+  offsetBalance?: number
 }
 
 export interface PnLResult {
@@ -24,13 +25,16 @@ export interface PnLResult {
   totalExpensesPA: number
   netRentalIncomePA: number
   interestPA: number
+  interestWithoutOffsetPA: number
+  interestSavingPA: number
+  offsetBalance: number
   netCashflowPA: number
   netCashflowWeekly: number
   grossYield: number
   netYield: number
 }
 
-export function calculatePropertyPnL(property: Property, mortgage?: Liability): PnLResult {
+export function calculatePropertyPnL(property: Property, mortgage?: Liability, offsetBalance: number = 0): PnLResult {
   const grossRentPA = (property.weeklyRent ?? 0) * 52
   const vacancyLossPA = grossRentPA * ((property.vacancyRatePA ?? 0) / 100)
   const effectiveRentPA = grossRentPA - vacancyLossPA
@@ -50,8 +54,11 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability): 
   // Net rental income = effective rent minus all operating expenses (before financing)
   const netRentalIncomePA = effectiveRentPA - totalExpensesPA
 
-  // Interest cost (not principal repayment — that's equity building)
-  const interestPA = mortgage ? mortgage.currentBalance * mortgage.interestRatePA : 0
+  // Interest cost with offset
+  const interestWithoutOffsetPA = mortgage ? mortgage.currentBalance * mortgage.interestRatePA : 0
+  const effectiveMortgageBalance = mortgage ? Math.max(0, mortgage.currentBalance - offsetBalance) : 0
+  const interestPA = mortgage ? effectiveMortgageBalance * mortgage.interestRatePA : 0
+  const interestSavingPA = interestWithoutOffsetPA - interestPA
 
   // Net cashflow = net rental income minus financing costs
   const netCashflowPA = netRentalIncomePA - interestPA
@@ -64,31 +71,34 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability): 
     grossRentPA, vacancyLossPA, effectiveRentPA,
     managementFeePA, councilRatesPA, waterRatesPA, insurancePA,
     strataPA, landTaxPA, maintenancePA, totalExpensesPA,
-    netRentalIncomePA, interestPA, netCashflowPA, netCashflowWeekly,
+    netRentalIncomePA, interestPA, interestWithoutOffsetPA, interestSavingPA,
+    offsetBalance,
+    netCashflowPA, netCashflowWeekly,
     grossYield, netYield,
   }
 }
 
-function PnLRow({ label, amount, indent, bold, muted }: {
+function PnLRow({ label, amount, indent, bold, muted, color }: {
   label: string
   amount: number
   indent?: boolean
   bold?: boolean
   muted?: boolean
+  color?: string
 }) {
   const isNegative = amount < 0
   return (
     <div className={`flex items-center justify-between py-1 ${indent ? 'pl-4' : ''} ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
       <span>{label}</span>
-      <span className={`tabular-nums ${isNegative ? 'text-red-400' : bold ? '' : 'text-foreground'}`}>
+      <span className={`tabular-nums ${color ? color : isNegative ? 'text-red-400' : bold ? '' : 'text-foreground'}`}>
         {isNegative ? `(${formatCurrency(Math.abs(amount))})` : formatCurrency(amount)}
       </span>
     </div>
   )
 }
 
-export function PropertyPnL({ property, mortgage }: PropertyPnLProps) {
-  const pnl = calculatePropertyPnL(property, mortgage)
+export function PropertyPnL({ property, mortgage, offsetBalance = 0 }: PropertyPnLProps) {
+  const pnl = calculatePropertyPnL(property, mortgage, offsetBalance)
 
   const cashflowIcon = pnl.netCashflowPA > 0
     ? <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -137,12 +147,20 @@ export function PropertyPnL({ property, mortgage }: PropertyPnLProps) {
           <PnLRow label="Net Rental Income" amount={pnl.netRentalIncomePA} bold />
         </div>
 
-        {pnl.interestPA > 0 && (
+        {(pnl.interestPA > 0 || pnl.interestSavingPA > 0) && (
           <>
             <Separator />
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
-              <PnLRow label="Mortgage Interest" amount={-pnl.interestPA} indent muted />
+              {pnl.offsetBalance > 0 ? (
+                <>
+                  <PnLRow label="Mortgage Interest (before offset)" amount={-pnl.interestWithoutOffsetPA} indent muted />
+                  <PnLRow label="Less Offset Saving" amount={pnl.interestSavingPA} indent muted color="text-emerald-400" />
+                  <PnLRow label="Net Mortgage Interest" amount={-pnl.interestPA} bold />
+                </>
+              ) : (
+                <PnLRow label="Mortgage Interest" amount={-pnl.interestPA} indent muted />
+              )}
             </div>
           </>
         )}
