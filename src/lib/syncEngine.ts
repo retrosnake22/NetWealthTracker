@@ -58,16 +58,78 @@ export async function saveToCloud(userId: string, storeState: object): Promise<b
 }
 
 /**
- * Creates a debounced save function.
+ * Creates a debounced save function with cancel support.
  * Waits `delay` ms after the last call before actually saving.
  */
 export function createDebouncedSave(delay = 1500) {
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  return (userId: string, storeState: object) => {
+  function save(userId: string, storeState: object) {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
+      timer = null
       saveToCloud(userId, storeState)
     }, delay)
   }
+
+  function cancel() {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+
+  return { save, cancel }
+}
+
+// ─── Sync Controller (singleton) ───
+// Shared between App.tsx (sets up sync) and AppLayout.tsx (needs to pause for reset)
+
+interface SyncController {
+  /** Cancel any pending debounced save */
+  cancelPendingSave: () => void
+  /** Unsubscribe from store changes (stops future saves) */
+  pauseSync: () => void
+  /** Re-subscribe to store changes — call with subscriber setup fn */
+  resumeSync: (setupSubscriber: () => (() => void)) => void
+}
+
+let _cancelPendingSave: (() => void) | null = null
+let _unsubscribe: (() => void) | null = null
+
+export const syncController: SyncController = {
+  cancelPendingSave() {
+    _cancelPendingSave?.()
+  },
+
+  pauseSync() {
+    this.cancelPendingSave()
+    if (_unsubscribe) {
+      _unsubscribe()
+      _unsubscribe = null
+    }
+  },
+
+  resumeSync(setupSubscriber) {
+    if (_unsubscribe) {
+      _unsubscribe()
+    }
+    _unsubscribe = setupSubscriber()
+  },
+}
+
+/**
+ * Register the debounced save's cancel fn with the controller.
+ * Called once during App init.
+ */
+export function registerDebouncedCancel(cancelFn: () => void) {
+  _cancelPendingSave = cancelFn
+}
+
+/**
+ * Register the store unsubscribe fn with the controller.
+ * Called each time we subscribe to store changes.
+ */
+export function registerStoreUnsubscribe(unsub: (() => void) | null) {
+  _unsubscribe = unsub
 }

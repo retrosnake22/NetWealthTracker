@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { syncController } from '@/lib/syncEngine'
 import {
   LayoutDashboard,
   Wallet,
@@ -319,13 +320,22 @@ function SidebarFooter() {
   }, [])
 
   const handleResetAccount = async () => {
-    resetStore()
+    // 1. Stop all cloud sync BEFORE touching the store
+    //    This cancels any pending debounced save and unsubscribes
+    //    from store changes so resetStore() won't trigger a new save
+    syncController.pauseSync()
+
+    // 2. Delete cloud data first (while old data is still there, not after reset)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       await supabase.from('user_finance_data').delete().eq('user_id', user.id)
       localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
     }
+
+    // 3. Now reset the local store (sync is paused, so this won't re-upload)
+    resetStore()
     localStorage.removeItem('nwt-finance-store')
+
     setShowResetConfirm(false)
     window.location.reload()
   }

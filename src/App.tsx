@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
@@ -14,24 +14,22 @@ import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { loadFromCloud, createDebouncedSave } from '@/lib/syncEngine'
+import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerStoreUnsubscribe } from '@/lib/syncEngine'
 
 const debouncedSave = createDebouncedSave(2000)
+// Register the cancel fn so the sync controller can cancel pending saves
+registerDebouncedCancel(debouncedSave.cancel)
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
-  const unsubRef = useRef<(() => void) | null>(null)
 
   // Load cloud data when user logs in
   useEffect(() => {
     if (!session?.user?.id) {
       // Clean up store subscription on logout
-      if (unsubRef.current) {
-        unsubRef.current()
-        unsubRef.current = null
-      }
+      registerStoreUnsubscribe(null)
       return
     }
 
@@ -49,16 +47,15 @@ function App() {
       setSyncing(false)
 
       // Subscribe to future store changes → save to cloud
-      unsubRef.current = useFinanceStore.subscribe((state) => {
-        debouncedSave(userId, state)
+      const unsub = useFinanceStore.subscribe((state) => {
+        debouncedSave.save(userId, state)
       })
+      registerStoreUnsubscribe(unsub)
     })
 
     return () => {
-      if (unsubRef.current) {
-        unsubRef.current()
-        unsubRef.current = null
-      }
+      debouncedSave.cancel()
+      registerStoreUnsubscribe(null)
     }
   }, [session?.user?.id])
 
