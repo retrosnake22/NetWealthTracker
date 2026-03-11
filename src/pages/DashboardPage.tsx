@@ -32,14 +32,13 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'charts', 'liabilities']
+const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'charts']
 
 function loadOrder(): string[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
-      // Ensure all default widgets are present
       const missing = DEFAULT_ORDER.filter(id => !parsed.includes(id))
       return [...parsed.filter((id: string) => DEFAULT_ORDER.includes(id)), ...missing]
     }
@@ -270,15 +269,6 @@ export function DashboardPage() {
   const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
   const stockGrowth = ((projectionSettings.stockGrowthOverride ?? 0.07) * 100).toFixed(0)
 
-  // Liabilities breakdown
-  const liabBreakdown = liabilities.map(l => ({
-    name: l.name,
-    balance: l.currentBalance,
-    rate: l.interestRatePA,
-    repayment: l.minimumRepayment ?? 0,
-    frequency: l.repaymentFrequency ?? 'monthly',
-  }))
-
   const widgets: Record<string, React.ReactNode> = {
     hero: (
       <>
@@ -357,35 +347,6 @@ export function DashboardPage() {
         </div>
       </div>
     ),
-
-    liabilities: liabBreakdown.length > 0 ? (
-      <Card className="rounded-xl bg-card animate-fade-up">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Liabilities Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {liabBreakdown.map(l => (
-              <div key={l.name} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <div>
-                  <p className="text-sm font-medium">{l.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(l.rate * 100).toFixed(1)}% p.a. · {formatCurrency(l.repayment)}/{l.frequency}
-                  </p>
-                </div>
-                <p className="text-sm font-bold tabular-nums text-red-400">{formatCurrency(l.balance)}</p>
-              </div>
-            ))}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-sm font-semibold">Total</span>
-              <span className="text-sm font-bold tabular-nums text-red-400">
-                {formatCurrency(liabBreakdown.reduce((s, l) => s + l.balance, 0))}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    ) : null,
   }
 
   return (
