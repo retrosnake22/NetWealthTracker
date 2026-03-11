@@ -13,7 +13,7 @@ interface PropertyPnLProps {
 export interface PnLResult {
   grossRentPA: number
   vacancyLossPA: number
-  netRentPA: number
+  effectiveRentPA: number
   managementFeePA: number
   councilRatesPA: number
   waterRatesPA: number
@@ -22,6 +22,7 @@ export interface PnLResult {
   landTaxPA: number
   maintenancePA: number
   totalExpensesPA: number
+  netRentalIncomePA: number
   interestPA: number
   netCashflowPA: number
   netCashflowWeekly: number
@@ -32,9 +33,10 @@ export interface PnLResult {
 export function calculatePropertyPnL(property: Property, mortgage?: Liability): PnLResult {
   const grossRentPA = (property.weeklyRent ?? 0) * 52
   const vacancyLossPA = grossRentPA * ((property.vacancyRatePA ?? 0) / 100)
-  const netRentPA = grossRentPA - vacancyLossPA
+  const effectiveRentPA = grossRentPA - vacancyLossPA
 
-  const managementFeePA = netRentPA * ((property.propertyManagementPct ?? 0) / 100)
+  // Management fee is on effective rent (after vacancy)
+  const managementFeePA = effectiveRentPA * ((property.propertyManagementPct ?? 0) / 100)
   const councilRatesPA = property.councilRatesPA ?? 0
   const waterRatesPA = property.waterRatesPA ?? 0
   const insurancePA = property.insurancePA ?? 0
@@ -45,20 +47,24 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability): 
   const totalExpensesPA = managementFeePA + councilRatesPA + waterRatesPA +
     insurancePA + strataPA + landTaxPA + maintenancePA
 
+  // Net rental income = effective rent minus all operating expenses (before financing)
+  const netRentalIncomePA = effectiveRentPA - totalExpensesPA
+
   // Interest cost (not principal repayment — that's equity building)
   const interestPA = mortgage ? mortgage.currentBalance * mortgage.interestRatePA : 0
 
-  const netCashflowPA = netRentPA - totalExpensesPA - interestPA
+  // Net cashflow = net rental income minus financing costs
+  const netCashflowPA = netRentalIncomePA - interestPA
   const netCashflowWeekly = netCashflowPA / 52
 
   const grossYield = property.currentValue > 0 ? grossRentPA / property.currentValue : 0
   const netYield = property.currentValue > 0 ? netCashflowPA / property.currentValue : 0
 
   return {
-    grossRentPA, vacancyLossPA, netRentPA,
+    grossRentPA, vacancyLossPA, effectiveRentPA,
     managementFeePA, councilRatesPA, waterRatesPA, insurancePA,
     strataPA, landTaxPA, maintenancePA, totalExpensesPA,
-    interestPA, netCashflowPA, netCashflowWeekly,
+    netRentalIncomePA, interestPA, netCashflowPA, netCashflowWeekly,
     grossYield, netYield,
   }
 }
@@ -114,29 +120,21 @@ export function PropertyPnL({ property, mortgage }: PropertyPnLProps) {
 
         <Separator />
 
-        {/* Income */}
+        {/* Rental Income */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Income</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Rental Income</p>
           <PnLRow label="Gross Rental Income" amount={pnl.grossRentPA} />
           {pnl.vacancyLossPA > 0 && (
             <PnLRow label="Less Vacancy" amount={-pnl.vacancyLossPA} indent muted />
           )}
-          <PnLRow label="Net Rental Income" amount={pnl.netRentPA} bold />
-        </div>
-
-        <Separator />
-
-        {/* Expenses */}
-        <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Expenses</p>
-          {pnl.managementFeePA > 0 && <PnLRow label="Property Management" amount={pnl.managementFeePA} indent muted />}
-          {pnl.councilRatesPA > 0 && <PnLRow label="Council Rates" amount={pnl.councilRatesPA} indent muted />}
-          {pnl.waterRatesPA > 0 && <PnLRow label="Water Rates" amount={pnl.waterRatesPA} indent muted />}
-          {pnl.insurancePA > 0 && <PnLRow label="Insurance" amount={pnl.insurancePA} indent muted />}
-          {pnl.strataPA > 0 && <PnLRow label="Strata" amount={pnl.strataPA} indent muted />}
-          {pnl.landTaxPA > 0 && <PnLRow label="Land Tax" amount={pnl.landTaxPA} indent muted />}
-          {pnl.maintenancePA > 0 && <PnLRow label="Maintenance" amount={pnl.maintenancePA} indent muted />}
-          <PnLRow label="Total Expenses" amount={-pnl.totalExpensesPA} bold />
+          {pnl.managementFeePA > 0 && <PnLRow label="Less Property Management" amount={-pnl.managementFeePA} indent muted />}
+          {pnl.councilRatesPA > 0 && <PnLRow label="Less Council Rates" amount={-pnl.councilRatesPA} indent muted />}
+          {pnl.waterRatesPA > 0 && <PnLRow label="Less Water Rates" amount={-pnl.waterRatesPA} indent muted />}
+          {pnl.insurancePA > 0 && <PnLRow label="Less Insurance" amount={-pnl.insurancePA} indent muted />}
+          {pnl.strataPA > 0 && <PnLRow label="Less Strata" amount={-pnl.strataPA} indent muted />}
+          {pnl.landTaxPA > 0 && <PnLRow label="Less Land Tax" amount={-pnl.landTaxPA} indent muted />}
+          {pnl.maintenancePA > 0 && <PnLRow label="Less Maintenance" amount={-pnl.maintenancePA} indent muted />}
+          <PnLRow label="Net Rental Income" amount={pnl.netRentalIncomePA} bold />
         </div>
 
         {pnl.interestPA > 0 && (
