@@ -10,7 +10,7 @@ import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
   calculateMonthlyIncome, calculateMonthlyExpenses,
-  calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth,
+  calculateDebtToAssetRatio, projectNetWealth,
   calculateTotalNegativeGearingBenefit
 } from '@/lib/calculations'
 import type { CashAsset } from '@/types/models'
@@ -225,7 +225,7 @@ export function DashboardPage() {
   const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
   const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
   const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
-  const savingsRate      = calculateSavingsRate(incomes, expenseBudgets, properties, liabilities)
+  const savingsRate      = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
   const debtRatio        = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
@@ -263,8 +263,8 @@ export function DashboardPage() {
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0
 
   // KPI tags
-  const savingsTag = savingsRate > 0.2 ? 'Excellent' : savingsRate > 0.1 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
-  const savingsColor = savingsRate > 0.2 ? 'blue' as const : savingsRate > 0.1 ? 'blue' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const savingsTag = savingsRate > 20 ? 'Excellent' : savingsRate > 10 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
+  const savingsColor = savingsRate > 20 ? 'blue' as const : savingsRate > 10 ? 'blue' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
   const debtColor = debtRatio < 0.3 ? 'blue' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const surplusTag = monthlyCashflow > 500 ? 'Strong' : monthlyCashflow > 0 ? 'Positive' : 'Deficit'
@@ -328,7 +328,7 @@ export function DashboardPage() {
 
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
           <div className="animate-fade-up animate-delay-2 h-full">
-            <KpiCard label="Savings Rate" value={formatPercent(savingsRate)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate} icon={PiggyBank} accentColor="#3B82F6" />
+            <KpiCard label="Savings Rate" value={formatPercent(savingsRate / 100)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate / 100} icon={PiggyBank} accentColor="#3B82F6" />
           </div>
           <div className="animate-fade-up animate-delay-3 h-full">
             <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" />
