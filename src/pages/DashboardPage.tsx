@@ -1,5 +1,6 @@
 // NWT Dashboard
-import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
@@ -11,6 +12,81 @@ import {
   calculateMonthlyIncome, calculateMonthlyExpenses,
   calculateSavingsRate, calculateDebtToAssetRatio, projectNetWealth
 } from '@/lib/calculations'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+const STORAGE_KEY = 'nwt-dashboard-order'
+const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'charts', 'liabilities']
+
+function loadOrder(): string[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // Ensure all default widgets are present
+      const missing = DEFAULT_ORDER.filter(id => !parsed.includes(id))
+      return [...parsed.filter((id: string) => DEFAULT_ORDER.includes(id)), ...missing]
+    }
+  } catch { /* ignore */ }
+  return [...DEFAULT_ORDER]
+}
+
+function SortableWidget({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    position: 'relative' as const,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-80 scale-[1.01]' : ''}>
+      <div className="relative group">
+        <button
+          {...attributes}
+          {...listeners}
+          className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-md
+                     text-muted-foreground/0 group-hover:text-muted-foreground/60
+                     hover:!text-muted-foreground hover:bg-muted/50
+                     transition-all cursor-grab active:cursor-grabbing
+                     touch-none md:opacity-0 md:group-hover:opacity-100
+                     opacity-40"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="pl-4 md:pl-0 md:group-hover:pl-4 transition-all">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function CashflowBar({ label, amount, max, color, icon: Icon }: {
   label: string
@@ -86,6 +162,28 @@ function KpiCard({
 
 export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, projectionSettings } = useFinanceStore()
+  const [widgetOrder, setWidgetOrder] = useState(loadOrder)
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
+  }, [widgetOrder])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      setWidgetOrder(prev => {
+        const oldIndex = prev.indexOf(active.id as string)
+        const newIndex = prev.indexOf(over.id as string)
+        return arrayMove(prev, oldIndex, newIndex)
+      })
+    }
+  }
 
   const netWealthIncSuper = calculateNetWealth(assets, properties, liabilities)
   const totalAssets       = calculateTotalAssets(assets, properties)
@@ -172,60 +270,54 @@ export function DashboardPage() {
   const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
   const stockGrowth = ((projectionSettings.stockGrowthOverride ?? 0.07) * 100).toFixed(0)
 
-  return (
-    <div className="space-y-6">
+  // Liabilities breakdown
+  const liabBreakdown = liabilities.map(l => ({
+    name: l.name,
+    balance: l.currentBalance,
+    rate: l.interestRatePA,
+    repayment: l.minimumRepayment ?? 0,
+    frequency: l.repaymentFrequency ?? 'monthly',
+  }))
 
-      {/* ── Empty state ─── */}
-      {isEmpty && (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center animate-fade-up">
-          <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Welcome to Net Wealth Tracker</h3>
-          <p className="text-muted-foreground mb-4">
-            Start by adding your properties, assets, income, and expenses to see your financial picture.
-          </p>
+  const widgets: Record<string, React.ReactNode> = {
+    hero: (
+      <>
+        {isEmpty && (
+          <div className="rounded-xl border border-dashed border-border p-8 text-center animate-fade-up">
+            <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Welcome to Net Wealth Tracker</h3>
+            <p className="text-muted-foreground mb-4">
+              Start by adding your properties, assets, income, and expenses to see your financial picture.
+            </p>
+          </div>
+        )}
+        <div className="animate-fade-up">
+          <MetricCard
+            variant="hero"
+            title="Net Wealth (excl. Super)"
+            value={formatCurrency(netWealth)}
+            subtitle={`Incl. Super: ${formatCurrency(netWealthIncSuper)}`}
+            icon={DollarSign}
+            trend={netWealth >= 0 ? 'up' : 'down'}
+            breakdownItems={[
+              { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#60A5FA' },
+              { label: 'Total Liabilities', value: formatCurrency(totalLiabilities), color: '#f87171' },
+              { label: 'Monthly Surplus',  value: formatCurrency(monthlyCashflow),  color: monthlyCashflow >= 0 ? '#3b82f6' : '#f59e0b' },
+            ]}
+          />
         </div>
-      )}
+      </>
+    ),
 
-      {/* ── Hero card — Net Wealth with breakdown ─── */}
-      <div className="animate-fade-up">
-        <MetricCard
-          variant="hero"
-          title="Net Wealth (excl. Super)"
-          value={formatCurrency(netWealth)}
-          subtitle={`Incl. Super: ${formatCurrency(netWealthIncSuper)}`}
-          icon={DollarSign}
-          trend={netWealth >= 0 ? 'up' : 'down'}
-          breakdownItems={[
-            { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#60A5FA' },
-            { label: 'Total Liabilities', value: formatCurrency(totalLiabilities), color: '#f87171' },
-            { label: 'Monthly Surplus',  value: formatCurrency(monthlyCashflow),  color: monthlyCashflow >= 0 ? '#3b82f6' : '#f59e0b' },
-          ]}
-        />
-      </div>
-
-      {/* ── Cashflow + KPIs row ─── */}
+    'cashflow-kpis': (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
-
-        {/* Cashflow bar chart */}
         <Card className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1 h-full flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Monthly Cashflow</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <CashflowBar
-              label="Income"
-              amount={monthlyIncome}
-              max={cashflowMax}
-              color="bg-blue-500"
-              icon={ArrowUpRight}
-            />
-            <CashflowBar
-              label="Expenses"
-              amount={monthlyExpenses}
-              max={cashflowMax}
-              color="bg-red-400"
-              icon={ArrowDownRight}
-            />
+            <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
+            <CashflowBar label="Expenses" amount={monthlyExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Surplus</span>
@@ -237,45 +329,21 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* KPI Cards */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
           <div className="animate-fade-up animate-delay-2 h-full">
-            <KpiCard
-              label="Savings Rate"
-              value={formatPercent(savingsRate)}
-              tag={savingsTag}
-              tagColor={savingsColor}
-              ratio={savingsRate}
-              icon={PiggyBank}
-              accentColor="#3B82F6"
-            />
+            <KpiCard label="Savings Rate" value={formatPercent(savingsRate)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate} icon={PiggyBank} accentColor="#3B82F6" />
           </div>
           <div className="animate-fade-up animate-delay-3 h-full">
-            <KpiCard
-              label="Debt Ratio"
-              value={formatPercent(debtRatio)}
-              tag={debtTag}
-              tagColor={debtColor}
-              ratio={debtRatio}
-              icon={BarChart3}
-              accentColor="#f87171"
-            />
+            <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" />
           </div>
           <div className="animate-fade-up animate-delay-4 h-full">
-            <KpiCard
-              label="Monthly Surplus"
-              value={formatCurrency(monthlyCashflow)}
-              tag={surplusTag}
-              tagColor={surplusColor}
-              ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0}
-              icon={TrendingUp}
-              accentColor="#3b82f6"
-            />
+            <KpiCard label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} tag={surplusTag} tagColor={surplusColor} ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0} icon={TrendingUp} accentColor="#3b82f6" />
           </div>
         </div>
       </div>
+    ),
 
-      {/* ── Charts — 2/3 + 1/3 ─── */}
+    charts: (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 h-full animate-fade-up animate-delay-5">
           <WealthChart data={projectionData} />
@@ -288,7 +356,49 @@ export function DashboardPage() {
           <AssetBreakdown data={breakdownData} />
         </div>
       </div>
+    ),
 
-    </div>
+    liabilities: liabBreakdown.length > 0 ? (
+      <Card className="rounded-xl bg-card animate-fade-up">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">Liabilities Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {liabBreakdown.map(l => (
+              <div key={l.name} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{l.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(l.rate * 100).toFixed(1)}% p.a. · {formatCurrency(l.repayment)}/{l.frequency}
+                  </p>
+                </div>
+                <p className="text-sm font-bold tabular-nums text-red-400">{formatCurrency(l.balance)}</p>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm font-semibold">Total</span>
+              <span className="text-sm font-bold tabular-nums text-red-400">
+                {formatCurrency(liabBreakdown.reduce((s, l) => s + l.balance, 0))}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ) : null,
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
+        <div className="space-y-6">
+          {widgetOrder.map(id => (
+            <SortableWidget key={id} id={id}>
+              {widgets[id]}
+            </SortableWidget>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   )
 }
