@@ -168,6 +168,10 @@ export function DashboardPage() {
 
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
 
+  // Projection assumption labels
+  const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
+  const stockGrowth = ((projectionSettings.stockGrowthOverride ?? 0.07) * 100).toFixed(0)
+
   return (
     <div className="space-y-6">
 
@@ -275,6 +279,10 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 h-full animate-fade-up animate-delay-5">
           <WealthChart data={projectionData} />
+          <p className="text-xs text-muted-foreground mt-2 px-1">
+            Projection assumes {propGrowth}% p.a. property growth, {stockGrowth}% p.a. shares/super growth, and current monthly surplus reinvested.
+            {' '}Adjust in <a href="/projections" className="underline hover:text-foreground">Projections</a>.
+          </p>
         </div>
         <div className="h-full animate-fade-up animate-delay-6">
           <AssetBreakdown data={breakdownData} />
