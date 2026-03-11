@@ -26,8 +26,12 @@ export default function LoginPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
-      if (error) setError(error.message)
-      else setMessage('Password reset link sent! Check your email inbox.')
+      if (error) {
+        console.error('Password reset error details:', JSON.stringify(error, null, 2))
+        setError(`${error.message} (status: ${error.status ?? 'unknown'})`)
+      } else {
+        setMessage('Password reset link sent! Check your email inbox.')
+      }
       setLoading(false)
       return
     }
@@ -102,7 +106,7 @@ export default function LoginPage() {
           {/* Forgot password — info text */}
           {isForgotPassword && (
             <p className="text-sm text-muted-foreground text-center mb-4">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
           )}
 
