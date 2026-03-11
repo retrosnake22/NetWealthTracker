@@ -2,13 +2,15 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatPercent } from '@/lib/format'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Shield } from 'lucide-react'
+import { getMarginalTaxRate } from '@/lib/ausTax'
 import type { Property, Liability } from '@/types/models'
 
 interface PropertyPnLProps {
   property: Property
   mortgage?: Liability
   offsetBalance?: number
+  grossSalary?: number
 }
 
 export interface PnLResult {
@@ -32,9 +34,15 @@ export interface PnLResult {
   netCashflowWeekly: number
   grossYield: number
   netYield: number
+  // Negative gearing
+  deductibleLossPA: number
+  marginalTaxRate: number
+  taxBenefitPA: number
+  afterTaxCashflowPA: number
+  afterTaxCashflowWeekly: number
 }
 
-export function calculatePropertyPnL(property: Property, mortgage?: Liability, offsetBalance: number = 0): PnLResult {
+export function calculatePropertyPnL(property: Property, mortgage?: Liability, offsetBalance: number = 0, grossSalary: number = 0): PnLResult {
   const grossRentPA = (property.weeklyRent ?? 0) * 52
   const vacancyLossPA = grossRentPA * ((property.vacancyRatePA ?? 0) / 100)
   const effectiveRentPA = grossRentPA - vacancyLossPA
@@ -67,6 +75,13 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability, o
   const grossYield = property.currentValue > 0 ? grossRentPA / property.currentValue : 0
   const netYield = property.currentValue > 0 ? netRentalIncomePA / property.currentValue : 0
 
+  // Negative gearing: if property makes a loss, that loss reduces taxable income
+  const deductibleLossPA = Math.max(0, -netCashflowPA)
+  const marginalTaxRate = grossSalary > 0 ? getMarginalTaxRate(grossSalary) : 0
+  const taxBenefitPA = deductibleLossPA * marginalTaxRate
+  const afterTaxCashflowPA = netCashflowPA + taxBenefitPA
+  const afterTaxCashflowWeekly = afterTaxCashflowPA / 52
+
   return {
     grossRentPA, vacancyLossPA, effectiveRentPA,
     managementFeePA, councilRatesPA, waterRatesPA, insurancePA,
@@ -75,6 +90,8 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability, o
     offsetBalance,
     netCashflowPA, netCashflowWeekly,
     grossYield, netYield,
+    deductibleLossPA, marginalTaxRate, taxBenefitPA,
+    afterTaxCashflowPA, afterTaxCashflowWeekly,
   }
 }
 
@@ -97,8 +114,8 @@ function PnLRow({ label, amount, indent, bold, muted, color }: {
   )
 }
 
-export function PropertyPnL({ property, mortgage, offsetBalance = 0 }: PropertyPnLProps) {
-  const pnl = calculatePropertyPnL(property, mortgage, offsetBalance)
+export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary = 0 }: PropertyPnLProps) {
+  const pnl = calculatePropertyPnL(property, mortgage, offsetBalance, grossSalary)
 
   const cashflowIcon = pnl.netCashflowPA > 0
     ? <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -165,6 +182,29 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0 }: PropertyP
           </>
         )}
 
+        {pnl.taxBenefitPA > 0 && (
+          <>
+            <Separator />
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                <span className="flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  Negative Gearing Tax Benefit
+                </span>
+              </p>
+              <PnLRow label="Deductible Loss" amount={-pnl.deductibleLossPA} indent muted />
+              <div className="flex items-center justify-between py-1 pl-4 text-muted-foreground text-sm">
+                <span>Marginal Tax Rate</span>
+                <span className="tabular-nums">{(pnl.marginalTaxRate * 100).toFixed(0)}%</span>
+              </div>
+              <PnLRow label="Annual Tax Benefit" amount={pnl.taxBenefitPA} bold color="text-emerald-400" />
+              <p className="text-xs text-muted-foreground mt-1 pl-4">
+                Tax refund of {formatCurrency(pnl.taxBenefitPA / 12)}/month reduces real cost of holding
+              </p>
+            </div>
+          </>
+        )}
+
         <Separator />
 
         {/* Bottom line */}
@@ -177,6 +217,17 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0 }: PropertyP
             <p className="text-sm text-muted-foreground">
               {pnl.netCashflowWeekly < 0 ? `(${formatCurrency(Math.abs(pnl.netCashflowWeekly))})` : formatCurrency(pnl.netCashflowWeekly)}/wk
             </p>
+            {pnl.taxBenefitPA > 0 && (
+              <div className="mt-2 pt-2 border-t border-dashed border-border">
+                <p className={`text-base font-bold tabular-nums ${pnl.afterTaxCashflowPA >= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {pnl.afterTaxCashflowPA < 0 ? `(${formatCurrency(Math.abs(pnl.afterTaxCashflowPA))})` : formatCurrency(pnl.afterTaxCashflowPA)}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">/yr after tax</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {pnl.afterTaxCashflowWeekly < 0 ? `(${formatCurrency(Math.abs(pnl.afterTaxCashflowWeekly))})` : formatCurrency(pnl.afterTaxCashflowWeekly)}/wk after tax
+                </p>
+              </div>
+            )}
           </div>
           <div className="text-right space-y-1">
             <div className="text-sm">

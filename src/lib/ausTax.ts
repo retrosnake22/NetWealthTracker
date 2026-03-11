@@ -87,4 +87,26 @@ export function calculateTaxBreakdown(grossAnnual: number, includesSuper: boolea
   }
 }
 
+/**
+ * Get the marginal tax rate for a given taxable income (including Medicare Levy).
+ * Used for negative gearing calculations — the tax saving on each dollar of deductible loss.
+ */
+export function getMarginalTaxRate(taxableIncome: number): number {
+  if (taxableIncome <= 0) return 0
+
+  let marginalRate = 0
+  for (const bracket of TAX_BRACKETS) {
+    if (taxableIncome <= bracket.max) {
+      marginalRate = bracket.rate
+      break
+    }
+  }
+  // If above all brackets
+  if (marginalRate === 0 && taxableIncome > TAX_BRACKETS[TAX_BRACKETS.length - 1].min) {
+    marginalRate = TAX_BRACKETS[TAX_BRACKETS.length - 1].rate
+  }
+
+  return marginalRate + MEDICARE_LEVY
+}
+
 export { SUPER_RATE }

@@ -34,7 +34,13 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 
 export default function AssetsPage() {
   const store = useFinanceStore() as FinanceState
-  const { assets, properties, liabilities, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability } = store
+  const { assets, properties, liabilities, incomes, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability } = store
+
+  // Find gross salary for negative gearing calc
+  const grossSalary = useMemo(() => {
+    const salaryItem = incomes.find(i => i.category === 'salary' && i.isActive)
+    return salaryItem ? salaryItem.monthlyAmount * 12 : 0
+  }, [incomes])
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category') as AssetCategory | 'property' | null
 
@@ -358,7 +364,7 @@ export default function AssetsPage() {
                   </div>
                   {isInvestment && isExpanded && (
                     <div className="mt-3 ml-9">
-                      <PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} />
+                      <PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
                     </div>
                   )}
                 </div>
