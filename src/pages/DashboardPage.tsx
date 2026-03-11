@@ -59,7 +59,7 @@ function KpiCard({
 
   return (
     <Card
-      className="rounded-xl bg-card card-hover card-accent-left"
+      className="rounded-xl bg-card card-hover card-accent-left h-full"
       style={{ '--accent-color': accentColor } as React.CSSProperties}
     >
       <CardContent className="p-5 pl-6">
@@ -200,10 +200,10 @@ export function DashboardPage() {
       </div>
 
       {/* ── Cashflow + KPIs row ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
 
         {/* Cashflow bar chart */}
-        <Card className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1">
+        <Card className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1 h-full flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Monthly Cashflow</CardTitle>
           </CardHeader>
@@ -234,8 +234,8 @@ export function DashboardPage() {
         </Card>
 
         {/* KPI Cards */}
-        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="animate-fade-up animate-delay-2">
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          <div className="animate-fade-up animate-delay-2 h-full">
             <KpiCard
               label="Savings Rate"
               value={formatPercent(savingsRate)}
@@ -246,7 +246,7 @@ export function DashboardPage() {
               accentColor="#3B82F6"
             />
           </div>
-          <div className="animate-fade-up animate-delay-3">
+          <div className="animate-fade-up animate-delay-3 h-full">
             <KpiCard
               label="Debt Ratio"
               value={formatPercent(debtRatio)}
@@ -257,7 +257,7 @@ export function DashboardPage() {
               accentColor="#f87171"
             />
           </div>
-          <div className="animate-fade-up animate-delay-4">
+          <div className="animate-fade-up animate-delay-4 h-full">
             <KpiCard
               label="Monthly Surplus"
               value={formatCurrency(monthlyCashflow)}
@@ -272,7 +272,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── Charts — 2/3 + 1/3 ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 animate-fade-up animate-delay-5">
           <WealthChart data={projectionData} />
         </div>

@@ -12,6 +12,7 @@ import { ExpensesPage } from '@/pages/ExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
 import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { loadFromCloud, createDebouncedSave } from '@/lib/syncEngine'
 
@@ -82,8 +83,22 @@ function App() {
     )
   }
 
-  if (!session) {
+  // Allow reset-password page even without session (Supabase handles the token via URL hash)
+  const isResetPassword = window.location.pathname === '/reset-password'
+
+  if (!session && !isResetPassword) {
     return <LoginPage />
+  }
+
+  if (!session && isResetPassword) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </BrowserRouter>
+    )
   }
 
   if (syncing) {
@@ -100,6 +115,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/setup" element={<SetupWizardPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
           <Route path="/assets" element={<AssetsPage />} />
