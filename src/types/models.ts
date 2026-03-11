@@ -107,6 +107,7 @@ export interface ExpenseBudget extends BaseEntity {
   label: string
   monthlyBudget: number
   linkedPropertyId?: string
+  linkedAssetId?: string       // auto-generated from vehicle financing (car loan / lease)
 }
 
 export interface ExpenseActual extends BaseEntity {

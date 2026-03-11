@@ -133,13 +133,17 @@ export default function AssetsPage() {
   }
   function openEditAsset(a: Asset) {
     // Populate loan fields from linked liability if it's a car loan
+    // Try linked ID first, then fallback to name-based matching
     const linkedLiabilityId = (a as any).linkedLiabilityId
-    const linkedLiability = linkedLiabilityId ? liabilities.find(l => l.id === linkedLiabilityId) : null
+    let linkedLiability = linkedLiabilityId ? liabilities.find(l => l.id === linkedLiabilityId) : null
+    if (!linkedLiability && a.category === 'vehicles') {
+      linkedLiability = liabilities.find(l => l.category === 'car_loan' && l.name === `${a.name} Car Loan`) ?? null
+    }
     setAssetForm({
       name: a.name, value: String(a.currentValue), category: a.category,
       isOffset: (a as any).isOffset ?? false,
       linkedMortgageId: (a as any).linkedMortgageId ?? '',
-      vehicleFinancing: (a as any).financingType ?? 'owned',
+      vehicleFinancing: (a as any).financingType ?? (linkedLiability ? 'car_loan' : 'owned'),
       loanBalance: linkedLiability ? String(linkedLiability.currentBalance) : '',
       loanRate: linkedLiability ? String(linkedLiability.interestRatePA * 100) : '',
       loanRepayment: linkedLiability ? String(linkedLiability.minimumRepayment) : '',
@@ -178,23 +182,61 @@ export default function AssetsPage() {
     // Handle vehicle financing
     if (assetForm.category === 'vehicles' && assetId) {
       const financing = assetForm.vehicleFinancing
-      const oldFinancingType = editingAsset ? (editingAsset as any).financingType : undefined
+      const assetName = assetForm.name
       const oldLinkedLiabilityId = editingAsset ? (editingAsset as any).linkedLiabilityId : undefined
       const oldLinkedExpenseId = editingAsset ? (editingAsset as any).linkedExpenseId : undefined
 
-      // --- Clean up old linked entities when switching financing type ---
-      if (oldFinancingType === 'car_loan' && financing !== 'car_loan' && oldLinkedLiabilityId) {
-        // Remove the linked car loan liability
-        removeLiability(oldLinkedLiabilityId)
-        // Also remove the linked expense budget for the car loan repayment
-        const linkedExpense = expenseBudgets.find(b => b.label === `${editingAsset!.name} Car Loan Repayment`)
-        if (linkedExpense) removeExpenseBudget(linkedExpense.id)
-        // Also check by linked expense id on the asset
-        if (oldLinkedExpenseId) removeExpenseBudget(oldLinkedExpenseId)
+      // Helper: find car loan liability (by linked ID or name match)
+      const findLinkedLiability = () => {
+        if (oldLinkedLiabilityId) {
+          const byId = liabilities.find(l => l.id === oldLinkedLiabilityId)
+          if (byId) return byId
+        }
+        // Fallback: match by name pattern (handles pre-existing data without linked IDs)
+        return liabilities.find(l =>
+          l.category === 'car_loan' &&
+          (l.name === `${editingAsset?.name} Car Loan` || l.name === `${assetName} Car Loan`)
+        )
       }
-      if (oldFinancingType === 'lease' && financing !== 'lease' && oldLinkedExpenseId) {
-        // Remove the linked lease expense budget
-        removeExpenseBudget(oldLinkedExpenseId)
+
+      // Helper: find car loan expense (by linked ID, linkedAssetId, or label match)
+      const findLinkedExpense = () => {
+        if (oldLinkedExpenseId) {
+          const byId = expenseBudgets.find(b => b.id === oldLinkedExpenseId)
+          if (byId) return byId
+        }
+        return expenseBudgets.find(b =>
+          b.linkedAssetId === assetId ||
+          b.label === `${editingAsset?.name} Car Loan Repayment` ||
+          b.label === `${assetName} Car Loan Repayment`
+        )
+      }
+
+      // Helper: find lease expense
+      const findLinkedLeaseExpense = () => {
+        if (oldLinkedExpenseId) {
+          const byId = expenseBudgets.find(b => b.id === oldLinkedExpenseId)
+          if (byId) return byId
+        }
+        return expenseBudgets.find(b =>
+          b.linkedAssetId === assetId ||
+          b.label === `${editingAsset?.name} Lease Payment` ||
+          b.label === `${assetName} Lease Payment`
+        )
+      }
+
+      // --- Clean up when NOT car_loan anymore ---
+      if (financing !== 'car_loan') {
+        const linkedLiab = findLinkedLiability()
+        if (linkedLiab) removeLiability(linkedLiab.id)
+        const linkedExp = findLinkedExpense()
+        if (linkedExp) removeExpenseBudget(linkedExp.id)
+      }
+
+      // --- Clean up when NOT lease anymore ---
+      if (financing !== 'lease') {
+        const leaseExp = findLinkedLeaseExpense()
+        if (leaseExp) removeExpenseBudget(leaseExp.id)
       }
 
       if (financing === 'car_loan') {
@@ -202,50 +244,49 @@ export default function AssetsPage() {
         const loanRateDecimal = (parseFloat(assetForm.loanRate) || 0) / 100
         const loanTermYears = parseFloat(assetForm.loanTerm) || 5
         const monthlyRepayment = calcMonthlyRepayment(loanBalance, loanRateDecimal, loanTermYears)
+        const roundedRepayment = Math.round(monthlyRepayment * 100) / 100
 
-        if (oldFinancingType === 'car_loan' && oldLinkedLiabilityId) {
-          // Update existing liability instead of creating a new one
-          updateLiability(oldLinkedLiabilityId, {
-            name: `${assetForm.name} Car Loan`,
+        // Check if liability already exists (editing existing car loan)
+        const existingLiability = findLinkedLiability()
+
+        if (existingLiability) {
+          updateLiability(existingLiability.id, {
+            name: `${assetName} Car Loan`,
             currentBalance: loanBalance,
             interestRatePA: loanRateDecimal,
-            minimumRepayment: Math.round(monthlyRepayment * 100) / 100,
+            minimumRepayment: roundedRepayment,
             loanTermYears: loanTermYears,
           })
-          // Update or create linked expense budget
-          const existingExpense = expenseBudgets.find(b =>
-            b.label === `${editingAsset!.name} Car Loan Repayment` ||
-            b.id === oldLinkedExpenseId
-          )
+          // Update or create expense budget
+          const existingExpense = findLinkedExpense()
           if (existingExpense) {
             store.updateExpenseBudget(existingExpense.id, {
-              label: `${assetForm.name} Car Loan Repayment`,
-              monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+              label: `${assetName} Car Loan Repayment`,
+              monthlyBudget: roundedRepayment,
             })
           } else {
             addExpenseBudget({
               category: 'transport',
-              label: `${assetForm.name} Car Loan Repayment`,
-              monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+              label: `${assetName} Car Loan Repayment`,
+              monthlyBudget: roundedRepayment,
+              linkedAssetId: assetId,
             })
             const newBudgets = useFinanceStore.getState().expenseBudgets
             const newExpense = newBudgets[newBudgets.length - 1]
-            if (newExpense) {
-              updateAsset(assetId, { linkedExpenseId: newExpense.id } as any)
-            }
+            if (newExpense) updateAsset(assetId, { linkedExpenseId: newExpense.id } as any)
           }
           updateAsset(assetId, {
             financingType: 'car_loan',
-            linkedLiabilityId: oldLinkedLiabilityId,
+            linkedLiabilityId: existingLiability.id,
           } as any)
         } else {
           // Create a new car loan liability
           addLiability({
-            name: `${assetForm.name} Car Loan`,
+            name: `${assetName} Car Loan`,
             category: 'car_loan',
             currentBalance: loanBalance,
             interestRatePA: loanRateDecimal,
-            minimumRepayment: Math.round(monthlyRepayment * 100) / 100,
+            minimumRepayment: roundedRepayment,
             repaymentFrequency: 'monthly',
             loanTermYears: loanTermYears,
           })
@@ -255,8 +296,9 @@ export default function AssetsPage() {
           // Create expense budget for the car loan repayment
           addExpenseBudget({
             category: 'transport',
-            label: `${assetForm.name} Car Loan Repayment`,
-            monthlyBudget: Math.round(monthlyRepayment * 100) / 100,
+            label: `${assetName} Car Loan Repayment`,
+            monthlyBudget: roundedRepayment,
+            linkedAssetId: assetId,
           })
           const newBudgets = useFinanceStore.getState().expenseBudgets
           const newExpense = newBudgets[newBudgets.length - 1]
@@ -270,23 +312,23 @@ export default function AssetsPage() {
           }
         }
       } else if (financing === 'lease') {
-        if (oldFinancingType === 'lease' && oldLinkedExpenseId) {
-          // Update existing expense budget
-          store.updateExpenseBudget(oldLinkedExpenseId, {
-            label: `${assetForm.name} Lease Payment`,
+        const existingLeaseExpense = findLinkedLeaseExpense()
+        if (existingLeaseExpense) {
+          store.updateExpenseBudget(existingLeaseExpense.id, {
+            label: `${assetName} Lease Payment`,
             monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
           })
           updateAsset(assetId, {
             financingType: 'lease',
-            linkedExpenseId: oldLinkedExpenseId,
+            linkedExpenseId: existingLeaseExpense.id,
             leaseMonthlyPayment: parseFloat(assetForm.leasePayment) || 0,
           } as any)
         } else {
-          // Create a new expense budget for the lease payment
           addExpenseBudget({
-            category: 'other',
-            label: `${assetForm.name} Lease Payment`,
+            category: 'transport',
+            label: `${assetName} Lease Payment`,
             monthlyBudget: parseFloat(assetForm.leasePayment) || 0,
+            linkedAssetId: assetId,
           })
           const newBudgets = useFinanceStore.getState().expenseBudgets
           const newBudget = newBudgets[newBudgets.length - 1]
@@ -299,7 +341,7 @@ export default function AssetsPage() {
           }
         }
       } else {
-        // Owned — clear all financing links
+        // Owned — clear all financing links on the asset
         updateAsset(assetId, {
           financingType: 'owned',
           linkedLiabilityId: undefined,

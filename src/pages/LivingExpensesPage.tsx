@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
+import { Check, RotateCcw, ChevronDown, ChevronRight, Car } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useFinanceStore } from '@/stores/useFinanceStore'
@@ -39,19 +40,40 @@ export function LivingExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
-  // Build a map from category → existing budget entry
+  // Separate auto-generated vehicle expenses from manual budget entries
+  const autoVehicleExpenses = useMemo(() => {
+    return expenseBudgets.filter(b =>
+      b.linkedAssetId ||
+      b.label.endsWith('Car Loan Repayment') ||
+      b.label.endsWith('Lease Payment')
+    )
+  }, [expenseBudgets])
+
+  const autoVehicleTotal = useMemo(() =>
+    autoVehicleExpenses.reduce((s, b) => s + b.monthlyBudget, 0),
+    [autoVehicleExpenses]
+  )
+
+  // IDs of auto-generated expenses to exclude from manual budget editor
+  const autoExpenseIds = useMemo(() =>
+    new Set(autoVehicleExpenses.map(b => b.id)),
+    [autoVehicleExpenses]
+  )
+
+  // Build a map from category → existing budget entry (excluding auto-generated ones)
   const budgetByCategory = useMemo(() => {
     const map = new Map<ExpenseCategory, { id: string; monthlyBudget: number; label: string }>()
     for (const b of expenseBudgets) {
-      // Skip property-linked budgets
+      // Skip property-linked budgets and auto-generated vehicle expenses
       if (b.linkedPropertyId) continue
+      if (autoExpenseIds.has(b.id)) continue
       // If multiple entries for same category, keep the first (shouldn't happen but be safe)
       if (!map.has(b.category)) {
         map.set(b.category, { id: b.id, monthlyBudget: b.monthlyBudget, label: b.label })
       }
     }
     return map
-  }, [expenseBudgets])
+  }, [expenseBudgets, autoExpenseIds])
 
   // Track inline edit values: category → string amount
   const [editValues, setEditValues] = useState<Record<string, string>>({})
@@ -141,8 +163,11 @@ export function LivingExpensesPage() {
       }
     }
 
+    // Include auto-generated vehicle expenses in the total
+    total += autoVehicleTotal
+
     return { total, filledCount, totalCategories }
-  }, [editValues])
+  }, [editValues, autoVehicleTotal])
 
   // Group-level totals
   const groupSummaries = useMemo(() => {
@@ -195,6 +220,56 @@ export function LivingExpensesPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Auto-generated vehicle expenses */}
+          {autoVehicleExpenses.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base font-semibold">Vehicle Expenses</h2>
+                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
+                  🔗 Auto-generated
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground -mt-1">
+                These expenses are auto-generated from your vehicle financing setup. Edit them in Assets → Vehicles.
+              </p>
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-0">
+                  {autoVehicleExpenses.map((expense, idx) => (
+                    <div
+                      key={expense.id}
+                      className={`flex items-center justify-between px-5 py-3.5 ${
+                        idx !== autoVehicleExpenses.length - 1 ? 'border-b border-border/30' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">{expense.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {expense.label.includes('Lease') ? 'Lease' : 'Car Loan'} · Transport
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(expense.monthlyBudget)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                      </div>
+                    </div>
+                  ))}
+                  {autoVehicleExpenses.length > 1 && (
+                    <div className="flex items-center justify-between px-5 py-3 border-t border-border/50 bg-muted/20">
+                      <span className="text-sm font-medium text-muted-foreground">Total Vehicle Expenses</span>
+                      <div>
+                        <span className="text-sm font-bold tabular-nums">{formatCurrency(autoVehicleTotal)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Save/Reset actions */}
           {hasChanges && (
