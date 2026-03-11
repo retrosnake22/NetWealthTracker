@@ -143,32 +143,46 @@ export default function AssetsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {categoryFilter === 'property' ? 'Properties' : categoryFilter ? CATEGORY_LABELS[categoryFilter] : 'All Assets'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Total: {formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {showAssets && (
-            <Button onClick={openAddAsset} size="sm">
-              <Plus className="h-4 w-4 mr-1" /> Add Asset
-            </Button>
-          )}
-          {showProperties && (
-            <Button onClick={openAddProperty} size="sm" variant="outline">
-              <Home className="h-4 w-4 mr-1" /> Add Property
-            </Button>
-          )}
-        </div>
+      <div className='flex items-center justify-end gap-2'>
+        {showAssets && (
+          <Button onClick={openAddAsset} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Asset
+          </Button>
+        )}
+        {showProperties && (
+          <Button onClick={openAddProperty} size="sm" variant="outline">
+            <Home className="h-4 w-4 mr-1" /> Add Property
+          </Button>
+        )}
+      </div>
+
+      {/* Summary Strip */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Total Assets</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-blue-400'>
+              {formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Financial Assets</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalAssets)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Properties</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalProperties)}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Financial Assets */}
       {showAssets && filteredAssets.length > 0 && (
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Financial Assets</CardTitle>
           </CardHeader>
@@ -199,7 +213,7 @@ export default function AssetsPage() {
 
       {/* Properties */}
       {showProperties && properties.length > 0 && (
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Properties</CardTitle>
           </CardHeader>

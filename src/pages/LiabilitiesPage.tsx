@@ -99,6 +99,17 @@ export function LiabilitiesPage() {
 
   const total = liabilities.reduce((s, l) => s + l.currentBalance, 0)
 
+  const monthlyRepayments = liabilities.reduce((s, l) => {
+    const repayment = l.minimumRepayment ?? 0
+    if (l.repaymentFrequency === 'weekly') return s + (repayment * 52) / 12
+    if (l.repaymentFrequency === 'fortnightly') return s + (repayment * 26) / 12
+    return s + repayment
+  }, 0)
+
+  const weightedRate = total > 0
+    ? liabilities.reduce((s, l) => s + l.interestRatePA * (l.currentBalance / total), 0)
+    : 0
+
   const frequencyLabel = (freq: string) => {
     switch (freq) {
       case 'weekly': return '/wk'
@@ -168,14 +179,26 @@ export function LiabilitiesPage() {
         </Dialog>
       </div>
 
-      <Card className="card-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Total Liabilities</span>
-            <span className="text-amber-400">{formatCurrency(total)}</span>
-          </CardTitle>
-        </CardHeader>
-      </Card>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Total Liabilities</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-amber-400'>{formatCurrency(total)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Monthly Repayments</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(monthlyRepayments)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='p-4'>
+            <p className='text-sm text-muted-foreground'>Avg Interest Rate</p>
+            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{total > 0 ? formatPercent(weightedRate) : '—'}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {liabilities.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
@@ -203,7 +226,7 @@ export function LiabilitiesPage() {
                         )}
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-amber-400">{formatCurrency(item.currentBalance)}</p>
+                      <p className="text-lg font-bold tabular-nums text-amber-400">{formatCurrency(item.currentBalance)}</p>
                       <p className="text-xs text-muted-foreground">
                         Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
                       </p>

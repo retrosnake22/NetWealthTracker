@@ -29,7 +29,7 @@ export function WealthChart({ data }: WealthChartProps) {
             <span className="font-medium text-foreground">Net Wealth</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 rounded bg-green-600/60 inline-block" />
+            <span className="w-2.5 h-0.5 rounded bg-blue-800/60 inline-block" />
             Assets
           </span>
           <span className="flex items-center gap-1.5">

@@ -213,7 +213,7 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Debt</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(totalDebt)}</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(totalDebt)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -256,17 +256,17 @@ export function PropertiesPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div>
                           <p className="text-xs text-muted-foreground">Value</p>
-                          <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(prop.currentValue)}</p>
+                          <p className="text-xl font-bold tabular-nums">{formatCurrency(prop.currentValue)}</p>
                         </div>
                         {mortgage && (
                           <div>
                             <p className="text-xs text-muted-foreground">Mortgage</p>
-                            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-500">{formatCurrency(mortgage.currentBalance)}</p>
+                            <p className="text-xl font-bold tabular-nums text-red-400">{formatCurrency(mortgage.currentBalance)}</p>
                           </div>
                         )}
                         <div>
                           <p className="text-xs text-muted-foreground">Equity</p>
-                          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(equity)}</p>
+                          <p className="text-xl font-bold tabular-nums text-blue-400">{formatCurrency(equity)}</p>
                         </div>
                         {prop.type === 'investment' && prop.weeklyRent && (
                           <div>

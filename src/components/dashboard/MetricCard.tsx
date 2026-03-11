@@ -63,8 +63,8 @@ export function MetricCard({
               className={cn(
                 'font-extrabold tracking-tight tabular-nums animate-count',
                 isHero ? 'text-[42px] leading-none -tracking-[1.5px]' : 'text-2xl',
-                trend === 'up' && 'text-green-500',
-                trend === 'down' && 'text-red-500',
+                trend === 'up' && 'text-blue-400',
+                trend === 'down' && 'text-red-400',
               )}
             >
               {value}
@@ -80,7 +80,7 @@ export function MetricCard({
             className={cn(
               'shrink-0 rounded-xl p-3',
               isHero && 'gradient-sapphire p-4 shadow-lg',
-              !isHero && trend === 'up' && 'bg-green-500/10',
+              !isHero && trend === 'up' && 'bg-blue-500/10',
               !isHero && trend === 'down' && 'bg-red-500/10',
               !isHero && (!trend || trend === 'neutral') && 'bg-primary/10',
             )}
@@ -88,8 +88,8 @@ export function MetricCard({
             <Icon
               className={cn(
                 isHero ? 'h-7 w-7 text-white' : 'h-5 w-5',
-                !isHero && trend === 'up' && 'text-green-500',
-                !isHero && trend === 'down' && 'text-red-500',
+                !isHero && trend === 'up' && 'text-blue-400',
+                !isHero && trend === 'down' && 'text-red-400',
                 !isHero && (!trend || trend === 'neutral') && 'text-primary',
               )}
             />

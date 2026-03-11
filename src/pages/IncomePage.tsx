@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Label } from '@/components/ui/label'
@@ -177,15 +177,28 @@ export function IncomePage() {
         </Dialog>
       </div>
 
-      {/* ── Grand total ── */}
-      <Card className="card-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Total Monthly Income</span>
-            <span className="text-blue-400">{formatCurrency(grandTotal)}</span>
-          </CardTitle>
-        </CardHeader>
-      </Card>
+      {/* ── Summary strip ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Total Monthly Income</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(grandTotal)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(grandTotal * 12)}/year</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Manual Income</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(manualTotal)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Auto-Generated</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(autoTotal)}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ── Auto-Generated Income section ── */}
       {autoItems.length > 0 && (
@@ -207,7 +220,7 @@ export function IncomePage() {
                         </Badge>
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">
+                      <p className="text-lg font-bold tabular-nums text-blue-400">
                         {formatCurrency(item.monthlyAmount)}/mo
                       </p>
                       <p className="text-xs text-muted-foreground">{item.note}</p>
@@ -244,7 +257,7 @@ export function IncomePage() {
                         {!item.isActive && <Badge variant="outline">Inactive</Badge>}
                       </div>
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                      <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>

@@ -45,14 +45,14 @@ function KpiCard({
   label: string
   value: string
   tag: string
-  tagColor: 'green' | 'amber' | 'red'
+  tagColor: 'blue' | 'amber' | 'red'
   ratio: number
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
 }) {
-  const barColor = { green: 'bg-green-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
+  const barColor = { blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
   const tagBg = {
-    green: 'bg-green-500/10 text-green-500',
+    blue: 'bg-blue-500/10 text-blue-400',
     amber: 'bg-amber-500/10 text-amber-500',
     red: 'bg-red-500/10 text-red-500',
   }[tagColor]
@@ -158,11 +158,11 @@ export function DashboardPage() {
 
   // KPI tags
   const savingsTag = savingsRate > 0.2 ? 'Excellent' : savingsRate > 0.1 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
-  const savingsColor = savingsRate > 0.2 ? 'green' as const : savingsRate > 0.1 ? 'green' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const savingsColor = savingsRate > 0.2 ? 'blue' as const : savingsRate > 0.1 ? 'blue' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
-  const debtColor = debtRatio < 0.3 ? 'green' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
+  const debtColor = debtRatio < 0.3 ? 'blue' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const surplusTag = monthlyCashflow > 500 ? 'Strong' : monthlyCashflow > 0 ? 'Positive' : 'Deficit'
-  const surplusColor = monthlyCashflow > 500 ? 'green' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
+  const surplusColor = monthlyCashflow > 500 ? 'blue' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
 
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
 

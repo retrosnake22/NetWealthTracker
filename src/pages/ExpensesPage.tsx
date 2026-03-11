@@ -32,7 +32,7 @@ const SUPER_CATEGORIES: { label: string; icon: string; color: string; categories
   { label: 'Property', icon: '🏠', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', categories: ['mortgage_repayment', 'council_rates', 'water_rates', 'strata', 'property_management', 'land_tax', 'maintenance', 'building_insurance'] },
   { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'utilities'] },
   { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_home', 'insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: 'Living', icon: '🛒', color: 'bg-green-500/10 text-green-400 border-green-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
+  { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
   { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
   { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'other'] },
 ]
@@ -153,12 +153,7 @@ export function ExpensesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">Total Monthly Expenses</p>
-          <p className="text-3xl font-extrabold tabular-nums tracking-tight">{formatCurrency(total)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(total * 12)}/year</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Add Expense</Button>
@@ -191,6 +186,31 @@ export function ExpensesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Summary strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Total Monthly</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(total)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(total * 12)}/year</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Daily Living</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(manualTotal)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(manualTotal * 12)}/year</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Property Expenses</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(autoPropertyTotal)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(autoPropertyTotal * 12)}/year</p>
+          </CardContent>
+        </Card>
       </div>
 
       {expenseBudgets.length === 0 && autoPropertyExpenses.length === 0 ? (

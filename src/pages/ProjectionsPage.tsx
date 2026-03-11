@@ -94,19 +94,20 @@ export function ProjectionsPage() {
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Current Net Wealth</p>
-                <p className="text-2xl font-bold">{formatCurrency(startPoint?.netWealth ?? 0)}</p>
+                <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(startPoint?.netWealth ?? 0)}</p>
+                <p className='text-xs text-muted-foreground mt-0.5'>Today</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Projected ({projectionSettings.projectionYears}yr)</p>
-                <p className="text-2xl font-bold text-blue-400">{formatCurrency(finalPoint?.netWealth ?? 0)}</p>
+                <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(finalPoint?.netWealth ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">Projected Growth</p>
-                <p className={`text-2xl font-bold ${growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <p className={`text-2xl font-extrabold tabular-nums tracking-tight ${growth >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                   {formatCurrency(growth)}
                 </p>
               </CardContent>
@@ -178,7 +179,7 @@ export function ProjectionsPage() {
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Your monthly surplus is{' '}
-                <span className={monthlySurplus >= 0 ? 'text-green-500 font-semibold' : 'text-red-500 font-semibold'}>
+                <span className={monthlySurplus >= 0 ? 'text-blue-400 font-semibold' : 'text-red-400 font-semibold'}>
                   {formatCurrency(monthlySurplus)}
                 </span>
                 . Decide where extra cash goes each month.
