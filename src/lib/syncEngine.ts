@@ -8,6 +8,13 @@ const DATA_KEYS = [
 
 type SyncData = Record<string, unknown>
 
+// Guard flag — when true, saveToCloud becomes a no-op.
+// This prevents in-flight saves from re-upserting data after a reset.
+let _syncPaused = false
+
+export function isSyncPaused() { return _syncPaused }
+export function setSyncPaused(paused: boolean) { _syncPaused = paused }
+
 /**
  * Load finance data from Supabase for the current user.
  * Returns null if no cloud data exists yet.
@@ -33,12 +40,26 @@ export async function loadFromCloud(userId: string): Promise<SyncData | null> {
  * Save finance data to Supabase (upsert).
  */
 export async function saveToCloud(userId: string, storeState: object): Promise<boolean> {
+  // If sync was paused (e.g. during reset), bail out even if this request
+  // was started before the pause — prevents re-upserting deleted data
+  if (_syncPaused) {
+    console.log('[sync] Save skipped — sync is paused')
+    return false
+  }
+
   // Extract only the data keys (not functions)
   const payload: SyncData = {}
   for (const key of DATA_KEYS) {
     if (key in storeState) {
       payload[key] = (storeState as SyncData)[key]
     }
+  }
+
+  // Check again right before the network call in case pause happened
+  // while we were building the payload
+  if (_syncPaused) {
+    console.log('[sync] Save skipped — sync is paused')
+    return false
   }
 
   const { error } = await supabase
@@ -88,8 +109,10 @@ export function createDebouncedSave(delay = 1500) {
 interface SyncController {
   /** Cancel any pending debounced save */
   cancelPendingSave: () => void
-  /** Unsubscribe from store changes (stops future saves) */
+  /** Pause sync: sets paused flag, cancels pending save, unsubscribes from store */
   pauseSync: () => void
+  /** Clear the paused flag (called on reload/re-init) */
+  resumeSyncFlag: () => void
   /** Re-subscribe to store changes — call with subscriber setup fn */
   resumeSync: (setupSubscriber: () => (() => void)) => void
 }
@@ -103,11 +126,16 @@ export const syncController: SyncController = {
   },
 
   pauseSync() {
+    _syncPaused = true
     this.cancelPendingSave()
     if (_unsubscribe) {
       _unsubscribe()
       _unsubscribe = null
     }
+  },
+
+  resumeSyncFlag() {
+    _syncPaused = false
   },
 
   resumeSync(setupSubscriber) {

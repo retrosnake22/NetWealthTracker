@@ -321,18 +321,26 @@ function SidebarFooter() {
 
   const handleResetAccount = async () => {
     // 1. Stop all cloud sync BEFORE touching the store
-    //    This cancels any pending debounced save and unsubscribes
-    //    from store changes so resetStore() won't trigger a new save
+    //    This sets _syncPaused = true (so any in-flight saveToCloud becomes a no-op),
+    //    cancels any pending debounced save, and unsubscribes from store changes
     syncController.pauseSync()
 
-    // 2. Delete cloud data first (while old data is still there, not after reset)
+    // 2. Wait briefly for any already-in-flight HTTP save to complete
+    //    (the _syncPaused flag will prevent it from writing, but we want
+    //    to ensure the request finishes before we delete)
+    await new Promise((r) => setTimeout(r, 500))
+
+    // 3. Delete cloud data
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('user_finance_data').delete().eq('user_id', user.id)
+      const { error } = await supabase.from('user_finance_data').delete().eq('user_id', user.id)
+      if (error) {
+        console.error('[reset] Failed to delete cloud data:', error.message)
+      }
       localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
     }
 
-    // 3. Now reset the local store (sync is paused, so this won't re-upload)
+    // 4. Now reset the local store (sync is paused, so this won't re-upload)
     resetStore()
     localStorage.removeItem('nwt-finance-store')
 

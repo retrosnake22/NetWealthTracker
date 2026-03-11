@@ -14,7 +14,7 @@ import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerStoreUnsubscribe } from '@/lib/syncEngine'
+import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerStoreUnsubscribe, setSyncPaused } from '@/lib/syncEngine'
 
 const debouncedSave = createDebouncedSave(2000)
 // Register the cancel fn so the sync controller can cancel pending saves
@@ -37,6 +37,9 @@ function App() {
 
     // Clear store before loading new user's data
     useFinanceStore.getState().resetStore()
+
+    // Ensure sync is enabled (may have been paused by a reset before reload)
+    setSyncPaused(false)
 
     // Load from cloud, then subscribe to changes
     setSyncing(true)
