@@ -8,7 +8,8 @@ import AssetsPage from '@/pages/AssetsPage'
 import { PropertiesPage } from '@/pages/PropertiesPage'
 import { LiabilitiesPage } from '@/pages/LiabilitiesPage'
 import { IncomePage } from '@/pages/IncomePage'
-import { ExpensesPage } from '@/pages/ExpensesPage'
+import { FixedExpensesPage } from '@/pages/FixedExpensesPage'
+import { LivingExpensesPage } from '@/pages/LivingExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
 import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
@@ -115,14 +116,16 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/setup" element={<SetupWizardPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
           <Route path="/assets" element={<AssetsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/liabilities" element={<LiabilitiesPage />} />
           <Route path="/income" element={<IncomePage />} />
-          <Route path="/expenses" element={<ExpensesPage />} />
+          <Route path="/expenses" element={<Navigate to="/expenses/living" replace />} />
+          <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
+          <Route path="/expenses/living" element={<LivingExpensesPage />} />
           <Route path="/projections" element={<ProjectionsPage />} />
         </Route>
       </Routes>

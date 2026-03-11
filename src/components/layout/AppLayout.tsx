@@ -23,6 +23,8 @@ import {
   ChevronRight,
   Package,
   Trash2,
+  Building2,
+  ShoppingCart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -63,7 +65,16 @@ const navSections = [
     label: 'Income Statement',
     items: [
       { to: '/income', icon: TrendingUp, label: 'Income' },
-      { to: '/expenses', icon: Receipt, label: 'Expenses' },
+      {
+        to: '/expenses',
+        icon: Receipt,
+        label: 'Expenses',
+        expandable: true,
+        subItems: [
+          { to: '/expenses/fixed', category: 'fixed', label: 'Fixed Expenses', icon: Building2 },
+          { to: '/expenses/living', category: 'living', label: 'Living Expenses', icon: ShoppingCart },
+        ],
+      },
     ],
   },
   {
@@ -82,6 +93,8 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/liabilities': { title: 'Liabilities', subtitle: 'Mortgages, loans and debts' },
   '/income': { title: 'Income', subtitle: 'Your income sources' },
   '/expenses': { title: 'Expenses', subtitle: 'Budget and track spending' },
+  '/expenses/fixed': { title: 'Fixed Expenses', subtitle: 'Property and committed costs' },
+  '/expenses/living': { title: 'Living Expenses', subtitle: 'Budget and track daily spending' },
   '/projections': { title: 'Projections', subtitle: 'Model your future wealth' },
 }
 
@@ -143,6 +156,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const [searchParams] = useSearchParams()
 
+  // Auto-expand expenses section when on an expenses sub-route
+  useEffect(() => {
+    if (location.pathname.startsWith('/expenses')) {
+      setExpandedNav('/expenses')
+    }
+  }, [location.pathname])
+
   const toggleExpand = (to: string) => {
     setExpandedNav((prev) => (prev === to ? null : to))
   }
@@ -180,7 +200,10 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               const isExpandable = 'expandable' in item && item.expandable
               const subItems = 'subItems' in item ? (item as any).subItems : undefined
               const isExpanded = expandedNav === item.to
-              const parentActive = isItemActive(item.to, 'end' in item ? (item as any).end : false)
+              // For expandable items, highlight parent when any child route is active
+              const parentActive = isExpandable
+                ? location.pathname.startsWith(item.to)
+                : isItemActive(item.to, 'end' in item ? (item as any).end : false)
 
               return (
                 <div key={item.to}>
@@ -344,14 +367,12 @@ function SidebarFooter() {
 
   const handleResetAccount = async () => {
     // 1. Stop all cloud sync BEFORE touching the store
-    //    Sets _syncPaused = true, cancels pending debounced save, unsubscribes from store
     syncController.pauseSync()
 
     // 2. Wait for any in-flight HTTP save to finish
     await new Promise((r) => setTimeout(r, 600))
 
-    // 3. Overwrite cloud data with empty state (upsert, NOT delete)
-    //    Supabase RLS may silently block DELETE but INSERT/UPDATE works fine
+    // 3. Overwrite cloud data with empty state
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const emptyData = {
