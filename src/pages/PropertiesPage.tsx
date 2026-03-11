@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Pencil, Building2, Home } from 'lucide-react'
+import { Plus, Trash2, Pencil, Building2, Home, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatPercent } from '@/lib/format'
+import { PropertyPnL, calculatePropertyPnL } from '@/components/properties/PropertyPnL'
 import type { Property, PropertyType } from '@/types/models'
 
 interface PropertyForm {
@@ -55,6 +56,7 @@ export function PropertiesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null)
   const [form, setForm] = useState<PropertyForm>({ ...emptyForm })
+  const [expandedPnL, setExpandedPnL] = useState<Record<string, boolean>>({})
 
   const resetAndClose = () => {
     setForm({ ...emptyForm })
@@ -194,6 +196,26 @@ export function PropertiesPage() {
     return s + (m?.currentBalance ?? 0)
   }, 0)
 
+  const investmentProperties = properties.filter(p => p.type === 'investment')
+  const portfolioPnL = investmentProperties.length > 0
+    ? investmentProperties.reduce(
+        (acc, prop) => {
+          const pnl = calculatePropertyPnL(prop, getMortgage(prop.mortgageId))
+          return {
+            grossRentPA: acc.grossRentPA + pnl.grossRentPA,
+            totalExpensesPA: acc.totalExpensesPA + pnl.totalExpensesPA,
+            interestPA: acc.interestPA + pnl.interestPA,
+            netCashflowPA: acc.netCashflowPA + pnl.netCashflowPA,
+            totalValue: acc.totalValue + prop.currentValue,
+          }
+        },
+        { grossRentPA: 0, totalExpensesPA: 0, interestPA: 0, netCashflowPA: 0, totalValue: 0 }
+      )
+    : null
+
+  const togglePnL = (id: string) =>
+    setExpandedPnL(prev => ({ ...prev, [id]: !prev[id] }))
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end">
@@ -224,6 +246,46 @@ export function PropertiesPage() {
         </Card>
       </div>
 
+      {/* Investment Portfolio P&L Summary */}
+      {portfolioPnL && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Investment Portfolio Summary</h3>
+              <Badge variant="outline" className="ml-auto">{investmentProperties.length} {investmentProperties.length === 1 ? 'property' : 'properties'}</Badge>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Gross Rent</p>
+                <p className="text-lg font-bold tabular-nums">{formatCurrency(portfolioPnL.grossRentPA)}<span className="text-xs font-normal text-muted-foreground">/yr</span></p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Expenses</p>
+                <p className="text-lg font-bold tabular-nums text-red-400">{formatCurrency(portfolioPnL.totalExpensesPA)}<span className="text-xs font-normal text-muted-foreground">/yr</span></p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Interest</p>
+                <p className="text-lg font-bold tabular-nums text-red-400">{formatCurrency(portfolioPnL.interestPA)}<span className="text-xs font-normal text-muted-foreground">/yr</span></p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Net Cashflow</p>
+                <p className={`text-lg font-bold tabular-nums ${portfolioPnL.netCashflowPA >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {portfolioPnL.netCashflowPA < 0 ? `(${formatCurrency(Math.abs(portfolioPnL.netCashflowPA))})` : formatCurrency(portfolioPnL.netCashflowPA)}
+                  <span className="text-xs font-normal text-muted-foreground">/yr</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Net Yield</p>
+                <p className={`text-lg font-bold tabular-nums ${portfolioPnL.netCashflowPA >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatPercent(portfolioPnL.totalValue > 0 ? portfolioPnL.netCashflowPA / portfolioPnL.totalValue : 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Property list */}
       {properties.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
@@ -237,68 +299,89 @@ export function PropertiesPage() {
           {properties.map(prop => {
             const mortgage = getMortgage(prop.mortgageId)
             const equity = prop.currentValue - (mortgage?.currentBalance ?? 0)
+            const isInvestment = prop.type === 'investment'
+            const isPnLExpanded = expandedPnL[prop.id] ?? false
             return (
-              <Card key={prop.id} className="card-hover group">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        {prop.type === 'investment' ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
-                        <h3 className="text-lg font-semibold">{prop.name}</h3>
-                        <Badge className={prop.type === 'investment'
-                          ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                          : 'bg-blue-500/10 text-blue-400 border-blue-400/20'
-                        }>
-                          {prop.type === 'investment' ? 'Investment' : 'Primary'}
-                        </Badge>
+              <div key={prop.id} className="space-y-2">
+                <Card className="card-hover group">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          {isInvestment ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+                          <h3 className="text-lg font-semibold">{prop.name}</h3>
+                          <Badge className={isInvestment
+                            ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                            : 'bg-blue-500/10 text-blue-400 border-blue-400/20'
+                          }>
+                            {isInvestment ? 'Investment' : 'Primary'}
+                          </Badge>
+                        </div>
+                        {prop.address && <p className="text-sm text-muted-foreground">{prop.address}</p>}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Value</p>
+                            <p className="text-xl font-bold tabular-nums">{formatCurrency(prop.currentValue)}</p>
+                          </div>
+                          {mortgage && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Mortgage</p>
+                              <p className="text-xl font-bold tabular-nums text-red-400">{formatCurrency(mortgage.currentBalance)}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs text-muted-foreground">Equity</p>
+                            <p className="text-xl font-bold tabular-nums text-blue-400">{formatCurrency(equity)}</p>
+                          </div>
+                          {isInvestment && prop.weeklyRent && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Rent</p>
+                              <p className="text-lg font-semibold tabular-nums">{formatCurrency(prop.weeklyRent)}/wk</p>
+                            </div>
+                          )}
+                          {mortgage && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Interest Rate</p>
+                              <p className="text-lg font-semibold tabular-nums">{((mortgage.interestRatePA ?? 0) * 100).toFixed(2)}% p.a.</p>
+                            </div>
+                          )}
+                          {mortgage && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Repayment</p>
+                              <p className="text-lg font-semibold tabular-nums">{formatCurrency(mortgage.minimumRepayment)}/{mortgage.repaymentFrequency === 'monthly' ? 'mo' : mortgage.repaymentFrequency === 'fortnightly' ? 'fn' : 'wk'}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {prop.address && <p className="text-sm text-muted-foreground">{prop.address}</p>}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Value</p>
-                          <p className="text-xl font-bold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                        </div>
-                        {mortgage && (
-                          <div>
-                            <p className="text-xs text-muted-foreground">Mortgage</p>
-                            <p className="text-xl font-bold tabular-nums text-red-400">{formatCurrency(mortgage.currentBalance)}</p>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs text-muted-foreground">Equity</p>
-                          <p className="text-xl font-bold tabular-nums text-blue-400">{formatCurrency(equity)}</p>
-                        </div>
-                        {prop.type === 'investment' && prop.weeklyRent && (
-                          <div>
-                            <p className="text-xs text-muted-foreground">Rent</p>
-                            <p className="text-lg font-semibold tabular-nums">{formatCurrency(prop.weeklyRent)}/wk</p>
-                          </div>
-                        )}
-                        {mortgage && (
-                          <div>
-                            <p className="text-xs text-muted-foreground">Interest Rate</p>
-                            <p className="text-lg font-semibold tabular-nums">{((mortgage.interestRatePA ?? 0) * 100).toFixed(2)}% p.a.</p>
-                          </div>
-                        )}
-                        {mortgage && (
-                          <div>
-                            <p className="text-xs text-muted-foreground">Repayment</p>
-                            <p className="text-lg font-semibold tabular-nums">{formatCurrency(mortgage.minimumRepayment)}/{mortgage.repaymentFrequency === 'monthly' ? 'mo' : mortgage.repaymentFrequency === 'fortnightly' ? 'fn' : 'wk'}</p>
-                          </div>
-                        )}
+                      <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(prop)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(prop)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(prop)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(prop)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    {isInvestment && (
+                      <div className="mt-4 pt-3 border-t border-border">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-center text-muted-foreground hover:text-foreground"
+                          onClick={() => togglePnL(prop.id)}
+                        >
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          {isPnLExpanded ? 'Hide' : 'Show'} P&L Breakdown
+                          {isPnLExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                {isInvestment && isPnLExpanded && (
+                  <PropertyPnL property={prop} mortgage={mortgage} />
+                )}
+              </div>
             )
           })}
         </div>
