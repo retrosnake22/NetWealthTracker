@@ -206,7 +206,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 space-y-5 overflow-y-auto">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-5 overflow-y-auto min-h-0">
       {navSections.map((section) => (
         <div key={section.label}>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 mb-1.5">
@@ -450,13 +450,15 @@ function SidebarFooter() {
 
 function DesktopSidebar() {
   return (
-    <aside className="hidden md:flex w-60 flex-col border-r border-border/50 bg-sidebar">
-      <div className="p-5 pb-4">
+    <aside className="hidden md:flex w-60 flex-col border-r border-border/50 bg-sidebar h-screen sticky top-0">
+      <div className="p-5 pb-4 shrink-0">
         <BrandLogo />
       </div>
       <SidebarNav />
-      <NetWealthMini />
-      <SidebarFooter />
+      <div className="shrink-0">
+        <NetWealthMini />
+        <SidebarFooter />
+      </div>
     </aside>
   )
 }

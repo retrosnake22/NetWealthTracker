@@ -65,7 +65,6 @@ const STEPS = [
   { id: 'liabilities', label: 'Debts', icon: CreditCard },
   { id: 'income', label: 'Income', icon: Briefcase },
   { id: 'expenses', label: 'Expenses', icon: Receipt },
-  { id: 'projections', label: 'Goals', icon: Target },
   { id: 'summary', label: 'Summary', icon: TrendingUp },
 ] as const
 
@@ -95,10 +94,10 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 type AssetTab = AssetCategory
 const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: string }[] = [
   { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-amber-500 bg-amber-500/10' },
+  { id: 'property', label: 'Property', icon: Home, color: 'text-sky-500 bg-sky-500/10' },
   { id: 'stocks', label: 'Shares / Stocks', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
   { id: 'super', label: 'Super', icon: Target, color: 'text-violet-500 bg-violet-500/10' },
   { id: 'vehicles', label: 'Vehicles', icon: Car, color: 'text-amber-500 bg-amber-500/10' },
-  { id: 'property', label: 'Property', icon: Home, color: 'text-sky-500 bg-sky-500/10' },
   { id: 'other', label: 'Other', icon: Wallet, color: 'text-gray-500 bg-gray-500/10' },
 ]
 
@@ -162,7 +161,7 @@ export function SetupWizardPage() {
                   <step.icon className="w-4 h-4 text-primary" />
                 </div>
                 <span className="text-sm font-medium">
-                  Step {currentStep + 1} of {STEPS.length}
+                  {step.id === 'summary' ? 'Financial Snapshot' : `Step ${currentStep + 1} of ${STEPS.length - 1}`}
                 </span>
               </div>
             </div>
@@ -203,7 +202,6 @@ export function SetupWizardPage() {
         {step.id === 'liabilities' && <LiabilitiesStep store={store} />}
         {step.id === 'income' && <IncomeStep store={store} />}
         {step.id === 'expenses' && <ExpensesStep store={store} />}
-        {step.id === 'projections' && <ProjectionsStep store={store} />}
         {step.id === 'summary' && <SummaryStep store={store} onFinish={finishWizard} />}
       </div>
 
@@ -704,7 +702,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you own?"
-        description="Add all your assets \u2014 savings, investments, super, vehicles, and property."
+        description="Add all your assets: savings, investments, super, vehicles, and property."
         icon={Wallet}
       />
 
@@ -715,8 +713,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Category tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      {/* Category grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {ASSET_TABS.map(tab => {
           const count = getTabCount(tab.id)
           const isActive = activeTab === tab.id
@@ -725,17 +723,19 @@ function AssetsStep({ store }: { store: FinanceState }) {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
                 isActive
-                  ? 'border-primary bg-primary/10 text-primary'
+                  ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary/30'
+                  : count > 0
+                  ? 'border-border bg-muted/30 text-foreground'
                   : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              {tab.label}
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="truncate">{tab.label}</span>
               {count > 0 && (
-                <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full shrink-0 ${
+                  isActive ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'
                 }`}>
                   {count}
                 </span>
@@ -1905,87 +1905,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
 // -- Step 5: Expenses -- (moved to SetupWizardExpensesStep.tsx)
 // (ExpensesStep imported from SetupWizardExpensesStep.tsx)
 
-// -- Step 6: Projections --
-
-function ProjectionsStep({ store }: { store: FinanceState }) {
-  const { projectionSettings, updateProjectionSettings, assets, properties, liabilities } = store
-  const [years, setYears] = useState(String(projectionSettings.projectionYears))
-
-  const handleYearsChange = (v: string) => {
-    setYears(v)
-    const num = parseInt(v)
-    if (num > 0 && num <= 50) {
-      updateProjectionSettings({ projectionYears: num })
-    }
-  }
-
-  const totalAssetCount = assets.length + properties.length
-
-  return (
-    <div className="space-y-6">
-      <StepHeader
-        title="How far ahead do you want to plan?"
-        description="Set your projection horizon. You can configure detailed surplus allocations later from the Projections page."
-        icon={Target}
-      />
-
-      <Card>
-        <CardContent className="p-6 space-y-6">
-          <div className="space-y-2">
-            <Label>Projection Period</Label>
-            <div className="flex gap-2">
-              {['10', '20', '30', '40'].map(y => (
-                <button
-                  key={y}
-                  onClick={() => handleYearsChange(y)}
-                  className={`flex-1 py-3 rounded-xl border text-center font-semibold transition-all ${
-                    years === y
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50 text-muted-foreground'
-                  }`}
-                >
-                  {y} years
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Or set a custom period</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                type="number"
-                min={1} max={50}
-                value={years}
-                onChange={e => handleYearsChange(e.target.value)}
-                className="w-24"
-              />
-              <span className="text-muted-foreground">years</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-muted/30">
-        <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground mb-3">Your projection will include:</p>
-          <div className="grid grid-cols-2 gap-3 text-center">
-            <div>
-              <p className="text-2xl font-bold tabular-nums">{totalAssetCount}</p>
-              <p className="text-xs text-muted-foreground">Assets</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tabular-nums">{liabilities.length}</p>
-              <p className="text-xs text-muted-foreground">Debts</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// -- Step 7: Summary --
+// -- Summary (Final step, not numbered) --
 
 function SummaryStep({ store, onFinish }: { store: FinanceState; onFinish: () => void }) {
   const { assets, properties, liabilities, incomes, expenseBudgets } = store
