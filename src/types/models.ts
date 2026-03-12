@@ -148,6 +148,7 @@ export interface HouseholdMember {
 
 export interface UserProfile {
   profileType: ProfileType
+  individualName?: string
   householdMembers: HouseholdMember[]
   estimatedMonthlyExpenses?: number
 }

@@ -25,6 +25,7 @@ export interface FinanceState {
 
   // Profile
   setProfileType: (type: ProfileType) => void
+  setIndividualName: (name: string) => void
   setEstimatedMonthlyExpenses: (amount: number) => void
   addHouseholdMember: (name: string) => void
   updateHouseholdMember: (id: string, name: string) => void
@@ -130,6 +131,9 @@ export const useFinanceStore = create<FinanceState>()(
       // Profile
       setProfileType: (type) => set((state) => ({
         userProfile: { ...state.userProfile, profileType: type },
+      })),
+      setIndividualName: (name) => set((state) => ({
+        userProfile: { ...state.userProfile, individualName: name },
       })),
       setEstimatedMonthlyExpenses: (amount) => set((state) => ({
         userProfile: { ...state.userProfile, estimatedMonthlyExpenses: amount },

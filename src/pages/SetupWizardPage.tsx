@@ -161,7 +161,7 @@ export function SetupWizardPage() {
                   <step.icon className="w-4 h-4 text-primary" />
                 </div>
                 <span className="text-sm font-medium">
-                  {step.id === 'summary' ? 'Financial Snapshot' : `Step ${currentStep + 1} of ${STEPS.length - 1}`}
+                  {step.id === 'welcome' ? 'Welcome' : step.id === 'summary' ? 'Financial Snapshot' : `Step ${currentStep} of ${STEPS.length - 2}`}
                 </span>
               </div>
             </div>
@@ -186,7 +186,7 @@ export function SetupWizardPage() {
             <div>
               {currentStep < STEPS.length - 1 ? (
                 <Button variant="ghost" size="sm" onClick={finishWizard} className="text-muted-foreground">
-                  Skip Setup
+                  Save & Exit
                 </Button>
               ) : null}
             </div>
@@ -272,7 +272,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 // -- Step 2: Profile (Individual vs Household) --
 
 function ProfileStep({ store, onNext }: { store: FinanceState; onNext: () => void }) {
-  const { userProfile, setProfileType, addHouseholdMember, updateHouseholdMember, removeHouseholdMember } = store
+  const { userProfile, setProfileType, setIndividualName, addHouseholdMember, updateHouseholdMember, removeHouseholdMember } = store
   const [newMemberName, setNewMemberName] = useState('')
 
   const handleAddMember = () => {
@@ -328,6 +328,24 @@ function ProfileStep({ store, onNext }: { store: FinanceState; onNext: () => voi
           </p>
         </button>
       </div>
+
+      {userProfile.profileType === 'individual' && (
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <div>
+              <h3 className="font-semibold mb-1">What's your name?</h3>
+              <p className="text-sm text-muted-foreground">
+                We'll use this to personalise your experience.
+              </p>
+            </div>
+            <Input
+              placeholder="e.g. John"
+              value={userProfile.individualName || ''}
+              onChange={(e) => setIndividualName(e.target.value)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {userProfile.profileType === 'household' && (
         <Card>
@@ -1504,8 +1522,8 @@ function IncomeStep({ store }: { store: FinanceState }) {
   // Memoize to prevent infinite re-render loop
   const salaryPeople = useMemo(() => isHousehold
     ? userProfile.householdMembers
-    : [{ id: '__individual__', name: 'Your' }],
-  [isHousehold, userProfile.householdMembers])
+    : [{ id: '__individual__', name: userProfile.individualName || 'Your' }],
+  [isHousehold, userProfile.householdMembers, userProfile.individualName])
 
   const [salaryForms, setSalaryForms] = useState<Record<string, { grossAnnual: string; includesSuper: boolean }>>(() => {
     const initial: Record<string, { grossAnnual: string; includesSuper: boolean }> = {}
@@ -1546,7 +1564,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
     )
 
     const data: Partial<IncomeItem> = {
-      name: isHousehold ? `${person.name}'s Salary` : 'Salary',
+      name: isHousehold ? `${person.name}'s Salary` : (userProfile.individualName ? `${userProfile.individualName}'s Salary` : 'Salary'),
       category: 'salary',
       monthlyAmount: breakdown.netMonthly,
       isActive: true,
@@ -1676,7 +1694,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="w-4 h-4 text-primary" />
                   </div>
-                  <h3 className="font-semibold">{isHousehold ? `${person.name}'s Salary` : 'Your Salary'}</h3>
+                  <h3 className="font-semibold">{isHousehold ? `${person.name}'s Salary` : (userProfile.individualName ? `${userProfile.individualName}'s Salary` : 'Your Salary')}</h3>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">

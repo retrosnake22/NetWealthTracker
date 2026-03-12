@@ -1,7 +1,7 @@
 // NWT Dashboard
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
@@ -165,7 +165,7 @@ function KpiCard({
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
@@ -334,6 +334,20 @@ export function DashboardPage() {
 
   return (
     <>
+      {expenseBudgets.length === 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3 animate-fade-up">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm">Complete Your Setup</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              You haven't set up your detailed budget yet. Head to Living Expenses to enter your full budget breakdown.
+            </p>
+            <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400 mt-2">
+              Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
           <div className="space-y-6">
