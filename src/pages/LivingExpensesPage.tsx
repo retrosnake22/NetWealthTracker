@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, Plus, X, Trash2, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Check, RotateCcw, Plus, X, Trash2, Calculator, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -198,35 +198,66 @@ export function LivingExpensesPage() {
     setHasChanges(true)
   }, [customName, customAmount, customCategory, addExpenseBudget])
 
-  const handleActivateDetailedBudget = useCallback(() => {
-    setBudgetMode('detailed')
+  const handleSetBudgetMode = useCallback((mode: 'estimate' | 'detailed') => {
+    setBudgetMode(mode)
   }, [setBudgetMode])
 
   return (
     <div className="space-y-6">
-      {/* Estimate mode banner */}
-      {budgetMode === 'estimate' && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-sm">Using Monthly Estimate</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Your dashboard is using your estimated monthly expenses of{' '}
-                    <span className="font-bold text-foreground">{formatCurrency(estimatedMonthlyExpenses)}/mo</span>{' '}
-                    from the setup wizard. Switch to a detailed budget for more accurate tracking.
-                  </p>
-                </div>
-              </div>
-              <Button size="sm" onClick={handleActivateDetailedBudget} className="shrink-0 gap-1.5">
-                Activate Detailed Budget <ArrowRight className="h-3.5 w-3.5" />
+      {/* Page hero title */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Living Expenses</h1>
+        <p className="text-muted-foreground mt-1.5 text-sm sm:text-base max-w-2xl">
+          {budgetMode === 'detailed'
+            ? 'Your detailed budget is active. Update your spending categories below and use the Actuals tab each month to track real spending against your budget.'
+            : 'You\'re currently using a monthly estimate for your expenses. Switch to a detailed budget to break down spending by category and track actuals each month.'}
+        </p>
+      </div>
+
+      {/* Mode toggle */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground shrink-0">Tracking mode:</span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={budgetMode === 'estimate' ? 'default' : 'outline'}
+                onClick={() => handleSetBudgetMode('estimate')}
+                className="gap-1.5"
+              >
+                <Calculator className="h-3.5 w-3.5" />
+                Monthly Estimate
+                {budgetMode === 'estimate' && estimatedMonthlyExpenses > 0 && (
+                  <span className="ml-1 opacity-80">({formatCurrency(estimatedMonthlyExpenses)})</span>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant={budgetMode === 'detailed' ? 'default' : 'outline'}
+                onClick={() => handleSetBudgetMode('detailed')}
+                className="gap-1.5"
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                Detailed Budget
+                {budgetMode === 'detailed' && summary.total > 0 && (
+                  <span className="ml-1 opacity-80">({formatCurrency(summary.total)})</span>
+                )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          {budgetMode === 'estimate' && estimatedMonthlyExpenses > 0 && (
+            <p className="text-xs text-muted-foreground mt-2.5 pl-0 sm:pl-[108px]">
+              Using <span className="font-semibold text-foreground">{formatCurrency(estimatedMonthlyExpenses)}/mo</span> from your setup wizard estimate in all cashflow and projection calculations.
+            </p>
+          )}
+          {budgetMode === 'detailed' && (
+            <p className="text-xs text-muted-foreground mt-2.5 pl-0 sm:pl-[108px]">
+              Using your itemised budget total of <span className="font-semibold text-foreground">{formatCurrency(summary.total)}/mo</span> in all cashflow and projection calculations.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="budget" className="space-y-6">
         <TabsList className="h-10">
@@ -358,10 +389,10 @@ export function LivingExpensesPage() {
                     </div>
 
                     <div className="border-t border-border/50">
-                      {/* Column headers */}
-                      <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2 pl-12">
-                        <span>Category</span>
-                        <span className="text-right">Monthly Budget</span>
+                      {/* Column headers — bold and prominent */}
+                      <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
                       </div>
 
                       {group.categories.map((cat, idx) => {
@@ -376,7 +407,7 @@ export function LivingExpensesPage() {
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className={`text-sm truncate ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
+                              <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                                 {CATEGORY_LABELS[cat]}
                               </span>
                             </div>
@@ -422,6 +453,12 @@ export function LivingExpensesPage() {
                     </div>
                   </div>
                   <div className="border-t border-border/50">
+                    {/* Column headers for custom */}
+                    <div className="grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
+                      <span />
+                    </div>
                     {customBudgets.map((b, idx) => (
                       <div
                         key={b.id}
@@ -429,7 +466,7 @@ export function LivingExpensesPage() {
                           idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
                         }`}
                       >
-                        <span className="text-sm font-medium truncate">{b.label}</span>
+                        <span className="text-sm font-semibold truncate">{b.label}</span>
                         <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
