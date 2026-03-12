@@ -140,6 +140,7 @@ export interface ProjectionSettings {
 }
 
 export type ProfileType = 'individual' | 'household'
+export type BudgetMode = 'estimate' | 'detailed'
 
 export interface HouseholdMember {
   id: string
@@ -151,6 +152,7 @@ export interface UserProfile {
   individualName?: string
   householdMembers: HouseholdMember[]
   estimatedMonthlyExpenses?: number
+  budgetMode: BudgetMode
 }
 
 export interface MonthlySnapshot {

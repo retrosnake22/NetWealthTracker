@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, Plus, X, Trash2 } from 'lucide-react'
+import { Check, RotateCcw, Plus, X, Trash2, AlertTriangle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -45,7 +45,9 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
 ]
 
 export function LivingExpensesPage() {
-  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
+  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode } = useFinanceStore()
+  const budgetMode = userProfile?.budgetMode ?? 'estimate'
+  const estimatedMonthlyExpenses = userProfile?.estimatedMonthlyExpenses ?? 0
 
   // Custom expense dialog state
   const [showCustomExpense, setShowCustomExpense] = useState(false)
@@ -196,233 +198,263 @@ export function LivingExpensesPage() {
     setHasChanges(true)
   }, [customName, customAmount, customCategory, addExpenseBudget])
 
+  const handleActivateDetailedBudget = useCallback(() => {
+    setBudgetMode('detailed')
+  }, [setBudgetMode])
+
   return (
-    <Tabs defaultValue="budget" className="space-y-6">
-      <TabsList className="h-10">
-        <TabsTrigger value="budget" className="px-4">Budget</TabsTrigger>
-        <TabsTrigger value="actuals" className="px-4">Actuals</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="actuals">
-        <ExpenseActualsView />
-      </TabsContent>
-
-      <TabsContent value="budget">
-        <div className="space-y-6">
-          {/* Add Custom Expense button */}
-          <div className="flex items-center justify-end gap-2">
-            {!showCustomExpense ? (
-              <Button size="sm" variant="outline" onClick={() => setShowCustomExpense(true)} className="gap-1.5">
-                <Plus className="h-3.5 w-3.5" /> Add Custom Expense
-              </Button>
-            ) : (
-              <Card className="w-full">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm">Add Custom Expense</h3>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowCustomExpense(false)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Expense Name</Label>
-                      <Input
-                        placeholder="e.g. Dog Walker"
-                        value={customName}
-                        onChange={e => setCustomName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Category</Label>
-                      <Select value={customCategory} onValueChange={setCustomCategory}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {LIVING_SUPER_CATEGORIES.map(group => (
-                            <SelectItem key={group.label} value={group.categories[0]}>
-                              {group.icon} {group.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Monthly Amount</Label>
-                      <CurrencyInput
-                        value={customAmount}
-                        onChange={v => setCustomAmount(v)}
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  <Button size="sm" onClick={handleAddCustomExpense} disabled={!customName || !customAmount}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Expense
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Summary strip */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Total Monthly</p>
-                <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(summary.total)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(summary.total * 12)}/year</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Categories Used</p>
-                <p className="text-2xl font-extrabold tabular-nums tracking-tight">{summary.filledCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">of {summary.totalCategories} available</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Daily Equivalent</p>
-                <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(summary.total / 30.44)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">per day average</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Save/Reset actions */}
-          {hasChanges && (
-            <div className="flex items-center gap-3 justify-end">
-              <Button variant="ghost" size="sm" onClick={handleReset}>
-                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Undo Changes
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <Check className="h-3.5 w-3.5 mr-1.5" /> Save Budget
+    <div className="space-y-6">
+      {/* Estimate mode banner */}
+      {budgetMode === 'estimate' && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-sm">Using Monthly Estimate</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your dashboard is using your estimated monthly expenses of{' '}
+                    <span className="font-bold text-foreground">{formatCurrency(estimatedMonthlyExpenses)}/mo</span>{' '}
+                    from the setup wizard. Switch to a detailed budget for more accurate tracking.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" onClick={handleActivateDetailedBudget} className="shrink-0 gap-1.5">
+                Activate Detailed Budget <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Inline budget editor grouped by super-category */}
-          <div className="space-y-3">
-            {groupSummaries.map(group => (
-              <Card key={group.label}>
+      <Tabs defaultValue="budget" className="space-y-6">
+        <TabsList className="h-10">
+          <TabsTrigger value="budget" className="px-4">Budget</TabsTrigger>
+          <TabsTrigger value="actuals" className="px-4">Actuals</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="actuals">
+          <ExpenseActualsView />
+        </TabsContent>
+
+        <TabsContent value="budget">
+          <div className="space-y-6">
+            {/* Add Custom Expense button */}
+            <div className="flex items-center justify-end gap-2">
+              {!showCustomExpense ? (
+                <Button size="sm" variant="outline" onClick={() => setShowCustomExpense(true)} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> Add Custom Expense
+                </Button>
+              ) : (
+                <Card className="w-full">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-sm">Add Custom Expense</h3>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowCustomExpense(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Expense Name</Label>
+                        <Input
+                          placeholder="e.g. Dog Walker"
+                          value={customName}
+                          onChange={e => setCustomName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Category</Label>
+                        <Select value={customCategory} onValueChange={setCustomCategory}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {LIVING_SUPER_CATEGORIES.map(group => (
+                              <SelectItem key={group.label} value={group.categories[0]}>
+                                {group.icon} {group.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Monthly Amount</Label>
+                        <CurrencyInput
+                          value={customAmount}
+                          onChange={v => setCustomAmount(v)}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={handleAddCustomExpense} disabled={!customName || !customAmount}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Expense
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Summary strip */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Total Monthly</p>
+                  <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(summary.total)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(summary.total * 12)}/year</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Categories Used</p>
+                  <p className="text-2xl font-extrabold tabular-nums tracking-tight">{summary.filledCount}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">of {summary.totalCategories} available</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Daily Equivalent</p>
+                  <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(summary.total / 30.44)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">per day average</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Save/Reset actions */}
+            {hasChanges && (
+              <div className="flex items-center gap-3 justify-end">
+                <Button variant="ghost" size="sm" onClick={handleReset}>
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Undo Changes
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  <Check className="h-3.5 w-3.5 mr-1.5" /> Save Budget
+                </Button>
+              </div>
+            )}
+
+            {/* Inline budget editor grouped by super-category */}
+            <div className="space-y-3">
+              {groupSummaries.map(group => (
+                <Card key={group.label}>
+                  <CardContent className="p-0">
+                    <div className="flex items-center justify-between px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{group.icon}</span>
+                            <span className="font-semibold">{group.label}</span>
+                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                              {group.filledCount}/{group.categories.length}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold tabular-nums">
+                          {formatCurrency(group.groupTotal)}
+                          <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border/50">
+                      {/* Column headers */}
+                      <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2 pl-12">
+                        <span>Category</span>
+                        <span className="text-right">Monthly Budget</span>
+                      </div>
+
+                      {group.categories.map((cat, idx) => {
+                        const value = editValues[cat] || ''
+                        const hasValue = parseFloat(value) > 0
+
+                        return (
+                          <div
+                            key={cat}
+                            className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                              idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`text-sm truncate ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
+                                {CATEGORY_LABELS[cat]}
+                              </span>
+                            </div>
+                            <div className="flex justify-end">
+                              <div className="w-[140px] sm:w-[160px]">
+                                <CurrencyInput
+                                  value={value}
+                                  onChange={(v) => handleValueChange(cat, v)}
+                                  placeholder="—"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Custom Expenses */}
+            {customBudgets.length > 0 && (
+              <Card>
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="text-left">
                         <div className="flex items-center gap-2">
-                          <span className="text-base">{group.icon}</span>
-                          <span className="font-semibold">{group.label}</span>
+                          <span className="text-base">📌</span>
+                          <span className="font-semibold">Custom Expenses</span>
                           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                            {group.filledCount}/{group.categories.length}
+                            {customBudgets.length}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold tabular-nums">
-                        {formatCurrency(group.groupTotal)}
+                        {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
                         <span className="text-sm font-normal text-muted-foreground">/mo</span>
                       </p>
-                      <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
                     </div>
                   </div>
-
                   <div className="border-t border-border/50">
-                    {/* Column headers */}
-                    <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2 pl-12">
-                      <span>Category</span>
-                      <span className="text-right">Monthly Budget</span>
-                    </div>
-
-                    {group.categories.map((cat, idx) => {
-                      const value = editValues[cat] || ''
-                      const hasValue = parseFloat(value) > 0
-
-                      return (
-                        <div
-                          key={cat}
-                          className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                            idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`text-sm truncate ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
-                              {CATEGORY_LABELS[cat]}
-                            </span>
-                          </div>
-                          <div className="flex justify-end">
-                            <div className="w-[140px] sm:w-[160px]">
-                              <CurrencyInput
-                                value={value}
-                                onChange={(v) => handleValueChange(cat, v)}
-                                placeholder="—"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+                    {customBudgets.map((b, idx) => (
+                      <div
+                        key={b.id}
+                        className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                          idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
+                        }`}
+                      >
+                        <span className="text-sm font-medium truncate">{b.label}</span>
+                        <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            )}
 
-          {/* Custom Expenses */}
-          {customBudgets.length > 0 && (
-            <Card>
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">📌</span>
-                        <span className="font-semibold">Custom Expenses</span>
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                          {customBudgets.length}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold tabular-nums">
-                      {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
-                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                    </p>
-                  </div>
+            {/* Sticky save bar */}
+            {hasChanges && (
+              <div className="sticky bottom-4 flex justify-center">
+                <div className="bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">Unsaved changes</span>
+                  <Button size="sm" onClick={handleSave}>
+                    <Check className="h-4 w-4 mr-1" /> Save Budget
+                  </Button>
                 </div>
-                <div className="border-t border-border/50">
-                  {customBudgets.map((b, idx) => (
-                    <div
-                      key={b.id}
-                      className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                        idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
-                      }`}
-                    >
-                      <span className="text-sm font-medium truncate">{b.label}</span>
-                      <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Sticky save bar */}
-          {hasChanges && (
-            <div className="sticky bottom-4 flex justify-center">
-              <div className="bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">Unsaved changes</span>
-                <Button size="sm" onClick={handleSave}>
-                  <Check className="h-4 w-4 mr-1" /> Save Budget
-                </Button>
               </div>
-            </div>
-          )}
-        </div>
-      </TabsContent>
-    </Tabs>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

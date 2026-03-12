@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation } from '@/types/models'
+import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -254,6 +254,8 @@ export function calculateDashboardMetrics(
   liabilities: Liability[],
   assets: Asset[],
   expenseActuals?: ExpenseActual[],
+  budgetMode?: BudgetMode,
+  estimatedMonthlyExpenses?: number,
 ): DashboardMetrics {
   // Income: base + rental
   const baseIncome = calculateMonthlyIncome(incomes)
@@ -262,8 +264,11 @@ export function calculateDashboardMetrics(
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
   const monthlyIncome = baseIncome + rentalIncome
 
-  // Expenses: budgets (or actuals if available) + mortgage repayments + property running costs
-  const { total: baseExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [])
+  // Expenses: if in estimate mode and we have an estimate, use that as base expenses
+  // Otherwise use detailed budgets (or actuals if available)
+  const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
+  const { total: detailedExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [])
+  const baseExpenses = useEstimate ? estimatedMonthlyExpenses! : detailedExpenses
   // Exclude car_loan liabilities — their repayments are tracked as ExpenseBudget items
   const mortgageExpenses = liabilities
     .filter(l => l.category !== 'car_loan')

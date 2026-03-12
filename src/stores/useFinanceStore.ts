@@ -4,7 +4,7 @@ import type {
   Asset,
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
   SurplusAllocation, ProjectionSettings, AssetCategory,
-  UserProfile, ProfileType,
+  UserProfile, ProfileType, BudgetMode,
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
@@ -27,6 +27,7 @@ export interface FinanceState {
   setProfileType: (type: ProfileType) => void
   setIndividualName: (name: string) => void
   setEstimatedMonthlyExpenses: (amount: number) => void
+  setBudgetMode: (mode: BudgetMode) => void
   addHouseholdMember: (name: string) => void
   updateHouseholdMember: (id: string, name: string) => void
   removeHouseholdMember: (id: string) => void
@@ -82,6 +83,7 @@ const DEFAULT_GROWTH_RATES: Record<AssetCategory, number> = {
 const DEFAULT_PROFILE: UserProfile = {
   profileType: 'individual',
   householdMembers: [],
+  budgetMode: 'estimate',
 }
 
 const DEFAULT_PROJECTION_SETTINGS: ProjectionSettings = {
@@ -137,6 +139,9 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       setEstimatedMonthlyExpenses: (amount) => set((state) => ({
         userProfile: { ...state.userProfile, estimatedMonthlyExpenses: amount },
+      })),
+      setBudgetMode: (mode) => set((state) => ({
+        userProfile: { ...state.userProfile, budgetMode: mode },
       })),
       addHouseholdMember: (name) => set((state) => ({
         userProfile: {

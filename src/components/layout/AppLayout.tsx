@@ -35,6 +35,7 @@ import { calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities, ca
 import { formatCurrency } from '@/lib/format'
 import { useThemeMode } from '@/hooks/useThemeMode'
 import type { ThemeMode } from '@/hooks/useThemeMode'
+import { NotificationBell } from '@/components/NotificationBell'
 
 // ─── Nav structure with sections ───
 
@@ -461,7 +462,8 @@ function TopBar() {
           <span className="text-sm text-muted-foreground hidden lg:inline">&mdash; {subtitle}</span>
         )}
       </div>
-      <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+      <NotificationBell />
+      <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5 ml-2">
         {themeOptions.map(({ value, icon: Icon, label }) => (
           <button
             key={value}
@@ -523,6 +525,7 @@ function MobileHeader() {
           </SheetContent>
         </Sheet>
         <h1 className="text-base font-semibold flex-1">{title}</h1>
+        <NotificationBell />
         <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setThemeMode(nextTheme())}>
           <ThemeIcon className="h-4 w-4" />
         </Button>

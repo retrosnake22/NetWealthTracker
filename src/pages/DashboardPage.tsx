@@ -165,7 +165,7 @@ function KpiCard({
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
@@ -198,7 +198,7 @@ export function DashboardPage() {
 
   // Use shared metrics so dashboard and breakdown dialogs always match
   const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } =
-    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals)
+    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
@@ -334,13 +334,13 @@ export function DashboardPage() {
 
   return (
     <>
-      {expenseBudgets.length === 0 && (
+      {(userProfile?.budgetMode ?? 'estimate') === 'estimate' && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3 animate-fade-up">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-sm">Complete Your Setup</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              You haven't set up your detailed budget yet. Head to Living Expenses to enter your full budget breakdown.
+              Your expenses are based on a monthly estimate. Activate the detailed budget in Living Expenses for category-level tracking.
             </p>
             <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400 mt-2">
               Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
