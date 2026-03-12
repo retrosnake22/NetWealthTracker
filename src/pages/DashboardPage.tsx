@@ -1,6 +1,6 @@
 // NWT Dashboard
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -165,7 +165,6 @@ function KpiCard({
 }
 
 export function DashboardPage() {
-  const navigate = useNavigate()
   const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
@@ -243,9 +242,6 @@ export function DashboardPage() {
   const savingsColor = savingsRate > 20 ? 'blue' as const : savingsRate > 10 ? 'blue' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
   const debtColor = debtRatio < 0.3 ? 'blue' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
-  const surplusTag = monthlyCashflow > 500 ? 'Strong' : monthlyCashflow > 0 ? 'Positive' : 'Deficit'
-  const surplusColor = monthlyCashflow > 500 ? 'blue' as const : monthlyCashflow > 0 ? 'amber' as const : 'red' as const
-
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
 
   // Projection assumption labels
