@@ -165,7 +165,7 @@ function KpiCard({
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
