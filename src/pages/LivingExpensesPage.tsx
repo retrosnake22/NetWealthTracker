@@ -133,6 +133,16 @@ export function LivingExpensesPage() {
     setHasChanges(false)
   }, [budgetByCategory])
 
+  // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
+  const customBudgets = useMemo(() => {
+    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
+    return expenseBudgets.filter(b =>
+      !b.linkedPropertyId && !b.linkedAssetId &&
+      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
+      !standardLabels.has(b.label)
+    )
+  }, [expenseBudgets])
+
   // Summary
   const summary = useMemo(() => {
     let total = 0
@@ -170,16 +180,6 @@ export function LivingExpensesPage() {
       return { ...group, groupTotal, filledCount }
     })
   }, [editValues])
-
-  // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
-  const customBudgets = useMemo(() => {
-    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
-    return expenseBudgets.filter(b =>
-      !b.linkedPropertyId && !b.linkedAssetId &&
-      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
-      !standardLabels.has(b.label)
-    )
-  }, [expenseBudgets])
 
   const handleAddCustomExpense = useCallback(() => {
     if (!customName || !customAmount) return

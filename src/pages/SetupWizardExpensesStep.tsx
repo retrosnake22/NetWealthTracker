@@ -3,7 +3,7 @@ import { Receipt, Info } from 'lucide-react'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import type { FinanceState } from '@/stores/useFinanceStore'
 
-function StepHeader({ title, description, icon: Icon }: { title: string; description: string; icon: React.ComponentType<{ className?: string }> }) {
+function StepHeader({ description, icon: Icon }: { description: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
@@ -33,7 +33,6 @@ export function ExpensesStep({ store }: { store: FinanceState }) {
   return (
     <div className="space-y-6">
       <StepHeader
-        title="Estimated Monthly Expenses"
         description="Enter an estimate of your total monthly spending. You'll be able to enter a full detailed budget later."
         icon={Receipt}
       />

@@ -18,6 +18,25 @@
         "Created LiabilitiesPage with full CRUD (mortgages, loans, credit cards, HECS)",
         "Added Liabilities nav item to sidebar and route to App.tsx"
       ]
+    },
+    {
+      "id": "wizard-theme-expenses-update",
+      "title": "Setup Wizard, Theme Toggle & Living Expenses Enhancements",
+      "description": "Wizard improvements (remove home/car loan from liabilities, cash vs bank accounts, estimated monthly expenses), theme toggle in nav bar, and expanded living expense categories with custom expense support.",
+      "status": "done",
+      "priority": "P1",
+      "changes": [
+        "Removed Home Loan and Car Loan from wizard liabilities quick-picks (covered in assets)",
+        "Added Cash vs Bank Account selection for cash savings with interest rate support",
+        "Replaced detailed wizard expenses step with simple estimated monthly expenses field",
+        "Added Light/Dark/Auto theme toggle to top navigation bar (desktop + mobile)",
+        "Added Other Insurance under Insurance category",
+        "Added Security, Home Improvements, Repairs & Maintenance, Gardening under Housing",
+        "Added Medical, Pharmacy, Pet Costs, School Costs under Living category",
+        "Added Accounting Fees under Financial category",
+        "Added custom expense button to create user-defined expense types",
+        "Removed number input spinners globally via CSS"
+      ]
     }
   ]
 }
