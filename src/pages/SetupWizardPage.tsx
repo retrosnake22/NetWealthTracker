@@ -22,7 +22,6 @@ import type {
 import { ExpensesStep } from './SetupWizardExpensesStep'
 import { VehicleFinancingFields } from '@/components/forms/VehicleFinancingFields'
 import { useThemeMode } from '@/hooks/useThemeMode'
-import type { ThemeMode } from '@/hooks/useThemeMode'
 
 // -- Mortgage calculation helpers --
 
