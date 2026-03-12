@@ -16,7 +16,7 @@ interface AutoExpenseItem {
 }
 
 export function FixedExpensesPage() {
-	const { properties, liabilities, expenseBudgets, assets, removeExpenseBudget } = useFinanceStore()
+	const { properties, liabilities, expenseBudgets } = useFinanceStore()
 
 	// Clean up orphaned vehicle expenses on mount
 	useEffect(() => {
