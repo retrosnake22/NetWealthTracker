@@ -192,6 +192,16 @@
   .tabular-nums, [data-financial], h1, h2, h3, p {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Hide number input spinners globally */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
 
 /* ─── Custom utility classes ─── */

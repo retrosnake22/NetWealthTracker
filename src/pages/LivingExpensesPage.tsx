@@ -1,8 +1,11 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw } from 'lucide-react'
+import { Check, RotateCcw, Plus, X, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CurrencyInput } from '@/components/ui/currency-input'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
@@ -14,29 +17,40 @@ import type { ExpenseCategory } from '@/types/models'
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
   council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
+  security: 'Security', home_improvements: 'Home Improvements / Renovations',
+  repairs_maintenance: 'Repairs & Maintenance', gardening: 'Gardening',
   property_management: 'Property Management', land_tax: 'Land Tax',
   maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
   insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
+  insurance_other: 'Other Insurance',
   utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
+  medical: 'Medical', pharmacy: 'Pharmacy', pet_expenses: 'Pet Costs', school_costs: 'School Costs',
   subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
   clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
-  childcare: 'Childcare', pet_expenses: 'Pet Expenses', phone_internet: 'Phone & Internet',
+  childcare: 'Childcare', phone_internet: 'Phone & Internet',
   personal_care: 'Personal Care', gifts_donations: 'Gifts & Donations',
-  hecs_repayment: 'HECS Repayment', tax: 'Tax', other: 'Other',
+  hecs_repayment: 'HECS Repayment', tax: 'Tax', accounting_fees: 'Accounting Fees',
+  other: 'Other',
 }
 
 // Living expense categories grouped (excludes property-linked ones)
 const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'utilities'] },
-  { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
-  { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
-  { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'other'] },
+  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'utilities', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
+  { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'insurance_other'] },
+  { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
+  { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },
+  { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'accounting_fees', 'other'] },
 ]
 
 export function LivingExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
+
+  // Custom expense dialog state
+  const [showCustomExpense, setShowCustomExpense] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customCategory, setCustomCategory] = useState<string>('other')
+  const [customAmount, setCustomAmount] = useState('')
 
   // Build a map from category → existing budget entry (excluding auto-generated vehicle expenses)
   const budgetByCategory = useMemo(() => {
@@ -134,8 +148,14 @@ export function LivingExpensesPage() {
       }
     }
 
+    // Include custom budgets in totals
+    const customTotal = customBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+    total += customTotal
+    filledCount += customBudgets.length
+    totalCategories += customBudgets.length
+
     return { total, filledCount, totalCategories }
-  }, [editValues])
+  }, [editValues, customBudgets])
 
   // Group-level totals
   const groupSummaries = useMemo(() => {
@@ -151,6 +171,30 @@ export function LivingExpensesPage() {
     })
   }, [editValues])
 
+  // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
+  const customBudgets = useMemo(() => {
+    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
+    return expenseBudgets.filter(b =>
+      !b.linkedPropertyId && !b.linkedAssetId &&
+      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
+      !standardLabels.has(b.label)
+    )
+  }, [expenseBudgets])
+
+  const handleAddCustomExpense = useCallback(() => {
+    if (!customName || !customAmount) return
+    addExpenseBudget({
+      category: customCategory as ExpenseCategory,
+      label: customName,
+      monthlyBudget: parseFloat(customAmount) || 0,
+    })
+    setCustomName('')
+    setCustomCategory('other')
+    setCustomAmount('')
+    setShowCustomExpense(false)
+    setHasChanges(true)
+  }, [customName, customAmount, customCategory, addExpenseBudget])
+
   return (
     <Tabs defaultValue="budget" className="space-y-6">
       <TabsList className="h-10">
@@ -164,6 +208,60 @@ export function LivingExpensesPage() {
 
       <TabsContent value="budget">
         <div className="space-y-6">
+          {/* Add Custom Expense button */}
+          <div className="flex items-center justify-end gap-2">
+            {!showCustomExpense ? (
+              <Button size="sm" variant="outline" onClick={() => setShowCustomExpense(true)} className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" /> Add Custom Expense
+              </Button>
+            ) : (
+              <Card className="w-full">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Add Custom Expense</h3>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowCustomExpense(false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Expense Name</Label>
+                      <Input
+                        placeholder="e.g. Dog Walker"
+                        value={customName}
+                        onChange={e => setCustomName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Category</Label>
+                      <Select value={customCategory} onValueChange={setCustomCategory}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {LIVING_SUPER_CATEGORIES.map(group => (
+                            <SelectItem key={group.label} value={group.categories[0]}>
+                              {group.icon} {group.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Monthly Amount</Label>
+                      <CurrencyInput
+                        value={customAmount}
+                        onChange={v => setCustomAmount(v)}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={handleAddCustomExpense} disabled={!customName || !customAmount}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Expense
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           {/* Summary strip */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
@@ -267,6 +365,49 @@ export function LivingExpensesPage() {
               </Card>
             ))}
           </div>
+
+          {/* Custom Expenses */}
+          {customBudgets.length > 0 && (
+            <Card>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">📌</span>
+                        <span className="font-semibold">Custom Expenses</span>
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                          {customBudgets.length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold tabular-nums">
+                      {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
+                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="border-t border-border/50">
+                  {customBudgets.map((b, idx) => (
+                    <div
+                      key={b.id}
+                      className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                        idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
+                      }`}
+                    >
+                      <span className="text-sm font-medium truncate">{b.label}</span>
+                      <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Sticky save bar */}
           {hasChanges && (

@@ -14,6 +14,7 @@ import {
   LogOut,
   Moon,
   Sun,
+  Monitor,
   ArrowUpRight,
   Sparkles,
   PiggyBank,
@@ -129,22 +130,37 @@ function useFirstName() {
   return firstName
 }
 
-function useDarkMode() {
-  const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return true
-    const stored = localStorage.getItem('nwt-dark-mode')
-    if (stored !== null) return stored === 'true'
-    const isMobile = window.innerWidth < 768
-    if (isMobile) return true
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+type ThemeMode = 'light' | 'dark' | 'auto'
+
+function useThemeMode() {
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'auto'
+    return (localStorage.getItem('nwt-theme-mode') as ThemeMode) || 'auto'
   })
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('nwt-dark-mode', String(dark))
-  }, [dark])
+    const applyTheme = () => {
+      let isDark: boolean
+      if (mode === 'auto') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      } else {
+        isDark = mode === 'dark'
+      }
+      document.documentElement.classList.toggle('dark', isDark)
+    }
 
-  return [dark, setDark] as const
+    applyTheme()
+    localStorage.setItem('nwt-theme-mode', mode)
+
+    if (mode === 'auto') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = () => applyTheme()
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    }
+  }, [mode])
+
+  return [mode, setMode] as const
 }
 
 function BrandLogo() {
@@ -312,7 +328,7 @@ function NetWealthMini() {
 
 function SidebarFooter() {
   const [email, setEmail] = useState<string | null>(null)
-  const [dark, setDark] = useDarkMode()
+  const [themeMode, setThemeMode] = useThemeMode()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const resetStore = useFinanceStore((s) => s.resetStore)
 
@@ -388,10 +404,10 @@ function SidebarFooter() {
         variant="ghost"
         size="sm"
         className="w-full justify-start gap-2.5 text-muted-foreground hover:text-foreground rounded-lg h-9"
-        onClick={() => setDark(!dark)}
+        onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : themeMode === 'light' ? 'dark' : 'light')}
       >
-        {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        {dark ? 'Light Mode' : 'Dark Mode'}
+        {themeMode === 'dark' ? <Sun className="h-4 w-4" /> : themeMode === 'light' ? <Moon className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+        {themeMode === 'dark' ? 'Light Mode' : themeMode === 'light' ? 'Dark Mode' : 'System (Auto)'}
       </Button>
       {!showResetConfirm ? (
         <Button
@@ -450,6 +466,7 @@ function TopBar() {
   const page = pageTitles[location.pathname] ?? { title: '', subtitle: '' }
   const firstName = useFirstName()
   const isDashboard = location.pathname === '/'
+  const [themeMode, setThemeMode] = useThemeMode()
 
   const title = isDashboard && firstName
     ? `Welcome back, ${firstName}`
@@ -459,13 +476,36 @@ function TopBar() {
     ? 'Your financial overview at a glance'
     : page.subtitle
 
+  const themeOptions: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
+    { value: 'light', icon: Sun, label: 'Light' },
+    { value: 'dark', icon: Moon, label: 'Dark' },
+    { value: 'auto', icon: Monitor, label: 'Auto' },
+  ]
+
   return (
     <header className="sticky top-0 z-40 hidden md:flex items-center h-14 border-b border-border/50 bg-background/80 backdrop-blur-md px-8">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-1">
         <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
         {subtitle && (
           <span className="text-sm text-muted-foreground hidden lg:inline">&mdash; {subtitle}</span>
         )}
+      </div>
+      <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+        {themeOptions.map(({ value, icon: Icon, label }) => (
+          <button
+            key={value}
+            onClick={() => setThemeMode(value)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              themeMode === value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title={label}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">{label}</span>
+          </button>
+        ))}
       </div>
     </header>
   )
@@ -477,10 +517,19 @@ function MobileHeader() {
   const page = pageTitles[location.pathname] ?? { title: 'NWT', subtitle: '' }
   const firstName = useFirstName()
   const isDashboard = location.pathname === '/'
+  const [themeMode, setThemeMode] = useThemeMode()
 
   const title = isDashboard && firstName
     ? `Welcome back, ${firstName}`
     : page.title
+
+  const nextTheme = (): ThemeMode => {
+    if (themeMode === 'light') return 'dark'
+    if (themeMode === 'dark') return 'auto'
+    return 'light'
+  }
+
+  const ThemeIcon = themeMode === 'light' ? Sun : themeMode === 'dark' ? Moon : Monitor
 
   return (
     <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
@@ -502,7 +551,10 @@ function MobileHeader() {
             </div>
           </SheetContent>
         </Sheet>
-        <h1 className="text-base font-semibold">{title}</h1>
+        <h1 className="text-base font-semibold flex-1">{title}</h1>
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setThemeMode(nextTheme())}>
+          <ThemeIcon className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   )

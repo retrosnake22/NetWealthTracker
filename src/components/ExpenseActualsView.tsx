@@ -8,11 +8,11 @@ import { formatCurrency } from '@/lib/format'
 import type { ExpenseCategory } from '@/types/models'
 
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life'] },
-  { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing'] },
-  { label: 'Lifestyle', icon: '✨', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'pet_expenses', 'gifts_donations'] },
-  { label: 'Housing', icon: '🏡', categories: ['rent', 'utilities'] },
-  { label: 'Financial', icon: '💰', categories: ['hecs_repayment', 'tax', 'other'] },
+  { label: 'Housing', icon: '🏡', categories: ['rent', 'utilities', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
+  { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'insurance_other'] },
+  { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
+  { label: 'Lifestyle', icon: '✨', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },
+  { label: 'Financial', icon: '💰', categories: ['hecs_repayment', 'tax', 'accounting_fees', 'other'] },
 ]
 
 function getMonthLabel(monthStr: string): string {
@@ -270,7 +270,7 @@ export function ExpenseActualsView() {
                         value={actualStr}
                         onChange={(e) => handleValueChange(item.id, e.target.value)}
                         placeholder="—"
-                        className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40"
+                        className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </div>
                     <span className={`text-sm tabular-nums text-right ${

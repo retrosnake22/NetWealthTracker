@@ -1,16 +1,19 @@
 export type AssetCategory = 'cash' | 'property' | 'stocks' | 'super' | 'vehicles' | 'other'
 export type PropertyType = 'primary_residence' | 'investment'
 export type LiabilityCategory = 'mortgage' | 'home_loan' | 'personal_loan' | 'car_loan' | 'credit_card' | 'hecs' | 'other'
+export type CashSavingsType = 'cash' | 'bank'
 export type IncomeCategory = 'salary' | 'rental' | 'dividends' | 'interest' | 'side_hustle' | 'other'
 export type ExpenseCategory =
   | 'mortgage_repayment' | 'rent' | 'council_rates' | 'water_rates' | 'strata'
-  | 'insurance_health' | 'insurance_car' | 'insurance_life'
+  | 'security' | 'home_improvements' | 'repairs_maintenance' | 'gardening'
+  | 'insurance_health' | 'insurance_car' | 'insurance_life' | 'insurance_other'
   | 'utilities' | 'groceries' | 'transport' | 'fuel'
+  | 'medical' | 'pharmacy' | 'pet_expenses' | 'school_costs'
   | 'subscriptions' | 'entertainment' | 'dining_out'
   | 'clothing' | 'health_fitness' | 'education'
-  | 'childcare' | 'pet_expenses' | 'phone_internet'
+  | 'childcare' | 'phone_internet'
   | 'personal_care' | 'gifts_donations'
-  | 'hecs_repayment' | 'tax'
+  | 'hecs_repayment' | 'tax' | 'accounting_fees'
   | 'property_management' | 'land_tax' | 'maintenance' | 'building_insurance'
   | 'other'
 
@@ -29,6 +32,9 @@ export interface Asset extends BaseEntity {
 
 export interface CashAsset extends Asset {
   category: 'cash'
+  cashType?: CashSavingsType    // 'cash' = no interest, 'bank' = interest-bearing
+  bankName?: string              // only when cashType is 'bank'
+  interestRatePA?: number       // default 3% for bank, 0 for cash
   isOffset: boolean
   linkedMortgageId?: string
 }
@@ -143,6 +149,7 @@ export interface HouseholdMember {
 export interface UserProfile {
   profileType: ProfileType
   householdMembers: HouseholdMember[]
+  estimatedMonthlyExpenses?: number
 }
 
 export interface MonthlySnapshot {

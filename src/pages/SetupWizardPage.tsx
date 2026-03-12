@@ -418,6 +418,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
     name: '', currentValue: '', growthRatePA: '4.5',
     vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
     loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
+    cashType: 'bank' as 'cash' | 'bank',
+    bankName: '',
+    interestRate: '3.0',
   })
 
   const [propForm, setPropForm] = useState({
@@ -436,6 +439,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     setAssetForm({
       name: '', currentValue: '', growthRatePA: String((DEFAULT_GROWTH[activeTab] * 100).toFixed(1)),
       vehicleFinancing: 'owned', loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
+      cashType: 'bank' as 'cash' | 'bank', bankName: '', interestRate: '3.0',
     })
     setPropForm({
       name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7.0',
@@ -472,6 +476,9 @@ function AssetsStep({ store }: { store: FinanceState }) {
       growthRatePA: (asset.growthRatePA * 100).toFixed(1),
       vehicleFinancing: va.financingType ?? 'owned',
       loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
+      cashType: va.cashType || 'bank',
+      bankName: va.bankName || '',
+      interestRate: va.cashType === 'cash' ? '0' : (asset.growthRatePA * 100).toFixed(1),
     })
     setEditingId(asset.id)
     setShowForm(true)
@@ -479,21 +486,32 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
   const handleAddAsset = () => {
     if (!assetForm.name || !assetForm.currentValue) return
+    const cashFields = activeTab === 'cash' ? {
+      cashType: assetForm.cashType || 'bank',
+      bankName: assetForm.cashType === 'bank' ? assetForm.bankName : undefined,
+      growthRatePA: assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '3.0', 1),
+    } : {}
     if (editingId) {
       updateAsset(editingId, {
         name: assetForm.name,
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
-        growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
+        growthRatePA: activeTab === 'cash'
+          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '3.0', 1))
+          : pctToFraction(assetForm.growthRatePA, 1),
         ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
+        ...cashFields,
       } as any)
     } else {
       addAsset({
         name: assetForm.name,
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
-        growthRatePA: pctToFraction(assetForm.growthRatePA, 1),
+        growthRatePA: activeTab === 'cash'
+          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '3.0', 1))
+          : pctToFraction(assetForm.growthRatePA, 1),
         ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
+        ...cashFields,
       } as any)
 
       // Handle vehicle financing side-effects
@@ -1087,6 +1105,57 @@ function AssetsStep({ store }: { store: FinanceState }) {
                       placeholder="0"
                     />
                   </div>
+                  {activeTab === 'cash' && (
+                    <div className="space-y-3 sm:col-span-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Account Type</Label>
+                        <div className="flex gap-2">
+                          {(['cash', 'bank'] as const).map(t => (
+                            <button
+                              key={t}
+                              onClick={() => setAssetForm({ ...assetForm, cashType: t as any, interestRate: t === 'bank' ? '3.0' : '0' })}
+                              className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                                (assetForm as any).cashType === t || (!((assetForm as any).cashType) && t === 'bank')
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-border hover:border-primary/30 text-muted-foreground'
+                              }`}
+                            >
+                              {t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {((assetForm as any).cashType === 'bank' || !(assetForm as any).cashType) && (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Bank Name</Label>
+                            <Input
+                              placeholder="e.g. Commonwealth Bank"
+                              value={(assetForm as any).bankName || ''}
+                              onChange={e => setAssetForm({ ...assetForm, bankName: e.target.value } as any)}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Interest Rate (% p.a.)</Label>
+                            <Input
+                              type="number" step="0.1" min="0" max="20"
+                              value={(assetForm as any).interestRate || '3.0'}
+                              onChange={e => setAssetForm({ ...assetForm, interestRate: e.target.value } as any)}
+                            />
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Info className="w-3 h-3" />
+                              Interest income will be included in your income calculations
+                            </p>
+                          </div>
+                        </>
+                      )}
+                      {(assetForm as any).cashType === 'cash' && (
+                        <p className="text-xs text-muted-foreground">
+                          No interest is calculated for physical cash holdings.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <Button onClick={handleAddAsset} disabled={!assetForm.name || !assetForm.currentValue} className="w-full gap-2">
                   {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add {ASSET_LABELS[activeTab]}</>}
@@ -1195,7 +1264,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you owe?"
-        description="Add any debts — home loans, personal loans, car loans, credit cards, HECS. Mortgages from the previous step are already here."
+        description="Add any debts — personal loans, credit cards, HECS. Mortgages and car loans are covered in your assets."
         icon={CreditCard}
       />
 
@@ -1270,11 +1339,9 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
       )}
 
       {!showForm && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {([
-            ['home_loan', 'Home Loan'],
             ['personal_loan', 'Personal Loan'],
-            ['car_loan', 'Car Loan'],
             ['credit_card', 'Credit Card'],
             ['hecs', 'HECS-HELP'],
           ] as [LiabilityCategory, string][]).map(([cat, label]) => (
@@ -1287,7 +1354,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
               className="p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-2"
             >
               <div className={`w-8 h-8 rounded-lg ${LIA_ICONS[cat].color} flex items-center justify-center`}>
-                {cat === 'home_loan' ? <Home className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                <CreditCard className="w-4 h-4" />
               </div>
               <span className="text-sm font-medium">{label}</span>
             </button>

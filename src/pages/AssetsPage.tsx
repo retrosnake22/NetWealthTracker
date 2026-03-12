@@ -85,6 +85,9 @@ export default function AssetsPage() {
 		vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
 		loanBalance: '', loanRate: '', loanRepayment: '', loanTerm: '5',
 		leasePayment: '',
+		cashType: 'bank' as 'cash' | 'bank',
+		bankName: '',
+		interestRate: '3.0',
 	})
 
 	// Property editing
@@ -149,6 +152,9 @@ export default function AssetsPage() {
 			vehicleFinancing: 'owned' as 'owned' | 'car_loan' | 'lease',
 			loanBalance: '', loanRate: '', loanRepayment: '', loanTerm: '5',
 			leasePayment: '',
+			cashType: 'bank' as 'cash' | 'bank',
+			bankName: '',
+			interestRate: '3.0',
 		})
 		setEditingAsset(null)
 		setShowAddAsset(true)
@@ -171,6 +177,9 @@ export default function AssetsPage() {
 			loanRepayment: linkedLiability ? String(linkedLiability.minimumRepayment) : '',
 			loanTerm: linkedLiability?.loanTermYears ? String(linkedLiability.loanTermYears) : '5',
 			leasePayment: String((a as any).leaseMonthlyPayment ?? ''),
+			cashType: (a as any).cashType || 'bank',
+			bankName: (a as any).bankName || '',
+			interestRate: (a as any).cashType === 'cash' ? '0' : (a.growthRatePA * 100).toFixed(1),
 		})
 		setEditingAsset(a)
 		setShowAddAsset(true)
@@ -182,8 +191,11 @@ export default function AssetsPage() {
 			growthRatePA: editingAsset?.growthRatePA ?? 0,
 			category: assetForm.category,
 		}
-		// Add offset fields for cash assets
+		// Add offset and cash type fields for cash assets
 		if (assetForm.category === 'cash') {
+			data.cashType = assetForm.cashType
+			data.bankName = assetForm.cashType === 'bank' ? assetForm.bankName : undefined
+			data.growthRatePA = assetForm.cashType === 'cash' ? 0 : (parseFloat(assetForm.interestRate) || 3) / 100
 			data.isOffset = assetForm.isOffset
 			data.linkedMortgageId = assetForm.isOffset ? (assetForm.linkedMortgageId || undefined) : undefined
 		} else {
@@ -704,7 +716,60 @@ export default function AssetsPage() {
 							<Input type="number" value={assetForm.value} onChange={e => setAssetForm(f => ({ ...f, value: e.target.value }))} />
 						</div>
 
-						{/* Offset Account Section — only for cash assets */}
+						{/* Cash Type Section — only for cash assets */}
+					{assetForm.category === 'cash' && (
+						<div className="space-y-3">
+							<div>
+								<Label className="text-sm font-medium">Account Type</Label>
+								<div className="flex gap-2 mt-1.5">
+									{(['cash', 'bank'] as const).map(t => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => setAssetForm(f => ({ ...f, cashType: t, interestRate: t === 'bank' ? '3.0' : '0' }))}
+											className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
+												assetForm.cashType === t
+													? 'border-primary bg-primary/10 text-primary'
+													: 'border-input hover:border-primary/30 text-muted-foreground'
+											}`}
+										>
+											{t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
+										</button>
+									))}
+								</div>
+							</div>
+							{assetForm.cashType === 'bank' && (
+								<>
+									<div>
+										<Label>Bank Name</Label>
+										<Input
+											value={assetForm.bankName}
+											onChange={e => setAssetForm(f => ({ ...f, bankName: e.target.value }))}
+											placeholder="e.g. Commonwealth Bank"
+										/>
+									</div>
+									<div>
+										<Label>Interest Rate (% p.a.)</Label>
+										<Input
+											type="number" step="0.1" min="0" max="20"
+											value={assetForm.interestRate}
+											onChange={e => setAssetForm(f => ({ ...f, interestRate: e.target.value }))}
+										/>
+										<p className="text-xs text-muted-foreground mt-1">
+											Interest will be included in your income calculations
+										</p>
+									</div>
+								</>
+							)}
+							{assetForm.cashType === 'cash' && (
+								<p className="text-xs text-muted-foreground">
+									No interest is calculated for physical cash holdings.
+								</p>
+							)}
+						</div>
+					)}
+
+					{/* Offset Account Section — only for cash assets */}
 						{assetForm.category === 'cash' && (
 							<div className="border-t pt-4">
 								<div className="flex items-center justify-between mb-3">
