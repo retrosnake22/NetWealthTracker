@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Pencil, Trash2, CreditCard, Home, GraduationCap, Wallet, CircleDot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -33,7 +34,6 @@ const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 }
 
-// Bar accent colour that matches each category badge — used for the progress bar fill
 const CATEGORY_BAR_COLORS: Record<LiabilityCategory, string> = {
   mortgage: 'bg-red-500',
   home_loan: 'bg-red-500',
@@ -47,17 +47,35 @@ const CATEGORY_BAR_COLORS: Record<LiabilityCategory, string> = {
 const CATEGORY_GROUPS = [
   {
     key: 'mortgages',
-    label: 'Mortgages & Home Loans',
+    label: 'Mortgages',
     icon: Home,
     color: 'text-red-400',
-    categories: ['mortgage', 'home_loan'] as LiabilityCategory[],
+    categories: ['mortgage'] as LiabilityCategory[],
+    filterKey: 'mortgage',
+  },
+  {
+    key: 'home_loans',
+    label: 'Home Loans',
+    icon: Home,
+    color: 'text-red-400',
+    categories: ['home_loan'] as LiabilityCategory[],
+    filterKey: 'home_loan',
+  },
+  {
+    key: 'car_loans',
+    label: 'Car Loans',
+    icon: Wallet,
+    color: 'text-orange-400',
+    categories: ['car_loan'] as LiabilityCategory[],
+    filterKey: 'car_loan',
   },
   {
     key: 'personal',
-    label: 'Personal & Car Loans',
+    label: 'Personal Loans',
     icon: Wallet,
     color: 'text-orange-400',
-    categories: ['personal_loan', 'car_loan'] as LiabilityCategory[],
+    categories: ['personal_loan'] as LiabilityCategory[],
+    filterKey: 'personal_loan',
   },
   {
     key: 'credit',
@@ -65,13 +83,15 @@ const CATEGORY_GROUPS = [
     icon: CreditCard,
     color: 'text-pink-400',
     categories: ['credit_card'] as LiabilityCategory[],
+    filterKey: 'credit_card',
   },
   {
     key: 'hecs',
-    label: 'HECS-HELP',
+    label: 'HECS / Student',
     icon: GraduationCap,
     color: 'text-violet-400',
     categories: ['hecs'] as LiabilityCategory[],
+    filterKey: 'hecs',
   },
   {
     key: 'other',
@@ -79,11 +99,14 @@ const CATEGORY_GROUPS = [
     icon: CircleDot,
     color: 'text-gray-400',
     categories: ['other'] as LiabilityCategory[],
+    filterKey: 'other',
   },
 ]
 
 export function LiabilitiesPage() {
   const { liabilities, addLiability, updateLiability, removeLiability, properties } = useFinanceStore()
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category')
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Liability | null>(null)
@@ -96,9 +119,17 @@ export function LiabilitiesPage() {
     repaymentFrequency: 'monthly' as 'weekly' | 'fortnightly' | 'monthly',
   })
 
+  // Filter liabilities based on URL category param
+  const filteredLiabilities = useMemo(() => {
+    if (!categoryFilter) return liabilities
+    const group = CATEGORY_GROUPS.find(g => g.filterKey === categoryFilter)
+    if (!group) return liabilities
+    return liabilities.filter(l => group.categories.includes(l.category))
+  }, [liabilities, categoryFilter])
+
   const resetForm = () => {
     setForm({
-      name: '', category: 'personal_loan', currentBalance: '',
+      name: '', category: (categoryFilter as LiabilityCategory) || 'personal_loan', currentBalance: '',
       interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly',
     })
     setEditId(null)
@@ -146,9 +177,9 @@ export function LiabilitiesPage() {
     return properties.find(p => p.mortgageId === id)
   }
 
-  const total = liabilities.reduce((s, l) => s + l.currentBalance, 0)
+  const total = filteredLiabilities.reduce((s, l) => s + l.currentBalance, 0)
 
-  const monthlyRepayments = liabilities.reduce((s, l) => {
+  const monthlyRepayments = filteredLiabilities.reduce((s, l) => {
     const repayment = l.minimumRepayment ?? 0
     if (l.repaymentFrequency === 'weekly') return s + (repayment * 52) / 12
     if (l.repaymentFrequency === 'fortnightly') return s + (repayment * 26) / 12
@@ -156,7 +187,7 @@ export function LiabilitiesPage() {
   }, 0)
 
   const weightedRate = total > 0
-    ? liabilities.reduce((s, l) => s + l.interestRatePA * (l.currentBalance / total), 0)
+    ? filteredLiabilities.reduce((s, l) => s + l.interestRatePA * (l.currentBalance / total), 0)
     : 0
 
   const frequencyLabel = (freq: string) => {
@@ -171,11 +202,11 @@ export function LiabilitiesPage() {
     return CATEGORY_GROUPS
       .map(group => ({
         ...group,
-        items: liabilities.filter(l => group.categories.includes(l.category)),
-        subtotal: liabilities
+        items: filteredLiabilities.filter(l => group.categories.includes(l.category)),
+        subtotal: filteredLiabilities
           .filter(l => group.categories.includes(l.category))
           .reduce((s, l) => s + l.currentBalance, 0),
-        monthlyRepay: liabilities
+        monthlyRepay: filteredLiabilities
           .filter(l => group.categories.includes(l.category))
           .reduce((s, l) => {
             const r = l.minimumRepayment ?? 0
@@ -185,75 +216,85 @@ export function LiabilitiesPage() {
           }, 0),
       }))
       .filter(group => group.items.length > 0)
-  }, [liabilities])
+  }, [filteredLiabilities])
+
+  const activeFilterLabel = categoryFilter
+    ? CATEGORY_GROUPS.find(g => g.filterKey === categoryFilter)?.label ?? null
+    : null
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Liability</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? 'Edit' : 'Add'} Liability</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Name</Label>
-                <Input placeholder="e.g. Car Loan" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as LiabilityCategory})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Current Balance (AUD)</Label>
-                <CurrencyInput value={form.currentBalance} onChange={v => setForm({...form, currentBalance: v})} />
-              </div>
-              <div>
-                <Label>Interest Rate (% p.a.)</Label>
-                <Input type="number" step="0.01" value={form.interestRatePA} onChange={e => setForm({...form, interestRatePA: e.target.value})} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-center justify-between">
+        {activeFilterLabel && (
+          <p className="text-sm text-muted-foreground">
+            Showing: <span className="font-medium text-foreground">{activeFilterLabel}</span>
+          </p>
+        )}
+        <div className="ml-auto">
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm() }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Add Liability</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editId ? 'Edit' : 'Add'} Liability</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label>Repayment Amount</Label>
-                  <CurrencyInput value={form.minimumRepayment} onChange={v => setForm({...form, minimumRepayment: v})} />
+                  <Label>Name</Label>
+                  <Input placeholder="e.g. Car Loan" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                 </div>
                 <div>
-                  <Label>Frequency</Label>
-                  <Select value={form.repaymentFrequency} onValueChange={(v: 'weekly' | 'fortnightly' | 'monthly') => setForm({...form, repaymentFrequency: v})}>
+                  <Label>Category</Label>
+                  <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as LiabilityCategory})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="fortnightly">Fortnightly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
+                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Current Balance (AUD)</Label>
+                  <CurrencyInput value={form.currentBalance} onChange={v => setForm({...form, currentBalance: v})} />
+                </div>
+                <div>
+                  <Label>Interest Rate (% p.a.)</Label>
+                  <Input type="number" step="0.01" value={form.interestRatePA} onChange={e => setForm({...form, interestRatePA: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Repayment Amount</Label>
+                    <CurrencyInput value={form.minimumRepayment} onChange={v => setForm({...form, minimumRepayment: v})} />
+                  </div>
+                  <div>
+                    <Label>Frequency</Label>
+                    <Select value={form.repaymentFrequency} onValueChange={(v: 'weekly' | 'fortnightly' | 'monthly') => setForm({...form, repaymentFrequency: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleSave} disabled={!form.name || !form.currentBalance}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={handleSave} disabled={!form.name || !form.currentBalance}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Strip */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
         <Card>
           <CardContent className='p-4'>
-            <p className='text-sm text-muted-foreground'>Total Liabilities</p>
-            {/* Red for liabilities — debts carry negative weight, matches how liabilities appear elsewhere */}
+            <p className='text-sm text-muted-foreground'>{activeFilterLabel ? `${activeFilterLabel} Total` : 'Total Liabilities'}</p>
             <p className='text-2xl font-extrabold tabular-nums tracking-tight text-red-400'>{formatCurrency(total)}</p>
           </CardContent>
         </Card>
@@ -272,10 +313,12 @@ export function LiabilitiesPage() {
       </div>
 
       {/* Grouped Liabilities */}
-      {liabilities.length === 0 ? (
+      {filteredLiabilities.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <CreditCard className="h-12 w-12 mx-auto text-primary mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No liabilities yet</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            {activeFilterLabel ? `No ${activeFilterLabel.toLowerCase()} yet` : 'No liabilities yet'}
+          </h3>
           <p className="text-muted-foreground mb-4">Add your mortgages, loans, credit cards, and HECS debt.</p>
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Liability</Button>
         </div>
@@ -295,7 +338,6 @@ export function LiabilitiesPage() {
                     <span className="text-xs text-muted-foreground">({group.items.length})</span>
                   </div>
                   <div className="text-right">
-                    {/* Use text-foreground — no amber, no garish colour for subtotals */}
                     <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(group.subtotal)}</p>
                     <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.monthlyRepay)}/mo repayments</p>
                   </div>
@@ -305,7 +347,6 @@ export function LiabilitiesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {group.items.map(item => {
                     const linkedProperty = getLinkedProperty(item.id)
-                    // Share of this liability within its group — drives the progress bar width
                     const groupShare = group.subtotal > 0
                       ? Math.round((item.currentBalance / group.subtotal) * 100)
                       : 0
@@ -330,7 +371,7 @@ export function LiabilitiesPage() {
                               {/* Name */}
                               <p className="font-semibold truncate">{item.name}</p>
 
-                              {/* Balance — text-foreground, clean and prominent via font weight alone */}
+                              {/* Balance */}
                               <p className="text-lg font-bold tabular-nums text-foreground">
                                 {formatCurrency(item.currentBalance)}
                               </p>
@@ -341,7 +382,7 @@ export function LiabilitiesPage() {
                               </p>
                             </div>
 
-                            {/* Action buttons — appear on hover */}
+                            {/* Action buttons */}
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
                                 <Pencil className="h-4 w-4" />
@@ -352,7 +393,7 @@ export function LiabilitiesPage() {
                             </div>
                           </div>
 
-                          {/* Progress bar — share of group subtotal this liability represents */}
+                          {/* Progress bar */}
                           {group.items.length > 1 && (
                             <div className="mt-3 space-y-1">
                               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">

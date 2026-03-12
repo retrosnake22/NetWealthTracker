@@ -19,12 +19,13 @@ import {
   PiggyBank,
   Target,
   Car,
-  ChevronDown,
-  ChevronRight,
   Package,
   Trash2,
   Building2,
   ShoppingCart,
+  GraduationCap,
+  Landmark,
+  HandCoins,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -48,7 +49,6 @@ const navSections = [
         to: '/assets',
         icon: Wallet,
         label: 'Assets',
-        expandable: true,
         subItems: [
           { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', icon: PiggyBank },
           { to: '/assets?category=stocks', category: 'stocks', label: 'Shares / Stocks', icon: TrendingUp },
@@ -58,7 +58,20 @@ const navSections = [
           { to: '/assets?category=other', category: 'other', label: 'Other', icon: Package },
         ],
       },
-      { to: '/liabilities', icon: CreditCard, label: 'Liabilities' },
+      {
+        to: '/liabilities',
+        icon: CreditCard,
+        label: 'Liabilities',
+        subItems: [
+          { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', icon: Landmark },
+          { to: '/liabilities?category=home_loan', category: 'home_loan', label: 'Home Loans', icon: Home },
+          { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', icon: Car },
+          { to: '/liabilities?category=personal_loan', category: 'personal_loan', label: 'Personal Loans', icon: HandCoins },
+          { to: '/liabilities?category=credit_card', category: 'credit_card', label: 'Credit Cards', icon: CreditCard },
+          { to: '/liabilities?category=hecs', category: 'hecs', label: 'HECS / Student', icon: GraduationCap },
+          { to: '/liabilities?category=other', category: 'other', label: 'Other', icon: Package },
+        ],
+      },
     ],
   },
   {
@@ -69,7 +82,6 @@ const navSections = [
         to: '/expenses',
         icon: Receipt,
         label: 'Expenses',
-        expandable: true,
         subItems: [
           { to: '/expenses/fixed', category: 'fixed', label: 'Fixed Expenses', icon: Building2 },
           { to: '/expenses/living', category: 'living', label: 'Living Expenses', icon: ShoppingCart },
@@ -120,10 +132,8 @@ function useFirstName() {
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return true
-    // If user has manually toggled, respect their choice
     const stored = localStorage.getItem('nwt-dark-mode')
     if (stored !== null) return stored === 'true'
-    // First visit: default dark on mobile, use system preference on desktop
     const isMobile = window.innerWidth < 768
     if (isMobile) return true
     return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -152,20 +162,8 @@ function BrandLogo() {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const [expandedNav, setExpandedNav] = useState<string | null>('/assets')
   const location = useLocation()
   const [searchParams] = useSearchParams()
-
-  // Auto-expand expenses section when on an expenses sub-route
-  useEffect(() => {
-    if (location.pathname.startsWith('/expenses')) {
-      setExpandedNav('/expenses')
-    }
-  }, [location.pathname])
-
-  const toggleExpand = (to: string) => {
-    setExpandedNav((prev) => (prev === to ? null : to))
-  }
 
   const isItemActive = (itemTo: string, end?: boolean) => {
     const [itemPath, itemSearch] = itemTo.split('?')
@@ -184,6 +182,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     if (itemPath === '/assets') {
       return !searchParams.get('category')
     }
+    if (itemPath === '/liabilities') {
+      return !searchParams.get('category')
+    }
 
     return true
   }
@@ -197,97 +198,53 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           </p>
           <div className="space-y-0.5">
             {section.items.map((item) => {
-              const isExpandable = 'expandable' in item && item.expandable
               const subItems = 'subItems' in item ? (item as any).subItems : undefined
-              const isExpanded = expandedNav === item.to
-              // For expandable items, highlight parent when any child route is active
-              const parentActive = isExpandable
+              const hasSubItems = subItems && subItems.length > 0
+              const parentActive = hasSubItems
                 ? location.pathname.startsWith(item.to)
                 : isItemActive(item.to, 'end' in item ? (item as any).end : false)
 
               return (
                 <div key={item.to}>
-                  {isExpandable ? (
-                    <div className="flex items-center rounded-lg overflow-hidden">
-                      <Link
-                        to={item.to}
-                        onClick={onNavigate}
-                        className={`group relative flex items-center gap-3 pl-3 pr-2 py-2 text-sm font-medium transition-all duration-150 flex-1 min-w-0 ${
-                          parentActive
-                            ? 'bg-sapphire-subtle text-primary'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                        }`}
-                      >
-                        {parentActive && (
-                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
-                        )}
-                        <item.icon className={`h-4 w-4 shrink-0 ${parentActive ? 'text-primary' : ''}`} />
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                      <button
-                        onClick={() => toggleExpand(item.to)}
-                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                        className="flex items-center justify-center h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150 mr-1"
-                      >
-                        {isExpanded
-                          ? <ChevronDown className="h-3.5 w-3.5" />
-                          : <ChevronRight className="h-3.5 w-3.5" />
-                        }
-                      </button>
-                    </div>
-                  ) : (
-                    <NavLink
-                      to={item.to}
-                      end={'end' in item ? (item as any).end : undefined}
-                      onClick={onNavigate}
-                      className={({ isActive }) =>
-                        `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                          isActive
-                            ? 'bg-sapphire-subtle text-primary'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                        }`
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          {isActive && (
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
-                          )}
-                          <item.icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                          {item.label}
-                        </>
-                      )}
-                    </NavLink>
-                  )}
+                  {/* Parent nav item */}
+                  <NavLink
+                    to={item.to}
+                    end={'end' in item ? (item as any).end : undefined}
+                    onClick={onNavigate}
+                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                      parentActive
+                        ? 'bg-sapphire-subtle text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }`}
+                  >
+                    {parentActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+                    )}
+                    <item.icon className={`h-4 w-4 shrink-0 ${parentActive ? 'text-primary' : ''}`} />
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
 
-                  {isExpandable && subItems && (
-                    <div
-                      className="overflow-hidden transition-all duration-200 ease-in-out"
-                      style={{
-                        maxHeight: isExpanded ? `${subItems.length * 40}px` : '0px',
-                        opacity: isExpanded ? 1 : 0,
-                      }}
-                    >
-                      <div className="pl-4 pr-1 pb-0.5 space-y-0.5">
-                        {subItems.map((sub: any) => {
-                          const subActive = isItemActive(sub.to)
-                          return (
-                            <Link
-                              key={sub.to}
-                              to={sub.to}
-                              onClick={onNavigate}
-                              className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-                                subActive
-                                  ? 'bg-sapphire-subtle text-primary'
-                                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                              }`}
-                            >
-                              <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'text-primary' : ''}`} />
-                              {sub.label}
-                            </Link>
-                          )
-                        })}
-                      </div>
+                  {/* Always-visible subcategories */}
+                  {hasSubItems && (
+                    <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
+                      {subItems.map((sub: any) => {
+                        const subActive = isItemActive(sub.to)
+                        return (
+                          <Link
+                            key={sub.to}
+                            to={sub.to}
+                            onClick={onNavigate}
+                            className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+                              subActive
+                                ? 'bg-sapphire-subtle text-primary'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                            }`}
+                          >
+                            <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'text-primary' : ''}`} />
+                            {sub.label}
+                          </Link>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -366,13 +323,9 @@ function SidebarFooter() {
   }, [])
 
   const handleResetAccount = async () => {
-    // 1. Stop all cloud sync BEFORE touching the store
     syncController.pauseSync()
-
-    // 2. Wait for any in-flight HTTP save to finish
     await new Promise((r) => setTimeout(r, 600))
 
-    // 3. Overwrite cloud data with empty state
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const emptyData = {
@@ -410,7 +363,6 @@ function SidebarFooter() {
       localStorage.removeItem(`nwt-wizard-complete-${user.id}`)
     }
 
-    // 4. Reset local store (sync is paused, so this won't re-upload)
     resetStore()
     localStorage.removeItem('nwt-finance-store')
 
