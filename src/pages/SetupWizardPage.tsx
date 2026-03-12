@@ -211,9 +211,9 @@ export function SetupWizardPage() {
       {step.id !== 'welcome' && step.id !== 'profile' && step.id !== 'summary' && (
         <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border/50">
           <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">
-              You can always edit these later
-            </p>
+            <Button variant="outline" onClick={goBack} className="gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
             <Button onClick={goNext} className="gap-2">
               Continue <ArrowRight className="w-4 h-4" />
             </Button>
@@ -1434,9 +1434,11 @@ function IncomeStep({ store }: { store: FinanceState }) {
   })
 
   // Salary forms for each household member (or single individual)
-  const salaryPeople = isHousehold
+  // Memoize to prevent infinite re-render loop
+  const salaryPeople = useMemo(() => isHousehold
     ? userProfile.householdMembers
-    : [{ id: '__individual__', name: 'Your' }]
+    : [{ id: '__individual__', name: 'Your' }],
+  [isHousehold, userProfile.householdMembers])
 
   const [salaryForms, setSalaryForms] = useState<Record<string, { grossAnnual: string; includesSuper: boolean }>>(() => {
     const initial: Record<string, { grossAnnual: string; includesSuper: boolean }> = {}
@@ -1500,7 +1502,8 @@ function IncomeStep({ store }: { store: FinanceState }) {
         handleSaveSalary(person.id)
       }
     }
-  }, [salaryBreakdowns]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(salaryBreakdowns)])
 
   // Auto-generated rental income from investment properties
   const rentalIncomes = useMemo(() => {
