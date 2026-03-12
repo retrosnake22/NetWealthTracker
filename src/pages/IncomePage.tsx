@@ -336,6 +336,61 @@ export function IncomePage() {
         </Card>
       </div>
 
+      {/* ── Salary section (always first) ── */}
+      {(() => {
+        const salaryItems = manualGrouped.get('salary')
+        if (!salaryItems || salaryItems.length === 0) return null
+        const Icon = CATEGORY_ICONS.salary
+        const catTotal = salaryItems.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-muted">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <h3 className="text-sm font-medium">{CATEGORY_LABELS.salary}</h3>
+                <span className="text-xs text-muted-foreground">({salaryItems.length})</span>
+              </div>
+              <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+              {salaryItems.map(item => {
+                const memberName = getMemberName(item.memberId)
+                return (
+                  <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                            {!item.isActive && <Badge variant="outline">Inactive</Badge>}
+                            {memberName && (
+                              <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
+                            )}
+                          </div>
+                          <p className="font-semibold text-sm">{item.name}</p>
+                          <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                          {item.grossAnnualSalary && (
+                            <p className="text-xs text-muted-foreground">
+                              {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── Auto-Generated Income section (grouped by category) ── */}
       {autoItems.length > 0 && (
         <div className="space-y-4">
@@ -388,7 +443,7 @@ export function IncomePage() {
         </div>
       )}
 
-      {/* ── Manually Entered Income section (grouped by category) ── */}
+      {/* ── Other Manually Entered Income (non-salary, grouped by category) ── */}
       {incomes.length === 0 && autoItems.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <TrendingUp className="h-12 w-12 mx-auto text-primary mb-4" />
@@ -396,13 +451,11 @@ export function IncomePage() {
           <p className="text-muted-foreground mb-4">Add your salary, rental income, dividends, etc.</p>
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Income</Button>
         </div>
-      ) : incomes.length > 0 ? (
+      ) : incomes.filter(i => i.category !== 'salary').length > 0 ? (
         <div className="space-y-4">
-          {autoItems.length > 0 && (
-            <h2 className="text-base font-semibold">Manually Entered Income</h2>
-          )}
+          <h2 className="text-base font-semibold">Other Income</h2>
 
-          {CATEGORY_ORDER.map(cat => {
+          {CATEGORY_ORDER.filter(c => c !== 'salary').map(cat => {
             const items = manualGrouped.get(cat)
             if (!items || items.length === 0) return null
             const Icon = CATEGORY_ICONS[cat]

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFinanceStore, type FinanceState } from '@/stores/useFinanceStore'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format'
+import { calculateTaxBreakdown } from '@/lib/ausTax'
 import type {
   AssetCategory, IncomeCategory, IncomeItem, LiabilityCategory, MortgageType, Property
 } from '@/types/models'
@@ -105,7 +106,12 @@ const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: str
 
 export function SetupWizardPage() {
   const store = useFinanceStore()
-  const [currentStep, setCurrentStep] = useState(0)
+
+  // Skip profile step if already configured
+  const profileAlreadySet = store.userProfile.profileType === 'household'
+    ? store.userProfile.householdMembers.length > 0
+    : store.incomes.length > 0 || store.assets.length > 0 // individual with existing data
+  const [currentStep, setCurrentStep] = useState(profileAlreadySet ? 2 : 0)
 
   const step = STEPS[currentStep]
   const progress = ((currentStep) / (STEPS.length - 1)) * 100
@@ -1419,12 +1425,82 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
 // -- Step 4: Income --
 
 function IncomeStep({ store }: { store: FinanceState }) {
-  const { incomes, addIncome, removeIncome, updateIncome, properties, assets } = store
+  const { incomes, addIncome, removeIncome, updateIncome, properties, assets, userProfile } = store
+  const isHousehold = userProfile.profileType === 'household' && userProfile.householdMembers.length > 0
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', category: 'salary' as IncomeCategory, monthlyAmount: '',
   })
+
+  // Salary forms for each household member (or single individual)
+  const salaryPeople = isHousehold
+    ? userProfile.householdMembers
+    : [{ id: '__individual__', name: 'Your' }]
+
+  const [salaryForms, setSalaryForms] = useState<Record<string, { grossAnnual: string; includesSuper: boolean }>>(() => {
+    const initial: Record<string, { grossAnnual: string; includesSuper: boolean }> = {}
+    for (const person of salaryPeople) {
+      // Check if there's an existing salary income for this person
+      const existing = incomes.find(i =>
+        i.category === 'salary' && (isHousehold ? i.memberId === person.id : true)
+      )
+      initial[person.id] = {
+        grossAnnual: existing?.grossAnnualSalary ? String(existing.grossAnnualSalary) : '',
+        includesSuper: existing?.includesSuper ?? false,
+      }
+    }
+    return initial
+  })
+
+  const salaryBreakdowns = useMemo(() => {
+    const result: Record<string, ReturnType<typeof calculateTaxBreakdown> | null> = {}
+    for (const person of salaryPeople) {
+      const sf = salaryForms[person.id]
+      if (!sf) { result[person.id] = null; continue }
+      const gross = parseFloat(sf.grossAnnual) || 0
+      result[person.id] = gross > 0 ? calculateTaxBreakdown(gross, sf.includesSuper) : null
+    }
+    return result
+  }, [salaryForms, salaryPeople])
+
+  const handleSaveSalary = (personId: string) => {
+    const sf = salaryForms[personId]
+    const breakdown = salaryBreakdowns[personId]
+    if (!sf || !breakdown) return
+
+    const person = salaryPeople.find(p => p.id === personId)
+    if (!person) return
+
+    const existingIncome = incomes.find(i =>
+      i.category === 'salary' && (isHousehold ? i.memberId === personId : !i.memberId || i.memberId === '__individual__')
+    )
+
+    const data: Partial<IncomeItem> = {
+      name: isHousehold ? `${person.name}'s Salary` : 'Salary',
+      category: 'salary',
+      monthlyAmount: breakdown.netMonthly,
+      isActive: true,
+      grossAnnualSalary: parseFloat(sf.grossAnnual) || 0,
+      includesSuper: sf.includesSuper,
+      ...(isHousehold ? { memberId: personId } : {}),
+    }
+
+    if (existingIncome) {
+      updateIncome(existingIncome.id, data)
+    } else {
+      addIncome(data)
+    }
+  }
+
+  // Auto-save salary when values change (debounced via breakdown)
+  useEffect(() => {
+    for (const person of salaryPeople) {
+      if (salaryBreakdowns[person.id]) {
+        handleSaveSalary(person.id)
+      }
+    }
+  }, [salaryBreakdowns]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-generated rental income from investment properties
   const rentalIncomes = useMemo(() => {
@@ -1465,6 +1541,8 @@ function IncomeStep({ store }: { store: FinanceState }) {
     setEditingId(null)
   }
 
+  const nonSalaryIncomes = incomes.filter(i => i.category !== 'salary')
+
   const startEdit = (inc: IncomeItem) => {
     setForm({ name: inc.name, category: inc.category, monthlyAmount: String(inc.monthlyAmount) })
     setEditingId(inc.id)
@@ -1490,11 +1568,13 @@ function IncomeStep({ store }: { store: FinanceState }) {
     resetForm()
   }
 
-  const manualIncome = incomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
+  const salaryIncomes = incomes.filter(i => i.category === 'salary')
+  const salaryTotal = salaryIncomes.reduce((s, i) => s + i.monthlyAmount, 0)
+  const manualNonSalary = nonSalaryIncomes.filter((i: { isActive: boolean }) => i.isActive).reduce((s: number, i: { monthlyAmount: number }) => s + i.monthlyAmount, 0)
   const rentalTotal = rentalIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
   const interestTotal = interestIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
   const dividendTotal = dividendIncomes.reduce((s: number, r: { monthlyAmount: number }) => s + r.monthlyAmount, 0)
-  const totalMonthly = manualIncome + rentalTotal + interestTotal + dividendTotal
+  const totalMonthly = salaryTotal + manualNonSalary + rentalTotal + interestTotal + dividendTotal
 
   const hasAutoIncome = rentalIncomes.length > 0 || interestIncomes.length > 0 || dividendIncomes.length > 0
 
@@ -1502,9 +1582,83 @@ function IncomeStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you earn?"
-        description="Add your income sources. Rental income, savings interest and share dividends are calculated automatically from your assets."
+        description={isHousehold
+          ? "Enter each household member's salary, then add any other income sources."
+          : "Enter your salary details, then add any other income sources."
+        }
         icon={Briefcase}
       />
+
+      {/* Salary section — one card per person */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+          <DollarSign className="w-3.5 h-3.5" /> {isHousehold ? 'Household Salaries' : 'Salary'}
+        </p>
+
+        {salaryPeople.map(person => {
+          const sf = salaryForms[person.id] || { grossAnnual: '', includesSuper: false }
+          const breakdown = salaryBreakdowns[person.id]
+
+          return (
+            <Card key={person.id} className="border-primary/20">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <h3 className="font-semibold">{isHousehold ? `${person.name}'s Salary` : 'Your Salary'}</h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Gross Annual Salary (AUD)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 120000"
+                      value={sf.grossAnnual}
+                      onChange={e => setSalaryForms(prev => ({
+                        ...prev,
+                        [person.id]: { ...prev[person.id], grossAnnual: e.target.value }
+                      }))}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sf.includesSuper}
+                      onChange={e => setSalaryForms(prev => ({
+                        ...prev,
+                        [person.id]: { ...prev[person.id], includesSuper: e.target.checked }
+                      }))}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm">This amount includes superannuation</span>
+                  </label>
+                </div>
+
+                {breakdown && (
+                  <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Tax Breakdown (FY 2024-25)</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                      <span className="text-muted-foreground">Base Salary</span>
+                      <span className="text-right tabular-nums">{formatCurrency(breakdown.grossSalary)}</span>
+                      <span className="text-muted-foreground">Super (11.5%)</span>
+                      <span className="text-right tabular-nums">{formatCurrency(breakdown.superAmount)}</span>
+                      <span className="text-muted-foreground">Income Tax</span>
+                      <span className="text-right tabular-nums text-red-400">−{formatCurrency(breakdown.incomeTax)}</span>
+                      <span className="text-muted-foreground">Medicare</span>
+                      <span className="text-right tabular-nums text-red-400">−{formatCurrency(breakdown.medicareLevy)}</span>
+                      <div className="col-span-2 border-t border-border my-0.5" />
+                      <span className="font-semibold">Net Monthly</span>
+                      <span className="text-right tabular-nums font-bold text-primary">{formatCurrency(breakdown.netMonthly)}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
 
       {/* Auto-generated income from assets */}
       {hasAutoIncome && (
@@ -1577,13 +1731,11 @@ function IncomeStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Manual income items */}
-      {incomes.length > 0 && (
+      {/* Non-salary manual income items */}
+      {nonSalaryIncomes.length > 0 && (
         <div className="space-y-2">
-          {hasAutoIncome && (
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
-          )}
-          {incomes.map((inc: IncomeItem) => (
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
+          {nonSalaryIncomes.map((inc: IncomeItem) => (
             <Card key={inc.id} className="card-hover">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1621,12 +1773,12 @@ function IncomeStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Add/Edit form */}
+      {/* Add/Edit form for other income */}
       {showForm ? (
         <Card className="border-primary/30">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Income Source'}</h3>
+              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Other Income'}</h3>
               <Button variant="ghost" size="icon" onClick={resetForm}>
                 <X className="w-4 h-4" />
               </Button>
@@ -1635,7 +1787,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
               <div className="space-y-1.5">
                 <Label className="text-xs">Name</Label>
                 <Input
-                  placeholder="e.g. Full-time salary"
+                  placeholder="e.g. Side hustle"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                 />
@@ -1645,9 +1797,11 @@ function IncomeStep({ store }: { store: FinanceState }) {
                 <Select value={form.category} onValueChange={(v: IncomeCategory) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][]).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
+                    {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][])
+                      .filter(([k]) => k !== 'salary')
+                      .map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1671,7 +1825,7 @@ function IncomeStep({ store }: { store: FinanceState }) {
           className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
         >
           <Plus className="w-5 h-5" />
-          <span className="font-medium">Add Income Source</span>
+          <span className="font-medium">Add Other Income Source</span>
         </button>
       )}
     </div>

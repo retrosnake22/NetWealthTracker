@@ -37,6 +37,17 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
 ]
 
 export function LivingExpensesPage() {
+  // Clean up orphaned vehicle expenses on mount
+  useEffect(() => {
+    const { assets: currentAssets, expenseBudgets: currentBudgets, removeExpenseBudget: removeBudget } = useFinanceStore.getState()
+    const assetIds = new Set(currentAssets.map(a => a.id))
+    for (const b of currentBudgets) {
+      if (b.linkedAssetId && !assetIds.has(b.linkedAssetId)) {
+        removeBudget(b.id)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 

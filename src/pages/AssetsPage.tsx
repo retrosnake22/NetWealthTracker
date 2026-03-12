@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Home, ChevronDown, ChevronUp, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,28 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 export default function AssetsPage() {
   const store = useFinanceStore() as FinanceState
   const { assets, properties, liabilities, incomes, expenseBudgets, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, removeLiability, addExpenseBudget, removeExpenseBudget, } = store
+
+  // Clean up orphaned car loan liabilities and expenses on mount
+  useEffect(() => {
+    const state = useFinanceStore.getState()
+    const assetIds = new Set(state.assets.map(a => a.id))
+    const assetNames = new Set(state.assets.map(a => a.name))
+    // Clean orphan car_loan liabilities (name-based match to deleted vehicles)
+    for (const l of state.liabilities) {
+      if (l.category === 'car_loan') {
+        const vehicleName = l.name.replace(/ Car Loan$/, '')
+        if (!assetNames.has(vehicleName)) {
+          state.removeLiability(l.id)
+        }
+      }
+    }
+    // Clean orphan vehicle-linked expense budgets
+    for (const b of state.expenseBudgets) {
+      if (b.linkedAssetId && !assetIds.has(b.linkedAssetId)) {
+        state.removeExpenseBudget(b.id)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Find gross salary for negative gearing calc
   const grossSalary = useMemo(() => {
@@ -441,6 +463,41 @@ export default function AssetsPage() {
     }
   }
 
+  // Delete asset with cleanup of linked liabilities and expenses
+  const handleDeleteAsset = (assetId: string) => {
+    const asset = assets.find(a => a.id === assetId) as any
+    if (asset) {
+      // Clean up linked liability (by ID and by name)
+      if (asset.linkedLiabilityId) {
+        removeLiability(asset.linkedLiabilityId)
+      }
+      // Fallback: find car loan liability by name
+      const linkedLiab = liabilities.find(l =>
+        l.category === 'car_loan' && l.name === `${asset.name} Car Loan`
+      )
+      if (linkedLiab && linkedLiab.id !== asset.linkedLiabilityId) {
+        removeLiability(linkedLiab.id)
+      }
+
+      // Clean up linked expense (by ID and by name)
+      if (asset.linkedExpenseId) {
+        removeExpenseBudget(asset.linkedExpenseId)
+      }
+      // Fallback: find car loan repayment or lease expense by name
+      const linkedExps = expenseBudgets.filter(e =>
+        e.linkedAssetId === assetId ||
+        e.label === `${asset.name} Car Loan Repayment` ||
+        e.label === `${asset.name} Lease`
+      )
+      for (const exp of linkedExps) {
+        if (exp.id !== asset.linkedExpenseId) {
+          removeExpenseBudget(exp.id)
+        }
+      }
+    }
+    removeAsset(assetId)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -517,7 +574,7 @@ export default function AssetsPage() {
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeAsset(a.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDeleteAsset(a.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
