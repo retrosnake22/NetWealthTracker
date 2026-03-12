@@ -45,7 +45,7 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
 ]
 
 export function LivingExpensesPage() {
-  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode } = useFinanceStore()
+  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode, setEstimatedMonthlyExpenses } = useFinanceStore()
   const budgetMode = userProfile?.budgetMode ?? 'estimate'
   const estimatedMonthlyExpenses = userProfile?.estimatedMonthlyExpenses ?? 0
 
@@ -246,10 +246,18 @@ export function LivingExpensesPage() {
               </Button>
             </div>
           </div>
-          {budgetMode === 'estimate' && estimatedMonthlyExpenses > 0 && (
-            <p className="text-xs text-muted-foreground mt-2.5 pl-0 sm:pl-[108px]">
-              Using <span className="font-semibold text-foreground">{formatCurrency(estimatedMonthlyExpenses)}/mo</span> from your setup wizard estimate in all cashflow and projection calculations.
-            </p>
+          {budgetMode === 'estimate' && (
+            <div className="mt-3 pl-0 sm:pl-[108px] flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm text-muted-foreground">Monthly estimate used in calculations:</span>
+              <div className="w-48">
+                <CurrencyInput
+                  value={String(estimatedMonthlyExpenses || '')}
+                  onChange={(v) => setEstimatedMonthlyExpenses(parseFloat(v) || 0)}
+                  placeholder="Enter estimate"
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">({formatCurrency((estimatedMonthlyExpenses || 0) * 12)}/year)</span>
+            </div>
           )}
           {budgetMode === 'detailed' && (
             <p className="text-xs text-muted-foreground mt-2.5 pl-0 sm:pl-[108px]">

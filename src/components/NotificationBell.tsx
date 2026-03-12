@@ -17,9 +17,10 @@ interface Notification {
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const { userProfile } = useFinanceStore()
+  const { userProfile, dismissNotification } = useFinanceStore()
   const budgetMode = userProfile?.budgetMode ?? 'estimate'
   const estimatedMonthlyExpenses = userProfile?.estimatedMonthlyExpenses ?? 0
+  const dismissedNotifications = userProfile?.dismissedNotifications ?? []
 
   // Build notification list
   const notifications = useMemo<Notification[]>(() => {
@@ -38,8 +39,8 @@ export function NotificationBell() {
       })
     }
 
-    return items
-  }, [budgetMode, estimatedMonthlyExpenses])
+    return items.filter(n => !dismissedNotifications.includes(n.id))
+  }, [budgetMode, estimatedMonthlyExpenses, dismissedNotifications])
 
   const count = notifications.length
 
@@ -105,6 +106,13 @@ export function NotificationBell() {
                         </Link>
                       )}
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); dismissNotification(n.id) }}
+                      className="shrink-0 p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      title="Dismiss"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}

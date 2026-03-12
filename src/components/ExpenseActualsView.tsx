@@ -230,11 +230,11 @@ export function ExpenseActualsView() {
               </div>
 
               {/* Column headers */}
-              <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2">
-                <span>Expense</span>
-                <span className="text-right">Budget</span>
-                <span className="text-right">Actual</span>
-                <span className="text-right">Diff</span>
+              <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/40">
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
               </div>
 
               {/* Rows */}

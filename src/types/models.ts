@@ -153,6 +153,7 @@ export interface UserProfile {
   householdMembers: HouseholdMember[]
   estimatedMonthlyExpenses?: number
   budgetMode: BudgetMode
+  dismissedNotifications: string[]
 }
 
 export interface MonthlySnapshot {

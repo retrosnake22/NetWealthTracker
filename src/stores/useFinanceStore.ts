@@ -28,6 +28,7 @@ export interface FinanceState {
   setIndividualName: (name: string) => void
   setEstimatedMonthlyExpenses: (amount: number) => void
   setBudgetMode: (mode: BudgetMode) => void
+  dismissNotification: (id: string) => void
   addHouseholdMember: (name: string) => void
   updateHouseholdMember: (id: string, name: string) => void
   removeHouseholdMember: (id: string) => void
@@ -84,6 +85,7 @@ const DEFAULT_PROFILE: UserProfile = {
   profileType: 'individual',
   householdMembers: [],
   budgetMode: 'estimate',
+  dismissedNotifications: [],
 }
 
 const DEFAULT_PROJECTION_SETTINGS: ProjectionSettings = {
@@ -142,6 +144,12 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       setBudgetMode: (mode) => set((state) => ({
         userProfile: { ...state.userProfile, budgetMode: mode },
+      })),
+      dismissNotification: (id) => set((state) => ({
+        userProfile: {
+          ...state.userProfile,
+          dismissedNotifications: [...(state.userProfile.dismissedNotifications || []), id],
+        },
       })),
       addHouseholdMember: (name) => set((state) => ({
         userProfile: {
