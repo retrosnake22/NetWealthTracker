@@ -85,6 +85,7 @@ const DEFAULT_PROFILE: UserProfile = {
   profileType: 'individual',
   householdMembers: [],
   budgetMode: 'estimate',
+  estimatedMonthlyExpenses: 0,
   dismissedNotifications: [],
 }
 
@@ -286,6 +287,11 @@ export const useFinanceStore = create<FinanceState>()(
     }),
     {
       name: 'nwt-finance-store',
+        merge: (persisted: any, current: any) => ({
+          ...current,
+          ...persisted,
+          userProfile: { ...DEFAULT_PROFILE, ...(persisted?.userProfile ?? {}) },
+        }),
     }
   )
 )

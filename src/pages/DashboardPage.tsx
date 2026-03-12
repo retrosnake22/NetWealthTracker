@@ -1,8 +1,9 @@
 // NWT Dashboard
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
@@ -34,7 +35,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'charts']
+const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'expenses-chart', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -197,8 +198,8 @@ export function DashboardPage() {
   const netWealth         = netWealthIncSuper - superTotal
 
   // Use shared metrics so dashboard and breakdown dialogs always match
-  const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } =
-    calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
+  const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } = metrics
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   const projectionData = projectNetWealth(
@@ -251,7 +252,29 @@ export function DashboardPage() {
   const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
   const stockGrowth = ((projectionSettings.stockGrowthOverride ?? 0.07) * 100).toFixed(0)
 
-  const showBudgetBanner = (userProfile?.budgetMode ?? 'estimate') === 'estimate' && !(userProfile?.dismissedNotifications ?? []).includes('dashboard-budget-banner')
+  const showBudgetBanner = (userProfile?.budgetMode ?? 'estimate') === 'estimate' && !(userProfile?.dismissedNotifications ?? []).includes('budget-not-activated')
+
+  const expensesChartData = useMemo(() => {
+    const data: { name: string; living: number; fixed: number }[] = []
+
+    // Fixed expenses are constant (property mortgage repayments + running costs)
+    const fixedMonthly = metrics.mortgageExpenses + metrics.propertyRunningCosts
+
+    // Budget baseline
+    data.push({ name: 'Budget', living: metrics.baseExpenses, fixed: fixedMonthly })
+
+    // Get unique months from actuals, sorted
+    const months = [...new Set(expenseActuals.map(a => a.month))].sort()
+    for (const month of months) {
+      const monthActuals = expenseActuals.filter(a => a.month === month)
+      const actualTotal = monthActuals.reduce((s, a) => s + a.actualAmount, 0)
+      const [year, mo] = month.split('-')
+      const label = new Date(parseInt(year), parseInt(mo) - 1).toLocaleString('default', { month: 'short' })
+      data.push({ name: label, living: actualTotal, fixed: fixedMonthly })
+    }
+
+    return data
+  }, [expenseActuals, metrics])
 
   const widgets: Record<string, React.ReactNode> = {
     hero: (
@@ -314,10 +337,76 @@ export function DashboardPage() {
             <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" onClick={() => setBreakdownOpen('debt-ratio')} />
           </div>
           <div className="animate-fade-up animate-delay-4 h-full">
-            <KpiCard label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} tag={surplusTag} tagColor={surplusColor} ratio={monthlyIncome > 0 ? monthlyCashflow / monthlyIncome : 0} icon={TrendingUp} accentColor="#3b82f6" onClick={() => setBreakdownOpen('surplus')} />
+            <KpiCard label="Neg. Gearing Benefit" value={formatCurrency(metrics.negGearingBenefitPA)} tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'} tagColor={metrics.negGearingBenefitPA > 0 ? 'blue' : 'amber'} ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0} icon={TrendingUp} accentColor="#10b981" onClick={() => setBreakdownOpen('surplus')} />
           </div>
         </div>
       </div>
+    ),
+
+    'expenses-chart': (
+      <Card className="rounded-xl bg-card animate-fade-up">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">Expenses Trend</CardTitle>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-2.5 rounded-sm bg-amber-500 inline-block" />
+                <span>Living</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-2.5 rounded-sm bg-blue-500 inline-block" />
+                <span>Fixed</span>
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {expensesChartData.length <= 1 ? (
+            <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+              Track monthly actuals to see your expense trend over time.
+            </div>
+          ) : (
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expensesChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: '#71717a', fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#71717a', fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={55}
+                    tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(value),
+                      name === 'living' ? 'Living Expenses' : 'Fixed Expenses',
+                    ]}
+                    contentStyle={{
+                      backgroundColor: 'var(--popover)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      color: 'var(--popover-foreground)',
+                      boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  />
+                  <Bar dataKey="living" stackId="a" fill="#f59e0b" name="Living Expenses" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="fixed" stackId="a" fill="#3b82f6" name="Fixed Expenses" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     ),
 
     charts: (
@@ -330,7 +419,7 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="h-full animate-fade-up animate-delay-6">
-          <AssetBreakdown data={breakdownData} onClick={() => navigate('/assets')} />
+          <AssetBreakdown data={breakdownData} />
         </div>
       </div>
     ),
@@ -351,7 +440,7 @@ export function DashboardPage() {
                 Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
               <button
-                onClick={() => dismissNotification('dashboard-budget-banner')}
+                onClick={() => dismissNotification('budget-not-activated')}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Dismiss

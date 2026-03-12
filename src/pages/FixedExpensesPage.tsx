@@ -1,10 +1,10 @@
 import { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, ExternalLink, Car } from 'lucide-react'
+import { Building2, ExternalLink, Car, CreditCard } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatPercent } from '@/lib/format'
 import type { ExpenseCategory, Property } from '@/types/models'
 
 interface AutoExpenseItem {
@@ -13,6 +13,14 @@ interface AutoExpenseItem {
   label: string
   category: ExpenseCategory
   monthlyAmount: number
+}
+
+const LIABILITY_LABELS: Record<string, string> = {
+  personal_loan: 'Personal Loan',
+  credit_card: 'Credit Card',
+  hecs: 'HECS-HELP',
+  home_loan: 'Home Loan',
+  other: 'Other',
 }
 
 export function FixedExpensesPage() {
@@ -92,8 +100,29 @@ export function FixedExpensesPage() {
     [autoVehicleExpenses]
   )
 
+  // Auto-generated loan & debt repayments (personal loans, credit cards, HECS, other)
+  const autoLoanExpenses = useMemo(() => {
+    const propertyMortgageIds = new Set(properties.map(p => p.mortgageId).filter(Boolean))
+    return liabilities
+      .filter(l => !['mortgage', 'car_loan'].includes(l.category) && l.minimumRepayment > 0)
+      .filter(l => !propertyMortgageIds.has(l.id))
+      .map(l => {
+        const freq = l.repaymentFrequency === 'weekly' ? 52 : l.repaymentFrequency === 'fortnightly' ? 26 : 12
+        return {
+          id: l.id,
+          name: l.name,
+          category: l.category,
+          monthlyAmount: (l.minimumRepayment * freq) / 12,
+          interestRate: l.interestRatePA,
+          repaymentFrequency: l.repaymentFrequency,
+        }
+      })
+  }, [liabilities, properties])
+
+  const loanExpenseTotal = autoLoanExpenses.reduce((s, e) => s + e.monthlyAmount, 0)
+
   const propertyTotal = autoPropertyExpenses.reduce((s, e) => s + e.monthlyAmount, 0)
-  const totalMonthly = propertyTotal + vehicleExpenseTotal
+  const totalMonthly = propertyTotal + vehicleExpenseTotal + loanExpenseTotal
 
   // Group by property
   const autoByProperty = useMemo(() => {
@@ -108,12 +137,12 @@ export function FixedExpensesPage() {
     }))
   }, [autoPropertyExpenses])
 
-  const hasAnyExpenses = autoPropertyExpenses.length > 0 || autoVehicleExpenses.length > 0
+  const hasAnyExpenses = autoPropertyExpenses.length > 0 || autoVehicleExpenses.length > 0 || autoLoanExpenses.length > 0
 
   return (
     <div className="space-y-6">
       {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Fixed Monthly</p>
@@ -135,6 +164,13 @@ export function FixedExpensesPage() {
             <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(vehicleExpenseTotal)}/mo</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Loans & Debts</p>
+            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{autoLoanExpenses.length}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(loanExpenseTotal)}/mo</p>
+          </CardContent>
+        </Card>
       </div>
 
       {!hasAnyExpenses ? (
@@ -142,7 +178,7 @@ export function FixedExpensesPage() {
           <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No fixed expenses yet</h3>
           <p className="text-muted-foreground mb-4">
-            Fixed expenses are automatically generated from your property and vehicle data.
+            Fixed expenses are automatically generated from your property, vehicle, and loan data.
           </p>
           <Link
             to="/assets?category=property"
@@ -247,6 +283,56 @@ export function FixedExpensesPage() {
                       <span className="text-sm font-medium text-muted-foreground">Total Vehicle Expenses</span>
                       <div>
                         <span className="text-sm font-bold tabular-nums">{formatCurrency(vehicleExpenseTotal)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Loan & Debt Repayments */}
+          {autoLoanExpenses.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base font-semibold">Loan & Debt Repayments</h2>
+                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
+                  🔗 Auto-generated
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground -mt-1">
+                These repayments are auto-generated from your liabilities. Edit them in the Liabilities section.
+              </p>
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-0">
+                  {autoLoanExpenses.map((expense, idx) => (
+                    <div
+                      key={expense.id}
+                      className={`flex items-center justify-between px-5 py-3.5 ${
+                        idx !== autoLoanExpenses.length - 1 ? 'border-b border-border/30' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">{expense.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {LIABILITY_LABELS[expense.category] ?? expense.category} · {formatPercent(expense.interestRate)} p.a.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(expense.monthlyAmount)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                      </div>
+                    </div>
+                  ))}
+                  {autoLoanExpenses.length > 1 && (
+                    <div className="flex items-center justify-between px-5 py-3 border-t border-border/50 bg-muted/20">
+                      <span className="text-sm font-medium text-muted-foreground">Total Loan Repayments</span>
+                      <div>
+                        <span className="text-sm font-bold tabular-nums">{formatCurrency(loanExpenseTotal)}</span>
                         <span className="text-xs text-muted-foreground ml-1">/mo</span>
                       </div>
                     </div>

@@ -62,10 +62,11 @@ function autoCalcRepayment(balance: string, rate: string, type: MortgageType, te
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Sparkles },
-  { id: 'assets', label: 'Assets & Property', icon: Wallet },
+  { id: 'property', label: 'Property', icon: Home },
+  { id: 'assets', label: 'What You Own', icon: Wallet },
   { id: 'liabilities', label: 'Debts', icon: CreditCard },
   { id: 'income', label: 'Income', icon: Briefcase },
-  { id: 'expenses', label: 'Expenses', icon: Receipt },
+  { id: 'expenses', label: 'What do you spend?', icon: Receipt },
   { id: 'summary', label: 'Summary', icon: TrendingUp },
 ] as const
 
@@ -95,7 +96,6 @@ const DEFAULT_GROWTH: Record<AssetCategory, number> = {
 type AssetTab = AssetCategory
 const ASSET_TABS: { id: AssetTab; label: string; icon: typeof Wallet; color: string }[] = [
   { id: 'cash', label: 'Cash & Savings', icon: PiggyBank, color: 'text-amber-500 bg-amber-500/10' },
-  { id: 'property', label: 'Property', icon: Home, color: 'text-sky-500 bg-sky-500/10' },
   { id: 'stocks', label: 'Shares / Stocks', icon: TrendingUp, color: 'text-blue-500 bg-blue-500/10' },
   { id: 'super', label: 'Super', icon: Target, color: 'text-violet-500 bg-violet-500/10' },
   { id: 'vehicles', label: 'Vehicles', icon: Car, color: 'text-amber-500 bg-amber-500/10' },
@@ -205,6 +205,7 @@ export function SetupWizardPage() {
       {/* Step Content */}
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-32">
         {step.id === 'welcome' && <WelcomeStep store={store} onNext={goNext} />}
+        {step.id === 'property' && <PropertyStep store={store} />}
         {step.id === 'assets' && <AssetsStep store={store} />}
         {step.id === 'liabilities' && <LiabilitiesStep store={store} />}
         {step.id === 'income' && <IncomeStep store={store} />}
@@ -389,14 +390,470 @@ function WelcomeStep({ store, onNext }: { store: FinanceState; onNext: () => voi
   )
 }
 
-// -- Step 2: Assets & Property (unified) --
+// -- Step 2: Property --
+
+function PropertyStep({ store }: { store: FinanceState }) {
+  const {
+    properties, addProperty, removeProperty, updateProperty,
+    liabilities, addLiability, updateLiability, removeLiability,
+    addExpenseBudget,
+  } = store
+
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [propForm, setPropForm] = useState({
+    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
+    address: '', currentValue: '', growthRatePA: '7.0',
+    hasMortgage: true, mortgageBalance: '', interestRate: '', repayment: '',
+    mortgageType: 'principal_and_interest' as MortgageType,
+    loanTermYears: '30',
+    repaymentOverridden: false,
+    weeklyRent: '',
+    councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
+    propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
+  })
+
+  const resetForm = () => {
+    setPropForm({
+      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7.0',
+      hasMortgage: true, mortgageBalance: '', interestRate: '', repayment: '',
+      mortgageType: 'principal_and_interest', loanTermYears: '30',
+      repaymentOverridden: false, weeklyRent: '',
+      councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
+      propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
+    })
+    setShowForm(false)
+    setEditingId(null)
+  }
+
+  const autoCalcRepayment = (bal: string, rate: string, type: MortgageType, term: string) => {
+    const b = parseFloat(bal) || 0
+    const r = pctToFraction(rate, 4)
+    const t = parseInt(term) || 30
+    return calcMortgageMonthly(b, r, type, t).toFixed(0)
+  }
+
+  const updateMortgageField = (updates: Partial<typeof propForm>) => {
+    const merged = { ...propForm, ...updates }
+    if (!merged.repaymentOverridden && merged.mortgageBalance && merged.interestRate) {
+      merged.repayment = autoCalcRepayment(merged.mortgageBalance, merged.interestRate, merged.mortgageType, merged.loanTermYears)
+    }
+    setPropForm(merged)
+  }
+
+  const handleAddProperty = () => {
+    if (editingId) {
+      const prop = properties.find(p => p.id === editingId)
+      if (!prop) return
+      updateProperty(editingId, {
+        name: propForm.name,
+        type: propForm.type,
+        address: propForm.address,
+        currentValue: parseFloat(propForm.currentValue) || 0,
+        growthRatePA: pctToFraction(propForm.growthRatePA, 1),
+        weeklyRent: propForm.type === 'investment' ? parseFloat(propForm.weeklyRent) || 0 : 0,
+        councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
+        waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
+        insurancePA: parseFloat(propForm.insurancePA) || 0,
+        strataPA: (parseFloat(propForm.strataPA) || 0) * 4,
+        propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
+        landTaxPA: parseFloat(propForm.landTaxPA) || 0,
+        maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
+      })
+      if (propForm.hasMortgage && prop.mortgageId) {
+        updateLiability(prop.mortgageId, {
+          currentBalance: parseFloat(propForm.mortgageBalance) || 0,
+          interestRatePA: pctToFraction(propForm.interestRate, 4),
+          minimumRepayment: parseFloat(propForm.repayment) || 0,
+          mortgageType: propForm.mortgageType,
+          loanTermYears: parseInt(propForm.loanTermYears) || 30,
+        })
+      } else if (propForm.hasMortgage && !prop.mortgageId) {
+        const mortBal = parseFloat(propForm.mortgageBalance) || 0
+        if (mortBal > 0) {
+          addLiability({
+            name: `${propForm.name} Mortgage`,
+            category: 'mortgage',
+            currentBalance: mortBal,
+            interestRatePA: pctToFraction(propForm.interestRate, 4),
+            minimumRepayment: parseFloat(propForm.repayment) || 0,
+            repaymentFrequency: 'monthly',
+            mortgageType: propForm.mortgageType,
+            loanTermYears: parseInt(propForm.loanTermYears) || 30,
+          })
+          const latestLiabs = useFinanceStore.getState().liabilities
+          const newMort = latestLiabs[latestLiabs.length - 1]
+          if (newMort) updateProperty(editingId, { mortgageId: newMort.id })
+        }
+      } else if (!propForm.hasMortgage && prop.mortgageId) {
+        removeLiability(prop.mortgageId)
+        updateProperty(editingId, { mortgageId: undefined })
+      }
+      resetForm()
+      return
+    }
+
+    const propVal = parseFloat(propForm.currentValue) || 0
+    addProperty({
+      name: propForm.name,
+      type: propForm.type,
+      address: propForm.address,
+      currentValue: propVal,
+      growthRatePA: pctToFraction(propForm.growthRatePA, 1),
+      weeklyRent: propForm.type === 'investment' ? parseFloat(propForm.weeklyRent) || 0 : 0,
+      councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4,
+      waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4,
+      insurancePA: parseFloat(propForm.insurancePA) || 0,
+      strataPA: (parseFloat(propForm.strataPA) || 0) * 4,
+      propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
+      landTaxPA: parseFloat(propForm.landTaxPA) || 0,
+      maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
+    })
+
+    if (propForm.hasMortgage) {
+      const mortBal = parseFloat(propForm.mortgageBalance) || 0
+      if (mortBal > 0) {
+        addLiability({
+          name: `${propForm.name} Mortgage`,
+          category: 'mortgage',
+          currentBalance: mortBal,
+          interestRatePA: pctToFraction(propForm.interestRate, 4),
+          minimumRepayment: parseFloat(propForm.repayment) || 0,
+          repaymentFrequency: 'monthly',
+          mortgageType: propForm.mortgageType,
+          loanTermYears: parseInt(propForm.loanTermYears) || 30,
+        })
+        const latestLiabs = useFinanceStore.getState().liabilities
+        const newMort = latestLiabs[latestLiabs.length - 1]
+        const latestProps = useFinanceStore.getState().properties
+        const newProp = latestProps[latestProps.length - 1]
+        if (newMort && newProp) {
+          updateProperty(newProp.id, { mortgageId: newMort.id })
+        }
+      }
+    }
+
+    const latestBudgets = useFinanceStore.getState().expenseBudgets
+    const latestProps = useFinanceStore.getState().properties
+    const justAdded = latestProps[latestProps.length - 1]
+    if (justAdded) {
+      const propExpenses = [
+        { cat: 'council_rates', val: (parseFloat(propForm.councilRatesPA) || 0) * 4 },
+        { cat: 'water_rates', val: (parseFloat(propForm.waterRatesPA) || 0) * 4 },
+        { cat: 'home_insurance', val: parseFloat(propForm.insurancePA) || 0 },
+        { cat: 'strata', val: (parseFloat(propForm.strataPA) || 0) * 4 },
+        { cat: 'repairs_maintenance', val: parseFloat(propForm.maintenanceBudgetPA) || 0 },
+      ] as const
+      for (const { cat, val } of propExpenses) {
+        if (val > 0) {
+          const exists = latestBudgets.some(b => b.linkedPropertyId === justAdded.id && b.category === cat)
+          if (!exists) {
+            addExpenseBudget({
+              category: cat as any,
+              label: `${propForm.name} - ${cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`,
+              monthlyBudget: val / 12,
+              linkedPropertyId: justAdded.id,
+            })
+          }
+        }
+      }
+    }
+
+    resetForm()
+  }
+
+  const startEditProperty = (prop: Property) => {
+    const mortgage = prop.mortgageId ? liabilities.find(l => l.id === prop.mortgageId) : undefined
+    setPropForm({
+      name: prop.name,
+      type: prop.type as 'primary_residence' | 'investment',
+      address: prop.address || '',
+      currentValue: String(prop.currentValue),
+      growthRatePA: (prop.growthRatePA * 100).toFixed(1),
+      hasMortgage: !!mortgage,
+      mortgageBalance: mortgage ? String(mortgage.currentBalance) : '',
+      interestRate: mortgage ? (mortgage.interestRatePA * 100).toFixed(2) : '',
+      repayment: mortgage ? String(mortgage.minimumRepayment) : '',
+      mortgageType: mortgage?.mortgageType ?? 'principal_and_interest',
+      loanTermYears: mortgage?.loanTermYears ? String(mortgage.loanTermYears) : '30',
+      repaymentOverridden: false,
+      weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
+      councilRatesPA: prop.councilRatesPA ? String(prop.councilRatesPA / 4) : '',
+      waterRatesPA: prop.waterRatesPA ? String(prop.waterRatesPA / 4) : '',
+      insurancePA: prop.insurancePA ? String(prop.insurancePA) : '',
+      strataPA: prop.strataPA ? String(prop.strataPA / 4) : '',
+      propertyManagementPct: prop.propertyManagementPct ? String(prop.propertyManagementPct) : '',
+      landTaxPA: prop.landTaxPA ? String(prop.landTaxPA) : '',
+      maintenanceBudgetPA: prop.maintenanceBudgetPA ? String(prop.maintenanceBudgetPA) : '',
+    })
+    setEditingId(prop.id)
+    setShowForm(true)
+  }
+
+  const handleDeleteProperty = (propId: string) => {
+    const prop = properties.find(p => p.id === propId)
+    if (prop?.mortgageId) removeLiability(prop.mortgageId)
+    removeProperty(propId)
+  }
+
+  const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
+
+  const renderPropertyForm = () => (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
+          <Button variant="ghost" size="icon" onClick={resetForm}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Property Name</Label>
+            <Input
+              placeholder="e.g. Family Home"
+              value={propForm.name}
+              onChange={e => setPropForm({ ...propForm, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type</Label>
+            <Select value={propForm.type} onValueChange={(v: 'primary_residence' | 'investment') => setPropForm({ ...propForm, type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="primary_residence">Primary Residence</SelectItem>
+                <SelectItem value="investment">Investment Property</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Current Value</Label>
+            <CurrencyInput
+              value={propForm.currentValue}
+              onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
+              placeholder="0"
+            />
+          </div>
+
+          {propForm.type === 'investment' && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs">Weekly Rent</Label>
+              <CurrencyInput
+                value={propForm.weeklyRent}
+                onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                This will be automatically added to your income
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Property Running Costs */}
+        <div className="pt-2 border-t border-border/50">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">
+            Property Running Costs (Annual)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Council Rates ($/quarter)</Label>
+              <CurrencyInput value={propForm.councilRatesPA} onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Water Rates ($/quarter)</Label>
+              <CurrencyInput value={propForm.waterRatesPA} onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Insurance ($/year)</Label>
+              <CurrencyInput value={propForm.insurancePA} onValueChange={v => setPropForm({ ...propForm, insurancePA: v })} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Strata ($/quarter)</Label>
+              <CurrencyInput value={propForm.strataPA} onValueChange={v => setPropForm({ ...propForm, strataPA: v })} placeholder="0" />
+            </div>
+            {propForm.type === 'investment' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Property Management (%)</Label>
+                  <Input type="number" step="0.1" value={propForm.propertyManagementPct} onChange={e => setPropForm({ ...propForm, propertyManagementPct: e.target.value })} placeholder="e.g. 7" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Land Tax ($/year)</Label>
+                  <CurrencyInput value={propForm.landTaxPA} onValueChange={v => setPropForm({ ...propForm, landTaxPA: v })} placeholder="0" />
+                </div>
+              </>
+            )}
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs">Maintenance Budget ($/year)</Label>
+              <CurrencyInput value={propForm.maintenanceBudgetPA} onValueChange={v => setPropForm({ ...propForm, maintenanceBudgetPA: v })} placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Mortgage section */}
+        <div className="pt-2 border-t border-border/50">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={propForm.hasMortgage} onChange={e => setPropForm({ ...propForm, hasMortgage: e.target.checked })} className="rounded" />
+            <span className="text-sm font-medium">This property has a mortgage</span>
+          </label>
+
+          {propForm.hasMortgage && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Mortgage Balance</Label>
+                <CurrencyInput value={propForm.mortgageBalance} onValueChange={v => updateMortgageField({ mortgageBalance: v })} placeholder="0" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Mortgage Type</Label>
+                <Select value={propForm.mortgageType} onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                    <SelectItem value="interest_only">Interest Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Loan Term (years)</Label>
+                <Input type="number" value={propForm.loanTermYears} onChange={e => updateMortgageField({ loanTermYears: e.target.value })} placeholder="30" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Interest Rate (%)</Label>
+                <Input
+                  type="number" step="0.01" min="0" max="30"
+                  value={propForm.interestRate}
+                  onChange={e => updateMortgageField({ interestRate: e.target.value })}
+                  onBlur={e => {
+                    const clamped = parseFloat(e.target.value || '0').toFixed(2)
+                    updateMortgageField({ interestRate: clamped })
+                  }}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Min. Monthly Repayment
+                  {!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
+                </Label>
+                <CurrencyInput
+                  value={propForm.repayment}
+                  onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
+                  placeholder="0"
+                />
+                {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => {
+                      const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
+                      setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
+                    }}
+                  >
+                    Reset to calculated amount
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
+          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className="space-y-6">
+      <StepHeader
+        title="Your Property"
+        description="Add your properties — primary residence, investment properties, or both."
+        icon={Home}
+      />
+
+      {totalProperties > 0 && (
+        <div className="flex justify-between items-center px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+          <span className="text-sm font-medium text-muted-foreground">Total Property Value</span>
+          <span className="font-bold text-primary tabular-nums">{formatCurrency(totalProperties)}</span>
+        </div>
+      )}
+
+      {properties.length > 0 && (
+        <div className="space-y-2">
+          {properties.map(prop => {
+            const linkedMortgage = prop.mortgageId
+              ? liabilities.find(l => l.id === prop.mortgageId)
+              : undefined
+            return (
+              <div key={prop.id} className="space-y-2">
+                <Card className="card-hover">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                        {prop.type === 'primary_residence' ? (
+                          <Home className="w-5 h-5 text-sky-500" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-sky-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{prop.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
+                          {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                          {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
+                      <Button variant="ghost" size="icon" onClick={() => startEditProperty(prop)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProperty(prop.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                {editingId === prop.id && showForm && renderPropertyForm()}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {showForm && !editingId ? (
+        renderPropertyForm()
+      ) : !showForm && (
+        <button
+          onClick={() => { resetForm(); setShowForm(true) }}
+          className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="font-medium">{properties.length > 0 ? 'Add Another Property' : 'Add a Property'}</span>
+        </button>
+      )}
+
+      {properties.length === 0 && !showForm && (
+        <p className="text-center text-sm text-muted-foreground">
+          No property? No worries — hit <strong>Continue</strong> to move on.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// -- Step 3: Other Assets (non-property) --
 
 function AssetsStep({ store }: { store: FinanceState }) {
   const {
     assets, addAsset, removeAsset, updateAsset,
-    properties, addProperty, removeProperty, addLiability, updateProperty,
-    liabilities, updateLiability, removeLiability,
-    addExpenseBudget,
+    addLiability, addExpenseBudget,
   } = store
 
   const [activeTab, setActiveTab] = useState<AssetTab>('cash')
@@ -412,31 +869,11 @@ function AssetsStep({ store }: { store: FinanceState }) {
     interestRate: '',
   })
 
-  const [propForm, setPropForm] = useState({
-    name: '', type: 'primary_residence' as 'primary_residence' | 'investment',
-    address: '', currentValue: '', growthRatePA: '7.0',
-    hasMortgage: true, mortgageBalance: '', interestRate: '', repayment: '',
-    mortgageType: 'principal_and_interest' as MortgageType,
-    loanTermYears: '30',
-    repaymentOverridden: false,
-    weeklyRent: '',
-    councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
-    propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
-  })
-
   const resetForm = () => {
     setAssetForm({
       name: '', currentValue: '', growthRatePA: String((DEFAULT_GROWTH[activeTab] * 100).toFixed(1)),
       vehicleFinancing: 'owned', loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
       cashType: 'bank' as 'cash' | 'bank', bankName: '', interestRate: '',
-    })
-    setPropForm({
-      name: '', type: 'primary_residence', address: '', currentValue: '', growthRatePA: '7.0',
-      hasMortgage: true, mortgageBalance: '', interestRate: '', repayment: '',
-      mortgageType: 'principal_and_interest', loanTermYears: '30',
-      repaymentOverridden: false, weeklyRent: '',
-      councilRatesPA: '', waterRatesPA: '', insurancePA: '', strataPA: '',
-      propertyManagementPct: '', landTaxPA: '', maintenanceBudgetPA: '',
     })
     setShowForm(false)
     setEditingId(null)
@@ -446,14 +883,6 @@ function AssetsStep({ store }: { store: FinanceState }) {
     resetForm()
     setActiveTab(tab)
     setAssetForm(f => ({ ...f, growthRatePA: (DEFAULT_GROWTH[tab] * 100).toFixed(1) }))
-  }
-
-  const updateMortgageField = (updates: Partial<typeof propForm>) => {
-    const next = { ...propForm, ...updates }
-    if (next.hasMortgage && !next.repaymentOverridden) {
-      next.repayment = autoCalcRepayment(next.mortgageBalance, next.interestRate, next.mortgageType, next.loanTermYears)
-    }
-    setPropForm(next)
   }
 
   // -- Asset CRUD --
@@ -546,380 +975,16 @@ function AssetsStep({ store }: { store: FinanceState }) {
     resetForm()
   }
 
-  // -- Property CRUD --
-  const startEditProperty = (prop: typeof properties[0]) => {
-    const linkedMortgage = prop.mortgageId
-      ? liabilities.find(l => l.id === prop.mortgageId)
-      : undefined
-
-    setPropForm({
-      name: prop.name,
-      type: prop.type,
-      address: prop.address || '',
-      currentValue: String(prop.currentValue),
-      growthRatePA: (prop.growthRatePA * 100).toFixed(1),
-      hasMortgage: !!linkedMortgage,
-      mortgageBalance: linkedMortgage ? String(linkedMortgage.currentBalance) : '',
-      interestRate: linkedMortgage ? (linkedMortgage.interestRatePA * 100).toFixed(2) : '',
-      repayment: linkedMortgage ? String(linkedMortgage.minimumRepayment) : '',
-      mortgageType: linkedMortgage?.mortgageType || 'principal_and_interest',
-      loanTermYears: linkedMortgage?.loanTermYears ? String(linkedMortgage.loanTermYears) : '30',
-      repaymentOverridden: false,
-      weeklyRent: prop.weeklyRent ? String(prop.weeklyRent) : '',
-      councilRatesPA: prop.councilRatesPA ? String(prop.councilRatesPA / 4) : '',
-      waterRatesPA: prop.waterRatesPA ? String(prop.waterRatesPA / 4) : '',
-      insurancePA: prop.insurancePA ? String(prop.insurancePA) : '',
-      strataPA: prop.strataPA ? String(prop.strataPA / 4) : '',
-      propertyManagementPct: prop.propertyManagementPct ? String(prop.propertyManagementPct) : '',
-      landTaxPA: prop.landTaxPA ? String(prop.landTaxPA) : '',
-      maintenanceBudgetPA: prop.maintenanceBudgetPA ? String(prop.maintenanceBudgetPA) : '',
-    })
-    setEditingId(prop.id)
-    setShowForm(true)
-  }
-
-  const handleAddProperty = () => {
-    if (!propForm.name || !propForm.currentValue) return
-
-    if (editingId) {
-      const prop = properties.find(p => p.id === editingId)
-      updateProperty(editingId, {
-        name: propForm.name,
-        type: propForm.type,
-        address: propForm.address || undefined,
-        currentValue: parseFloat(propForm.currentValue) || 0,
-        growthRatePA: pctToFraction(propForm.growthRatePA, 1),
-        weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
-        councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4 || undefined,
-        waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4 || undefined,
-        insurancePA: parseFloat(propForm.insurancePA) || undefined,
-        strataPA: (parseFloat(propForm.strataPA) || 0) * 4 || undefined,
-        propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
-        landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
-        maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
-      })
-
-      if (propForm.hasMortgage && propForm.mortgageBalance) {
-        const mortgageData = {
-          name: `${propForm.name} Mortgage`,
-          category: 'mortgage' as const,
-          currentBalance: parseFloat(propForm.mortgageBalance) || 0,
-          interestRatePA: pctToFraction(propForm.interestRate, 2),
-          minimumRepayment: parseFloat(propForm.repayment) || 0,
-          repaymentFrequency: 'monthly' as const,
-          mortgageType: propForm.mortgageType,
-          loanTermYears: parseInt(propForm.loanTermYears) || 30,
-        }
-
-        if (prop?.mortgageId) {
-          updateLiability(prop.mortgageId, mortgageData)
-        } else {
-          addLiability(mortgageData)
-          const liabs = useFinanceStore.getState().liabilities
-          const newMortgageId = liabs[liabs.length - 1]?.id
-          if (newMortgageId) {
-            updateProperty(editingId, { mortgageId: newMortgageId })
-          }
-        }
-      } else if (prop?.mortgageId && !propForm.hasMortgage) {
-        removeLiability(prop.mortgageId)
-        updateProperty(editingId, { mortgageId: undefined })
-      }
-
-      resetForm()
-      return
-    }
-
-    // Adding new property
-    let mortgageId: string | undefined
-    if (propForm.hasMortgage && propForm.mortgageBalance) {
-      const mortData = {
-        name: `${propForm.name} Mortgage`,
-        category: 'mortgage' as const,
-        currentBalance: parseFloat(propForm.mortgageBalance) || 0,
-        interestRatePA: pctToFraction(propForm.interestRate, 2),
-        minimumRepayment: parseFloat(propForm.repayment) || 0,
-        repaymentFrequency: 'monthly' as const,
-        mortgageType: propForm.mortgageType,
-        loanTermYears: parseInt(propForm.loanTermYears) || 30,
-      }
-      addLiability(mortData)
-      const liabs = useFinanceStore.getState().liabilities
-      mortgageId = liabs[liabs.length - 1]?.id
-    }
-
-    addProperty({
-      name: propForm.name,
-      type: propForm.type,
-      address: propForm.address || undefined,
-      currentValue: parseFloat(propForm.currentValue) || 0,
-      growthRatePA: pctToFraction(propForm.growthRatePA, 1),
-      mortgageId,
-      weeklyRent: propForm.type === 'investment' ? (parseFloat(propForm.weeklyRent) || 0) : undefined,
-      councilRatesPA: (parseFloat(propForm.councilRatesPA) || 0) * 4 || undefined,
-      waterRatesPA: (parseFloat(propForm.waterRatesPA) || 0) * 4 || undefined,
-      insurancePA: parseFloat(propForm.insurancePA) || undefined,
-      strataPA: (parseFloat(propForm.strataPA) || 0) * 4 || undefined,
-      propertyManagementPct: propForm.type === 'investment' ? (parseFloat(propForm.propertyManagementPct) || undefined) : undefined,
-      landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
-      maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
-    })
-    resetForm()
-  }
-
-  const handleDeleteProperty = (propId: string) => {
-    const prop = properties.find(p => p.id === propId)
-    if (prop?.mortgageId) removeLiability(prop.mortgageId)
-    removeProperty(propId)
-  }
-
   const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
-  const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
-  const grandTotal = totalAssets + totalProperties
+  const grandTotal = totalAssets
 
-  const tabAssets = activeTab === 'property' ? [] : assets.filter(a => a.category === activeTab)
-  const tabProperties = activeTab === 'property' ? properties : []
-  const isPropertyTab = activeTab === 'property'
+  const tabAssets = assets.filter(a => a.category === activeTab)
 
   const getTabCount = (tab: AssetTab) => {
-    if (tab === 'property') return properties.length
     return assets.filter(a => a.category === tab).length
   }
 
   // -- Render functions for inline editing --
-
-  const renderPropertyForm = () => (
-    <Card className="border-primary/30">
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
-          <Button variant="ghost" size="icon" onClick={resetForm}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Property Name</Label>
-            <Input
-              placeholder="e.g. Family Home"
-              value={propForm.name}
-              onChange={e => setPropForm({ ...propForm, name: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Type</Label>
-            <Select value={propForm.type} onValueChange={(v: 'primary_residence' | 'investment') => setPropForm({ ...propForm, type: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="primary_residence">Primary Residence</SelectItem>
-                <SelectItem value="investment">Investment Property</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Current Value</Label>
-            <CurrencyInput
-              value={propForm.currentValue}
-              onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
-              placeholder="0"
-            />
-          </div>
-
-          {propForm.type === 'investment' && (
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label className="text-xs">Weekly Rent</Label>
-              <CurrencyInput
-                value={propForm.weeklyRent}
-                onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
-                placeholder="0"
-              />
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Info className="w-3 h-3" />
-                This will be automatically added to your income
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Property Running Costs */}
-        <div className="pt-2 border-t border-border/50">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">
-            Property Running Costs (Annual)
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Council Rates ($/quarter)</Label>
-              <CurrencyInput
-                value={propForm.councilRatesPA}
-                onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Water Rates ($/quarter)</Label>
-              <CurrencyInput
-                value={propForm.waterRatesPA}
-                onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Building / Landlord Insurance ($ p.a.)</Label>
-              <CurrencyInput
-                value={propForm.insurancePA}
-                onValueChange={v => setPropForm({ ...propForm, insurancePA: v })}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Strata / Body Corp ($/quarter)</Label>
-              <CurrencyInput
-                value={propForm.strataPA}
-                onValueChange={v => setPropForm({ ...propForm, strataPA: v })}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Maintenance Budget ($ p.a.)</Label>
-              <CurrencyInput
-                value={propForm.maintenanceBudgetPA}
-                onValueChange={v => setPropForm({ ...propForm, maintenanceBudgetPA: v })}
-                placeholder="0"
-              />
-            </div>
-            {propForm.type === 'investment' && (
-              <>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Property Management Fee (%)</Label>
-                  <Input
-                    type="number" step="0.1" min="0" max="20"
-                    value={propForm.propertyManagementPct}
-                    onChange={e => setPropForm({ ...propForm, propertyManagementPct: e.target.value })}
-                    placeholder="e.g. 7"
-                  />
-                  {propForm.weeklyRent && propForm.propertyManagementPct && (
-                    <p className="text-xs text-muted-foreground">
-                      &asymp; {formatCurrency(parseFloat(propForm.weeklyRent) * 52 * parseFloat(propForm.propertyManagementPct) / 100 / 12)}/mo
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Land Tax ($ p.a.)</Label>
-                  <CurrencyInput
-                    value={propForm.landTaxPA}
-                    onValueChange={v => setPropForm({ ...propForm, landTaxPA: v })}
-                    placeholder="0"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-            <Info className="w-3 h-3" />
-            These will automatically appear in your monthly expenses
-          </p>
-        </div>
-
-        {/* Mortgage section */}
-        <div className="pt-2 border-t border-border/50">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={propForm.hasMortgage}
-              onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span className="text-sm font-medium">This property has a mortgage</span>
-          </label>
-
-          {propForm.hasMortgage && (
-            <div className="space-y-3 mt-3 ml-7">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Info className="w-3 h-3" />
-                Mortgage details will appear in the Debts section and repayments in your monthly expenses
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Loan Type</Label>
-                  <Select
-                    value={propForm.mortgageType}
-                    onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
-                      <SelectItem value="interest_only">Interest Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {propForm.mortgageType === 'principal_and_interest' && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Loan Term (years)</Label>
-                    <Input
-                      type="number" min="1" max="40"
-                      value={propForm.loanTermYears}
-                      onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Mortgage Balance</Label>
-                  <CurrencyInput
-                    value={propForm.mortgageBalance}
-                    onValueChange={v => updateMortgageField({ mortgageBalance: v })}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Interest Rate (% p.a.)</Label>
-                  <Input
-                    type="number" step="0.01" min="0" max="30"
-                    value={propForm.interestRate}
-                    onChange={e => updateMortgageField({ interestRate: e.target.value })}
-                    onBlur={e => {
-                      const clamped = parseFloat(e.target.value || '0').toFixed(2)
-                      updateMortgageField({ interestRate: clamped })
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  Min. Monthly Repayment
-                  {!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
-                </Label>
-                <CurrencyInput
-                  value={propForm.repayment}
-                  onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
-                  placeholder="0"
-                />
-                {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
-                  <button
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => {
-                      const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
-                      setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
-                    }}
-                  >
-                    Reset to calculated amount
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
-          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
-        </Button>
-      </CardContent>
-    </Card>
-  )
 
   const renderAssetForm = () => (
     <Card className="border-primary/30">
@@ -1024,7 +1089,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     <div className="space-y-6">
       <StepHeader
         title="What do you own?"
-        description="Add all your assets: savings, investments, super, vehicles, and property."
+        description="Add your savings, investments, super, vehicles, and other assets."
         icon={Wallet}
       />
 
@@ -1067,78 +1132,8 @@ function AssetsStep({ store }: { store: FinanceState }) {
         })}
       </div>
 
-      {/* Property tab content */}
-      {isPropertyTab && (
-        <div className="space-y-4">
-          {tabProperties.length > 0 && (
-            <div className="space-y-2">
-              {tabProperties.map(prop => {
-                const linkedMortgage = prop.mortgageId
-                  ? liabilities.find(l => l.id === prop.mortgageId)
-                  : undefined
-                return (
-                  <div key={prop.id} className="space-y-2">
-                    <Card className="card-hover">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                            {prop.type === 'primary_residence' ? (
-                              <Home className="w-5 h-5 text-sky-500" />
-                            ) : (
-                              <Building2 className="w-5 h-5 text-sky-500" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium">{prop.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
-                              {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
-                              {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                          <Button variant="ghost" size="icon" onClick={() => startEditProperty(prop)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProperty(prop.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    {editingId === prop.id && showForm && renderPropertyForm()}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Property form — only at bottom for NEW items */}
-          {showForm && !editingId ? (
-            renderPropertyForm()
-          ) : !showForm && (
-            <button
-              onClick={() => { resetForm(); setShowForm(true) }}
-              className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="font-medium">{properties.length > 0 ? 'Add Another Property' : 'Add a Property'}</span>
-            </button>
-          )}
-
-          {properties.length === 0 && !showForm && (
-            <p className="text-center text-sm text-muted-foreground">
-              No property? No worries — switch to another asset type or hit <strong>Continue</strong>.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Non-property tab content */}
-      {!isPropertyTab && (
-        <div className="space-y-4">
+      {/* Asset tab content */}
+      <div className="space-y-4">
           {tabAssets.length > 0 && (
             <div className="space-y-2">
               {tabAssets.map(asset => {
@@ -1190,12 +1185,11 @@ function AssetsStep({ store }: { store: FinanceState }) {
             </button>
           )}
         </div>
-      )}
     </div>
   )
 }
 
-// -- Step 3: Liabilities --
+// __LIAB_START__
 
 function LiabilitiesStep({ store }: { store: FinanceState }) {
   const { liabilities, addLiability, removeLiability, updateLiability } = store
@@ -1210,7 +1204,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     repaymentOverridden: false,
   })
 
-  const isMortgageCategory = (cat: LiabilityCategory) => cat === 'mortgage' || cat === 'home_loan'
+  const isMortgageCategory = (cat: LiabilityCategory) => cat === 'mortgage' || cat === 'home_loan' || cat === 'personal_loan'
 
   const resetForm = () => {
     setForm({ name: '', category: 'personal_loan', currentBalance: '', interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly', mortgageType: 'principal_and_interest', loanTermYears: '30', repaymentOverridden: false })

@@ -12,7 +12,7 @@ export function AssetBreakdown({ data, onClick }: AssetBreakdownProps) {
   const total = data.reduce((s, d) => s + d.value, 0)
 
   return (
-    <Card className="rounded-xl bg-card overflow-hidden card-hover h-full flex flex-col cursor-pointer" onClick={onClick}>
+    <Card className={`rounded-xl bg-card overflow-hidden card-hover h-full flex flex-col ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">Asset Breakdown</CardTitle>
       </CardHeader>

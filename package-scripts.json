@@ -1,0 +1,1 @@
+{"scripts": {"patch": "node scripts/patch-wizard.mjs"}}

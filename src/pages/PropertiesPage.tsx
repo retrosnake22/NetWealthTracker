@@ -299,6 +299,8 @@ export function PropertiesPage() {
           {properties.map(prop => {
             const mortgage = getMortgage(prop.mortgageId)
             const equity = prop.currentValue - (mortgage?.currentBalance ?? 0)
+            const equityPct = prop.currentValue > 0 ? (equity / prop.currentValue) * 100 : 100
+            const lvr = prop.currentValue > 0 && mortgage ? (mortgage.currentBalance / prop.currentValue) * 100 : 0
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
             return (
@@ -333,6 +335,10 @@ export function PropertiesPage() {
                             <p className="text-xs text-muted-foreground">Equity</p>
                             <p className="text-xl font-bold tabular-nums text-blue-400">{formatCurrency(equity)}</p>
                           </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Equity %</p>
+                            <p className="text-lg font-semibold tabular-nums">{equityPct.toFixed(1)}%</p>
+                          </div>
                           {isInvestment && prop.weeklyRent && (
                             <div>
                               <p className="text-xs text-muted-foreground">Rent</p>
@@ -352,6 +358,32 @@ export function PropertiesPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* LVR / Equity bar */}
+                        {mortgage && prop.currentValue > 0 && (
+                          <div className="mt-4 space-y-1.5">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>LVR: {lvr.toFixed(1)}%</span>
+                              <span className={lvr > 80 ? 'text-red-400' : lvr > 60 ? 'text-amber-400' : 'text-emerald-400'}>
+                                {lvr > 80 ? 'High LVR' : lvr > 60 ? 'Moderate' : 'Healthy'}
+                              </span>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                              <div
+                                className={`h-full rounded-l-full transition-all ${lvr > 80 ? 'bg-red-400' : lvr > 60 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                                style={{ width: `${Math.min(lvr, 100)}%` }}
+                              />
+                              <div
+                                className="h-full bg-blue-500/40 rounded-r-full transition-all"
+                                style={{ width: `${Math.max(100 - lvr, 0)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                              <span>Debt {lvr.toFixed(0)}%</span>
+                              <span>Equity {equityPct.toFixed(0)}%</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(prop)}>

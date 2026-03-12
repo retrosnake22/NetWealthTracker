@@ -38,7 +38,7 @@ function NavLink({ to, label }: { to: string; label: string }) {
 }
 
 export function KpiBreakdownDialog({ open, onClose }: Props) {
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, userProfile } = useFinanceStore()
 
   const totalAssets = calculateTotalAssets(assets, properties)
   const totalLiabilities = calculateTotalLiabilities(liabilities)
@@ -47,7 +47,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   const netWealthExclSuper = netWealth - superAssets
 
   // Use shared metrics so figures always match the dashboard
-  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals)
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
   const {
     rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
