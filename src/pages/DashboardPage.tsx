@@ -165,7 +165,7 @@ function KpiCard({
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
 
@@ -250,6 +250,8 @@ export function DashboardPage() {
   // Projection assumption labels
   const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
   const stockGrowth = ((projectionSettings.stockGrowthOverride ?? 0.07) * 100).toFixed(0)
+
+  const showBudgetBanner = (userProfile?.budgetMode ?? 'estimate') === 'estimate' && !(userProfile?.dismissedNotifications ?? []).includes('dashboard-budget-banner')
 
   const widgets: Record<string, React.ReactNode> = {
     hero: (
@@ -336,7 +338,7 @@ export function DashboardPage() {
 
   return (
     <>
-      {(userProfile?.budgetMode ?? 'estimate') === 'estimate' && (
+      {showBudgetBanner && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3 animate-fade-up">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -344,9 +346,17 @@ export function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">
               Your expenses are based on a monthly estimate. Activate the detailed budget in Living Expenses for category-level tracking.
             </p>
-            <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400 mt-2">
-              Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
+            <div className="flex items-center gap-4 mt-2">
+              <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400">
+                Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+              <button
+                onClick={() => dismissNotification('dashboard-budget-banner')}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}
