@@ -18,13 +18,14 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
   council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
   security: 'Security', home_improvements: 'Home Improvements / Renovations',
-  repairs_maintenance: 'Repairs & Maintenance', gardening: 'Gardening',
+  repairs_maintenance: 'Repairs & Maintenance', gardening: 'Gardening', home_insurance: 'Home Insurance',
   property_management: 'Property Management', land_tax: 'Land Tax',
   maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
   insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   insurance_other: 'Other Insurance',
-  utilities: 'Utilities', groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
+  electricity: 'Electricity', water: 'Water', rates: 'Rates',
+  groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
   medical: 'Medical', pharmacy: 'Pharmacy', pet_expenses: 'Pet Costs', school_costs: 'School Costs',
   subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
   clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
@@ -36,7 +37,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 
 // Living expense categories grouped (excludes property-linked ones)
 const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'utilities', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
+  { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'electricity', 'water', 'rates', 'home_insurance', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
   { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'insurance_other'] },
   { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
   { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },

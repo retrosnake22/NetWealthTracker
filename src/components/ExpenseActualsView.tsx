@@ -8,7 +8,7 @@ import { formatCurrency } from '@/lib/format'
 import type { ExpenseCategory } from '@/types/models'
 
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Housing', icon: '🏡', categories: ['rent', 'utilities', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
+  { label: 'Housing', icon: '🏡', categories: ['rent', 'electricity', 'water', 'rates', 'home_insurance', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
   { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'insurance_other'] },
   { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
   { label: 'Lifestyle', icon: '✨', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },
