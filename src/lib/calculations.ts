@@ -324,7 +324,9 @@ export function projectNetWealth(
   allocations: SurplusAllocation[],
   years: number,
   propertyGrowthOverride?: number,
-  stockGrowthOverride?: number
+  stockGrowthOverride?: number,
+  budgetMode?: BudgetMode,
+  estimatedMonthlyExpenses?: number
 ): ProjectionPoint[] {
   const points: ProjectionPoint[] = []
   const months = years * 12
@@ -354,7 +356,11 @@ export function projectNetWealth(
   const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
   const cashAssets = (assets.filter(a => a.category === 'cash') as CashAsset[])
   const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary) / 12
-  const monthlySurplus = calculateMonthlyCashflow(incomes, budgets, properties, liabilities) + negGearingBenefitMonthly
+  // When using estimate mode, replace budget-based expenses with the flat estimate
+    const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
+    const monthlyExpenseTotal = useEstimate ? estimatedMonthlyExpenses! : calculateMonthlyExpenses(budgets)
+    const propertyExpenses = calculateMonthlyPropertyExpenses(properties, liabilities)
+    const monthlySurplus = calculateMonthlyIncome(incomes) - monthlyExpenseTotal - propertyExpenses + negGearingBenefitMonthly
 
   for (let m = 0; m <= months; m++) {
     if (m % 12 === 0) {

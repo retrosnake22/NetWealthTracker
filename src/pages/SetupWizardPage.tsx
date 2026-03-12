@@ -220,7 +220,7 @@ export function SetupWizardPage() {
               <ArrowLeft className="w-4 h-4" /> Back
             </Button>
             <Button onClick={goNext} className="gap-2">
-              Continue <ArrowRight className="w-4 h-4" />
+              {currentStep === STEPS.length - 2 ? <><Check className="w-4 h-4" /> Finish</> : <>Continue <ArrowRight className="w-4 h-4" /></>}
             </Button>
           </div>
         </div>

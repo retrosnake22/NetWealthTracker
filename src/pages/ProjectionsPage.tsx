@@ -10,7 +10,7 @@ import { projectNetWealth } from '@/lib/calculations'
 export function ProjectionsPage() {
   const {
     assets, properties, liabilities, incomes, expenseBudgets,
-    projectionSettings, updateProjectionSettings,
+    projectionSettings, updateProjectionSettings, userProfile,
   } = useFinanceStore()
 
   const allocations = projectionSettings.surplusAllocations
@@ -24,7 +24,9 @@ export function ProjectionsPage() {
     allocations,
     projectionSettings.projectionYears,
     propertyGrowth,
-    stockGrowth
+    stockGrowth,
+    userProfile?.budgetMode,
+    userProfile?.estimatedMonthlyExpenses
   )
 
   const finalPoint = data[data.length - 1]

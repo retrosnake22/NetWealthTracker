@@ -206,7 +206,9 @@ export function DashboardPage() {
     projectionSettings.surplusAllocations,
     projectionSettings.projectionYears,
     projectionSettings.propertyGrowthOverride,
-    projectionSettings.stockGrowthOverride
+    projectionSettings.stockGrowthOverride,
+    userProfile?.budgetMode,
+    userProfile?.estimatedMonthlyExpenses
   )
 
   // Asset breakdown for pie chart
