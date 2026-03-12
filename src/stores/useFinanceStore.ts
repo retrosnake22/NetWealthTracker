@@ -170,7 +170,9 @@ export const useFinanceStore = create<FinanceState>()(
         assets: state.assets.map(a => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
       removeAsset: (id) => set((state) => ({
-        assets: state.assets.filter(a => a.id !== id)
+        assets: state.assets.filter(a => a.id !== id),
+        // Cascade: remove any expense budgets linked to this asset (e.g. vehicle loan/lease repayments)
+        expenseBudgets: state.expenseBudgets.filter(b => b.linkedAssetId !== id),
       })),
 
       // Properties
@@ -191,9 +193,20 @@ export const useFinanceStore = create<FinanceState>()(
       updateLiability: (id, updates) => set((state) => ({
         liabilities: state.liabilities.map(l => l.id === id ? { ...l, ...updates, updatedAt: now() } : l)
       })),
-      removeLiability: (id) => set((state) => ({
-        liabilities: state.liabilities.filter(l => l.id !== id)
-      })),
+      removeLiability: (id) => set((state) => {
+        const liability = state.liabilities.find(l => l.id === id)
+        const result: Partial<FinanceState> = {
+          liabilities: state.liabilities.filter(l => l.id !== id),
+        }
+        // Cascade: if removing a car loan or lease liability, also remove its auto-generated expense budget
+        if (liability && (liability.category === 'car_loan')) {
+          const loanName = liability.name
+          result.expenseBudgets = state.expenseBudgets.filter(b =>
+            !(b.label === `${loanName} Repayment` || b.label.endsWith('Car Loan Repayment') && b.label.startsWith(loanName.replace(' Car Loan', '')))
+          )
+        }
+        return result
+      }),
 
       // Income
       addIncome: (income) => set((state) => ({

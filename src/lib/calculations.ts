@@ -357,7 +357,7 @@ export function projectNetWealth(
       const totalL = Array.from(liabilityValues.values()).reduce((s, v) => s + v, 0)
       points.push({
         month: m,
-        label: m === 0 ? 'Now' : `Year ${m / 12}`,
+        label: m === 0 ? 'Now' : `${new Date().getFullYear() + m / 12}`,
         netWealth: totalA - totalL,
         totalAssets: totalA,
         totalLiabilities: totalL,
