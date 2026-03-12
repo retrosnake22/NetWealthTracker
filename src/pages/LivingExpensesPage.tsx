@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, ChevronDown, ChevronRight, Car } from 'lucide-react'
+import { Check, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useFinanceStore } from '@/stores/useFinanceStore'
@@ -37,54 +36,24 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
 ]
 
 export function LivingExpensesPage() {
-  // Clean up orphaned vehicle expenses on mount
-  useEffect(() => {
-    const { assets: currentAssets, expenseBudgets: currentBudgets, removeExpenseBudget: removeBudget } = useFinanceStore.getState()
-    const assetIds = new Set(currentAssets.map(a => a.id))
-    for (const b of currentBudgets) {
-      if (b.linkedAssetId && !assetIds.has(b.linkedAssetId)) {
-        removeBudget(b.id)
-      }
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget } = useFinanceStore()
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
-  // Separate auto-generated vehicle expenses from manual budget entries
-  const autoVehicleExpenses = useMemo(() => {
-    return expenseBudgets.filter(b =>
-      b.linkedAssetId ||
-      b.label.endsWith('Car Loan Repayment') ||
-      b.label.endsWith('Lease Payment')
-    )
-  }, [expenseBudgets])
-
-  const autoVehicleTotal = useMemo(() =>
-    autoVehicleExpenses.reduce((s, b) => s + b.monthlyBudget, 0),
-    [autoVehicleExpenses]
-  )
-
-  // IDs of auto-generated expenses to exclude from manual budget editor
-  const autoExpenseIds = useMemo(() =>
-    new Set(autoVehicleExpenses.map(b => b.id)),
-    [autoVehicleExpenses]
-  )
-
-  // Build a map from category → existing budget entry (excluding auto-generated ones)
+  // Build a map from category → existing budget entry (excluding auto-generated vehicle expenses)
   const budgetByCategory = useMemo(() => {
     const map = new Map<ExpenseCategory, { id: string; monthlyBudget: number; label: string }>()
     for (const b of expenseBudgets) {
-      // Skip property-linked budgets and auto-generated vehicle expenses
+      // Skip property-linked budgets
       if (b.linkedPropertyId) continue
-      if (autoExpenseIds.has(b.id)) continue
+      // Skip asset-linked budgets and auto-generated vehicle expenses
+      if (b.linkedAssetId) continue
+      if (b.label.endsWith('Car Loan Repayment') || b.label.endsWith('Lease Payment')) continue
       // If multiple entries for same category, keep the first (shouldn't happen but be safe)
       if (!map.has(b.category)) {
         map.set(b.category, { id: b.id, monthlyBudget: b.monthlyBudget, label: b.label })
       }
     }
     return map
-  }, [expenseBudgets, autoExpenseIds])
+  }, [expenseBudgets])
 
   // Track inline edit values: category → string amount
   const [editValues, setEditValues] = useState<Record<string, string>>({})
@@ -150,15 +119,6 @@ export function LivingExpensesPage() {
     setHasChanges(false)
   }, [budgetByCategory])
 
-  const toggleGroup = (label: string) => {
-    setCollapsedGroups(prev => {
-      const next = new Set(prev)
-      if (next.has(label)) next.delete(label)
-      else next.add(label)
-      return next
-    })
-  }
-
   // Summary
   const summary = useMemo(() => {
     let total = 0
@@ -174,11 +134,8 @@ export function LivingExpensesPage() {
       }
     }
 
-    // Include auto-generated vehicle expenses in the total
-    total += autoVehicleTotal
-
     return { total, filledCount, totalCategories }
-  }, [editValues, autoVehicleTotal])
+  }, [editValues])
 
   // Group-level totals
   const groupSummaries = useMemo(() => {
@@ -232,56 +189,6 @@ export function LivingExpensesPage() {
             </Card>
           </div>
 
-          {/* Auto-generated vehicle expenses */}
-          {autoVehicleExpenses.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold">Vehicle Expenses</h2>
-                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                  🔗 Auto-generated
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground -mt-1">
-                These expenses are auto-generated from your vehicle financing setup. Edit them in Assets → Vehicles.
-              </p>
-              <Card className="bg-muted/30 border-dashed">
-                <CardContent className="p-0">
-                  {autoVehicleExpenses.map((expense, idx) => (
-                    <div
-                      key={expense.id}
-                      className={`flex items-center justify-between px-5 py-3.5 ${
-                        idx !== autoVehicleExpenses.length - 1 ? 'border-b border-border/30' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">{expense.label}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {expense.label.includes('Lease') ? 'Lease' : 'Car Loan'} · Transport
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(expense.monthlyBudget)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
-                      </div>
-                    </div>
-                  ))}
-                  {autoVehicleExpenses.length > 1 && (
-                    <div className="flex items-center justify-between px-5 py-3 border-t border-border/50 bg-muted/20">
-                      <span className="text-sm font-medium text-muted-foreground">Total Vehicle Expenses</span>
-                      <div>
-                        <span className="text-sm font-bold tabular-nums">{formatCurrency(autoVehicleTotal)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Save/Reset actions */}
           {hasChanges && (
             <div className="flex items-center gap-3 justify-end">
@@ -296,81 +203,69 @@ export function LivingExpensesPage() {
 
           {/* Inline budget editor grouped by super-category */}
           <div className="space-y-3">
-            {groupSummaries.map(group => {
-              const collapsed = collapsedGroups.has(group.label)
-              return (
-                <Card key={group.label}>
-                  <CardContent className="p-0">
-                    <button
-                      onClick={() => toggleGroup(group.label)}
-                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {collapsed
-                          ? <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        }
-                        <div className="text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{group.icon}</span>
-                            <span className="font-semibold">{group.label}</span>
-                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                              {group.filledCount}/{group.categories.length}
+            {groupSummaries.map(group => (
+              <Card key={group.label}>
+                <CardContent className="p-0">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{group.icon}</span>
+                          <span className="font-semibold">{group.label}</span>
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                            {group.filledCount}/{group.categories.length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold tabular-nums">
+                        {formatCurrency(group.groupTotal)}
+                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border/50">
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2 pl-12">
+                      <span>Category</span>
+                      <span className="text-right">Monthly Budget</span>
+                    </div>
+
+                    {group.categories.map((cat, idx) => {
+                      const value = editValues[cat] || ''
+                      const hasValue = parseFloat(value) > 0
+
+                      return (
+                        <div
+                          key={cat}
+                          className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                            idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`text-sm truncate ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
+                              {CATEGORY_LABELS[cat]}
                             </span>
                           </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums">
-                          {formatCurrency(group.groupTotal)}
-                          <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
-                      </div>
-                    </button>
-
-                    {!collapsed && (
-                      <div className="border-t border-border/50">
-                        {/* Column headers */}
-                        <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2 text-xs text-muted-foreground border-b border-border/30 gap-2 pl-12">
-                          <span>Category</span>
-                          <span className="text-right">Monthly Budget</span>
-                        </div>
-
-                        {group.categories.map((cat, idx) => {
-                          const value = editValues[cat] || ''
-                          const hasValue = parseFloat(value) > 0
-
-                          return (
-                            <div
-                              key={cat}
-                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                                idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className={`text-sm truncate ${hasValue ? 'font-medium' : 'text-muted-foreground'}`}>
-                                  {CATEGORY_LABELS[cat]}
-                                </span>
-                              </div>
-                              <div className="flex justify-end">
-                                <div className="w-[140px] sm:w-[160px]">
-                                  <CurrencyInput
-                                    value={value}
-                                    onChange={(v) => handleValueChange(cat, v)}
-                                    placeholder="—"
-                                  />
-                                </div>
-                              </div>
+                          <div className="flex justify-end">
+                            <div className="w-[140px] sm:w-[160px]">
+                              <CurrencyInput
+                                value={value}
+                                onChange={(v) => handleValueChange(cat, v)}
+                                placeholder="—"
+                              />
                             </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Sticky save bar */}
