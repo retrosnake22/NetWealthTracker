@@ -450,7 +450,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
   const updateMortgageField = (updates: Partial<typeof propForm>) => {
     const next = { ...propForm, ...updates }
-    if (!next.repaymentOverridden && next.hasMortgage) {
+    if (next.hasMortgage && !next.repaymentOverridden) {
       next.repayment = autoCalcRepayment(next.mortgageBalance, next.interestRate, next.mortgageType, next.loanTermYears)
     }
     setPropForm(next)
@@ -664,15 +664,12 @@ function AssetsStep({ store }: { store: FinanceState }) {
       landTaxPA: propForm.type === 'investment' ? (parseFloat(propForm.landTaxPA) || undefined) : undefined,
       maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || undefined,
     })
-
     resetForm()
   }
 
   const handleDeleteProperty = (propId: string) => {
     const prop = properties.find(p => p.id === propId)
-    if (prop?.mortgageId) {
-      removeLiability(prop.mortgageId)
-    }
+    if (prop?.mortgageId) removeLiability(prop.mortgageId)
     removeProperty(propId)
   }
 
@@ -688,6 +685,340 @@ function AssetsStep({ store }: { store: FinanceState }) {
     if (tab === 'property') return properties.length
     return assets.filter(a => a.category === tab).length
   }
+
+  // -- Render functions for inline editing --
+
+  const renderPropertyForm = () => (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
+          <Button variant="ghost" size="icon" onClick={resetForm}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Property Name</Label>
+            <Input
+              placeholder="e.g. Family Home"
+              value={propForm.name}
+              onChange={e => setPropForm({ ...propForm, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type</Label>
+            <Select value={propForm.type} onValueChange={(v: 'primary_residence' | 'investment') => setPropForm({ ...propForm, type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="primary_residence">Primary Residence</SelectItem>
+                <SelectItem value="investment">Investment Property</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Current Value</Label>
+            <CurrencyInput
+              value={propForm.currentValue}
+              onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
+              placeholder="0"
+            />
+          </div>
+
+          {propForm.type === 'investment' && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs">Weekly Rent</Label>
+              <CurrencyInput
+                value={propForm.weeklyRent}
+                onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                This will be automatically added to your income
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Property Running Costs */}
+        <div className="pt-2 border-t border-border/50">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">
+            Property Running Costs (Annual)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Council Rates ($/quarter)</Label>
+              <CurrencyInput
+                value={propForm.councilRatesPA}
+                onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Water Rates ($/quarter)</Label>
+              <CurrencyInput
+                value={propForm.waterRatesPA}
+                onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Building / Landlord Insurance ($ p.a.)</Label>
+              <CurrencyInput
+                value={propForm.insurancePA}
+                onValueChange={v => setPropForm({ ...propForm, insurancePA: v })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Strata / Body Corp ($/quarter)</Label>
+              <CurrencyInput
+                value={propForm.strataPA}
+                onValueChange={v => setPropForm({ ...propForm, strataPA: v })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Maintenance Budget ($ p.a.)</Label>
+              <CurrencyInput
+                value={propForm.maintenanceBudgetPA}
+                onValueChange={v => setPropForm({ ...propForm, maintenanceBudgetPA: v })}
+                placeholder="0"
+              />
+            </div>
+            {propForm.type === 'investment' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Property Management Fee (%)</Label>
+                  <Input
+                    type="number" step="0.1" min="0" max="20"
+                    value={propForm.propertyManagementPct}
+                    onChange={e => setPropForm({ ...propForm, propertyManagementPct: e.target.value })}
+                    placeholder="e.g. 7"
+                  />
+                  {propForm.weeklyRent && propForm.propertyManagementPct && (
+                    <p className="text-xs text-muted-foreground">
+                      &asymp; {formatCurrency(parseFloat(propForm.weeklyRent) * 52 * parseFloat(propForm.propertyManagementPct) / 100 / 12)}/mo
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Land Tax ($ p.a.)</Label>
+                  <CurrencyInput
+                    value={propForm.landTaxPA}
+                    onValueChange={v => setPropForm({ ...propForm, landTaxPA: v })}
+                    placeholder="0"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+            <Info className="w-3 h-3" />
+            These will automatically appear in your monthly expenses
+          </p>
+        </div>
+
+        {/* Mortgage section */}
+        <div className="pt-2 border-t border-border/50">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={propForm.hasMortgage}
+              onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-sm font-medium">This property has a mortgage</span>
+          </label>
+
+          {propForm.hasMortgage && (
+            <div className="space-y-3 mt-3 ml-7">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Mortgage details will appear in the Debts section and repayments in your monthly expenses
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Loan Type</Label>
+                  <Select
+                    value={propForm.mortgageType}
+                    onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                      <SelectItem value="interest_only">Interest Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {propForm.mortgageType === 'principal_and_interest' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Loan Term (years)</Label>
+                    <Input
+                      type="number" min="1" max="40"
+                      value={propForm.loanTermYears}
+                      onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Mortgage Balance</Label>
+                  <CurrencyInput
+                    value={propForm.mortgageBalance}
+                    onValueChange={v => updateMortgageField({ mortgageBalance: v })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Interest Rate (% p.a.)</Label>
+                  <Input
+                    type="number" step="0.01" min="0" max="30"
+                    value={propForm.interestRate}
+                    onChange={e => updateMortgageField({ interestRate: e.target.value })}
+                    onBlur={e => {
+                      const clamped = parseFloat(e.target.value || '0').toFixed(2)
+                      updateMortgageField({ interestRate: clamped })
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Min. Monthly Repayment
+                  {!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
+                </Label>
+                <CurrencyInput
+                  value={propForm.repayment}
+                  onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
+                  placeholder="0"
+                />
+                {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => {
+                      const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
+                      setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
+                    }}
+                  >
+                    Reset to calculated amount
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
+          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+
+  const renderAssetForm = () => (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{editingId ? `Edit ${ASSET_LABELS[activeTab]}` : `Add ${ASSET_LABELS[activeTab]}`}</h3>
+          <Button variant="ghost" size="icon" onClick={resetForm}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs">Name</Label>
+            <Input
+              placeholder={activeTab === 'cash' ? 'e.g. Emergency Fund' : activeTab === 'stocks' ? 'e.g. VDHG Portfolio' : activeTab === 'super' ? 'e.g. AustralianSuper' : activeTab === 'vehicles' ? 'e.g. 2020 Toyota RAV4' : 'e.g. Collectibles'}
+              value={assetForm.name}
+              onChange={e => setAssetForm({ ...assetForm, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Current Value</Label>
+            <CurrencyInput
+              value={assetForm.currentValue}
+              onValueChange={v => setAssetForm({ ...assetForm, currentValue: v })}
+              placeholder="0"
+            />
+          </div>
+          {activeTab === 'cash' && (
+            <div className="space-y-3 sm:col-span-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Account Type</Label>
+                <div className="flex gap-2">
+                  {(['cash', 'bank'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setAssetForm({ ...assetForm, cashType: t as any, interestRate: t === 'bank' ? '' : '0' })}
+                      className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                        (assetForm as any).cashType === t || (!((assetForm as any).cashType) && t === 'bank')
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/30 text-muted-foreground'
+                      }`}
+                    >
+                      {t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {((assetForm as any).cashType === 'bank' || !(assetForm as any).cashType) && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Bank Name</Label>
+                    <Input
+                      placeholder="e.g. Commonwealth Bank"
+                      value={(assetForm as any).bankName || ''}
+                      onChange={e => setAssetForm({ ...assetForm, bankName: e.target.value } as any)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Interest Rate (% p.a.)</Label>
+                    <Input
+                      type="number" step="0.1" min="0" max="20"
+                      value={assetForm.interestRate}
+                      onChange={e => setAssetForm({ ...assetForm, interestRate: e.target.value })}
+                      placeholder="e.g. 3.0"
+                    />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Interest income will be included in your income calculations
+                    </p>
+                  </div>
+                </>
+              )}
+              {(assetForm as any).cashType === 'cash' && (
+                <p className="text-xs text-muted-foreground">
+                  No interest is calculated for physical cash holdings.
+                </p>
+              )}
+            </div>
+          )}
+          {/* Vehicle financing fields */}
+          {activeTab === 'vehicles' && (
+            <div className="sm:col-span-2">
+              <VehicleFinancingFields
+                vehicleFinancing={assetForm.vehicleFinancing}
+                loanBalance={assetForm.loanBalance}
+                loanRate={assetForm.loanRate}
+                loanRepayment={assetForm.loanRepayment}
+                leasePayment={assetForm.leasePayment}
+                onChange={updates => setAssetForm(prev => ({ ...prev, ...updates }))}
+              />
+            </div>
+          )}
+        </div>
+        <Button onClick={handleAddAsset} disabled={!assetForm.name || !assetForm.currentValue} className="w-full gap-2">
+          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add {ASSET_LABELS[activeTab]}</>}
+        </Button>
+      </CardContent>
+    </Card>
+  )
 
   return (
     <div className="space-y-6">
@@ -746,274 +1077,48 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   ? liabilities.find(l => l.id === prop.mortgageId)
                   : undefined
                 return (
-                  <Card key={prop.id} className="card-hover">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                          {prop.type === 'primary_residence' ? (
-                            <Home className="w-5 h-5 text-sky-500" />
-                          ) : (
-                            <Building2 className="w-5 h-5 text-sky-500" />
-                          )}
+                  <div key={prop.id} className="space-y-2">
+                    <Card className="card-hover">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                            {prop.type === 'primary_residence' ? (
+                              <Home className="w-5 h-5 text-sky-500" />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-sky-500" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{prop.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
+                              {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
+                              {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{prop.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {prop.type === 'primary_residence' ? 'Primary Residence' : 'Investment'}
-                            {prop.weeklyRent ? ` · ${formatCurrency(prop.weeklyRent)}/wk rent` : ''}
-                            {linkedMortgage ? ` · ${linkedMortgage.mortgageType === 'interest_only' ? 'IO' : 'P&I'} ${formatCurrency(linkedMortgage.minimumRepayment)}/mo` : ''}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
+                          <Button variant="ghost" size="icon" onClick={() => startEditProperty(prop)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProperty(prop.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold tabular-nums">{formatCurrency(prop.currentValue)}</p>
-                        <Button variant="ghost" size="icon" onClick={() => startEditProperty(prop)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProperty(prop.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                    {editingId === prop.id && showForm && renderPropertyForm()}
+                  </div>
                 )
               })}
             </div>
           )}
 
-          {/* Property form */}
-          {showForm ? (
-            <Card className="border-primary/30">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{editingId ? 'Edit Property' : 'Add Property'}</h3>
-                  <Button variant="ghost" size="icon" onClick={resetForm}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Property Name</Label>
-                    <Input
-                      placeholder="e.g. Family Home"
-                      value={propForm.name}
-                      onChange={e => setPropForm({ ...propForm, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Type</Label>
-                    <Select value={propForm.type} onValueChange={(v: 'primary_residence' | 'investment') => setPropForm({ ...propForm, type: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="primary_residence">Primary Residence</SelectItem>
-                        <SelectItem value="investment">Investment Property</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Current Value</Label>
-                    <CurrencyInput
-                      value={propForm.currentValue}
-                      onValueChange={v => setPropForm({ ...propForm, currentValue: v })}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  {propForm.type === 'investment' && (
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs">Weekly Rent</Label>
-                      <CurrencyInput
-                        value={propForm.weeklyRent}
-                        onValueChange={v => setPropForm({ ...propForm, weeklyRent: v })}
-                        placeholder="0"
-                      />
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        This will be automatically added to your income
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Property Running Costs */}
-                <div className="pt-2 border-t border-border/50">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">
-                    Property Running Costs (Annual)
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Council Rates ($/quarter)</Label>
-                      <CurrencyInput
-                        value={propForm.councilRatesPA}
-                        onValueChange={v => setPropForm({ ...propForm, councilRatesPA: v })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Water Rates ($/quarter)</Label>
-                      <CurrencyInput
-                        value={propForm.waterRatesPA}
-                        onValueChange={v => setPropForm({ ...propForm, waterRatesPA: v })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Building / Landlord Insurance ($ p.a.)</Label>
-                      <CurrencyInput
-                        value={propForm.insurancePA}
-                        onValueChange={v => setPropForm({ ...propForm, insurancePA: v })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Strata / Body Corp ($/quarter)</Label>
-                      <CurrencyInput
-                        value={propForm.strataPA}
-                        onValueChange={v => setPropForm({ ...propForm, strataPA: v })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Maintenance Budget ($ p.a.)</Label>
-                      <CurrencyInput
-                        value={propForm.maintenanceBudgetPA}
-                        onValueChange={v => setPropForm({ ...propForm, maintenanceBudgetPA: v })}
-                        placeholder="0"
-                      />
-                    </div>
-                    {propForm.type === 'investment' && (
-                      <>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Property Management Fee (%)</Label>
-                          <Input
-                            type="number" step="0.1" min="0" max="20"
-                            value={propForm.propertyManagementPct}
-                            onChange={e => setPropForm({ ...propForm, propertyManagementPct: e.target.value })}
-                            placeholder="e.g. 7"
-                          />
-                          {propForm.weeklyRent && propForm.propertyManagementPct && (
-                            <p className="text-xs text-muted-foreground">
-                              &asymp; {formatCurrency(parseFloat(propForm.weeklyRent) * 52 * parseFloat(propForm.propertyManagementPct) / 100 / 12)}/mo
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Land Tax ($ p.a.)</Label>
-                          <CurrencyInput
-                            value={propForm.landTaxPA}
-                            onValueChange={v => setPropForm({ ...propForm, landTaxPA: v })}
-                            placeholder="0"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-                    <Info className="w-3 h-3" />
-                    These will automatically appear in your monthly expenses
-                  </p>
-                </div>
-
-                {/* Mortgage section */}
-                <div className="pt-2 border-t border-border/50">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={propForm.hasMortgage}
-                      onChange={e => updateMortgageField({ hasMortgage: e.target.checked })}
-                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm font-medium">This property has a mortgage</span>
-                  </label>
-
-                  {propForm.hasMortgage && (
-                    <div className="space-y-3 mt-3 ml-7">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Mortgage details will appear in the Debts section and repayments in your monthly expenses
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Loan Type</Label>
-                          <Select
-                            value={propForm.mortgageType}
-                            onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}
-                          >
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
-                              <SelectItem value="interest_only">Interest Only</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {propForm.mortgageType === 'principal_and_interest' && (
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Loan Term (years)</Label>
-                            <Input
-                              type="number" min="1" max="40"
-                              value={propForm.loanTermYears}
-                              onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Mortgage Balance</Label>
-                          <CurrencyInput
-                            value={propForm.mortgageBalance}
-                            onValueChange={v => updateMortgageField({ mortgageBalance: v })}
-                            placeholder="0"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Interest Rate (% p.a.)</Label>
-                          <Input
-                            type="number" step="0.01" min="0" max="30"
-                            value={propForm.interestRate}
-                            onChange={e => updateMortgageField({ interestRate: e.target.value })}
-                            onBlur={e => {
-                              const clamped = parseFloat(e.target.value || '0').toFixed(2)
-                              updateMortgageField({ interestRate: clamped })
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">
-                          Min. Monthly Repayment
-                          {!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
-                        </Label>
-                        <CurrencyInput
-                          value={propForm.repayment}
-                          onValueChange={v => setPropForm({ ...propForm, repayment: v, repaymentOverridden: true })}
-                          placeholder="0"
-                        />
-                        {propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
-                          <button
-                            className="text-xs text-primary hover:underline"
-                            onClick={() => {
-                              const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
-                              setPropForm({ ...propForm, repayment: calc, repaymentOverridden: false })
-                            }}
-                          >
-                            Reset to calculated amount
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <Button onClick={handleAddProperty} disabled={!propForm.name || !propForm.currentValue} className="w-full gap-2">
-                  {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Property</>}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
+          {/* Property form — only at bottom for NEW items */}
+          {showForm && !editingId ? (
+            renderPropertyForm()
+          ) : !showForm && (
             <button
               onClick={() => { resetForm(); setShowForm(true) }}
               className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
@@ -1025,7 +1130,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
 
           {properties.length === 0 && !showForm && (
             <p className="text-center text-sm text-muted-foreground">
-              No property? No worries \u2014 switch to another asset type or hit <strong>Continue</strong>.
+              No property? No worries — switch to another asset type or hit <strong>Continue</strong>.
             </p>
           )}
         </div>
@@ -1040,134 +1145,42 @@ function AssetsStep({ store }: { store: FinanceState }) {
                 const tabConfig = ASSET_TABS.find(t => t.id === asset.category)!
                 const Icon = tabConfig.icon
                 return (
-                  <Card key={asset.id} className="card-hover">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg ${tabConfig.color} flex items-center justify-center`}>
-                          <Icon className="w-5 h-5" />
+                  <div key={asset.id} className="space-y-2">
+                    <Card className="card-hover">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg ${tabConfig.color} flex items-center justify-center`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{asset.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {ASSET_LABELS[asset.category]}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{asset.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {ASSET_LABELS[asset.category]}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
+                          <Button variant="ghost" size="icon" onClick={() => startEditAsset(asset)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeAsset(asset.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold tabular-nums">{formatCurrency(asset.currentValue)}</p>
-                        <Button variant="ghost" size="icon" onClick={() => startEditAsset(asset)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeAsset(asset.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                    {editingId === asset.id && showForm && renderAssetForm()}
+                  </div>
                 )
               })}
             </div>
           )}
 
-          {/* Simple asset form */}
-          {showForm ? (
-            <Card className="border-primary/30">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{editingId ? `Edit ${ASSET_LABELS[activeTab]}` : `Add ${ASSET_LABELS[activeTab]}`}</h3>
-                  <Button variant="ghost" size="icon" onClick={resetForm}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs">Name</Label>
-                    <Input
-                      placeholder={activeTab === 'cash' ? 'e.g. Emergency Fund' : activeTab === 'stocks' ? 'e.g. VDHG Portfolio' : activeTab === 'super' ? 'e.g. AustralianSuper' : activeTab === 'vehicles' ? 'e.g. 2020 Toyota RAV4' : 'e.g. Collectibles'}
-                      value={assetForm.name}
-                      onChange={e => setAssetForm({ ...assetForm, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Current Value</Label>
-                    <CurrencyInput
-                      value={assetForm.currentValue}
-                      onValueChange={v => setAssetForm({ ...assetForm, currentValue: v })}
-                      placeholder="0"
-                    />
-                  </div>
-                  {activeTab === 'cash' && (
-                    <div className="space-y-3 sm:col-span-2">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Account Type</Label>
-                        <div className="flex gap-2">
-                          {(['cash', 'bank'] as const).map(t => (
-                            <button
-                              key={t}
-                              onClick={() => setAssetForm({ ...assetForm, cashType: t as any, interestRate: t === 'bank' ? '' : '0' })}
-                              className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                                (assetForm as any).cashType === t || (!((assetForm as any).cashType) && t === 'bank')
-                                  ? 'border-primary bg-primary/10 text-primary'
-                                  : 'border-border hover:border-primary/30 text-muted-foreground'
-                              }`}
-                            >
-                              {t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {((assetForm as any).cashType === 'bank' || !(assetForm as any).cashType) && (
-                        <>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Bank Name</Label>
-                            <Input
-                              placeholder="e.g. Commonwealth Bank"
-                              value={(assetForm as any).bankName || ''}
-                              onChange={e => setAssetForm({ ...assetForm, bankName: e.target.value } as any)}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Interest Rate (% p.a.)</Label>
-                            <Input
-                              type="number" step="0.1" min="0" max="20"
-                              value={assetForm.interestRate}
-                              onChange={e => setAssetForm({ ...assetForm, interestRate: e.target.value })}
-                              placeholder="e.g. 3.0"
-                            />
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Info className="w-3 h-3" />
-                              Interest income will be included in your income calculations
-                            </p>
-                          </div>
-                        </>
-                      )}
-                      {(assetForm as any).cashType === 'cash' && (
-                        <p className="text-xs text-muted-foreground">
-                          No interest is calculated for physical cash holdings.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {/* Vehicle financing fields */}
-                  {activeTab === 'vehicles' && (
-                    <div className="sm:col-span-2">
-                      <VehicleFinancingFields
-                        vehicleFinancing={assetForm.vehicleFinancing}
-                        loanBalance={assetForm.loanBalance}
-                        loanRate={assetForm.loanRate}
-                        loanRepayment={assetForm.loanRepayment}
-                        leasePayment={assetForm.leasePayment}
-                        onChange={updates => setAssetForm(prev => ({ ...prev, ...updates }))}
-                      />
-                    </div>
-                  )}
-                </div>
-                <Button onClick={handleAddAsset} disabled={!assetForm.name || !assetForm.currentValue} className="w-full gap-2">
-                  {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add {ASSET_LABELS[activeTab]}</>}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
+          {/* Simple asset form — only at bottom for NEW items */}
+          {showForm && !editingId ? (
+            renderAssetForm()
+          ) : !showForm && (
             <button
               onClick={() => { resetForm(); setShowForm(true) }}
               className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
@@ -1265,6 +1278,124 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
     other: { color: 'text-gray-500 bg-gray-500/10' },
   }
 
+  const renderLiabilityForm = () => (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{editingId ? 'Edit Debt' : 'Add Debt'}</h3>
+          <Button variant="ghost" size="icon" onClick={resetForm}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name</Label>
+            <Input
+              placeholder={isMortgageCategory(form.category) ? 'e.g. ANZ Home Loan' : 'e.g. ANZ Credit Card'}
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type</Label>
+            <Select value={form.category} onValueChange={(v: LiabilityCategory) => updateLoanField({ category: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.entries(LIABILITY_LABELS) as [LiabilityCategory, string][])
+                  .filter(([k]) => k !== 'mortgage')
+                  .map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isMortgageCategory(form.category) && (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Loan Type</Label>
+                <Select
+                  value={form.mortgageType}
+                  onValueChange={(v: MortgageType) => updateLoanField({ mortgageType: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+                    <SelectItem value="interest_only">Interest Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.mortgageType === 'principal_and_interest' && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Loan Term (years)</Label>
+                  <Input
+                    type="number" min="1" max="40"
+                    value={form.loanTermYears}
+                    onChange={e => updateLoanField({ loanTermYears: e.target.value })}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Balance Owing</Label>
+            <CurrencyInput
+              value={form.currentBalance}
+              onValueChange={v => updateLoanField({ currentBalance: v })}
+              placeholder="0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Interest Rate (% p.a.)</Label>
+            <Input
+              type="number" step="0.01" min="0" max="50"
+              value={form.interestRatePA}
+              onChange={e => updateLoanField({ interestRatePA: e.target.value })}
+              onBlur={e => updateLoanField({ interestRatePA: parseFloat(e.target.value || '0').toFixed(2) })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              Min. Monthly Repayment
+              {isMortgageCategory(form.category) && !form.repaymentOverridden && form.minimumRepayment ? ' (auto-calculated)' : ''}
+            </Label>
+            <CurrencyInput
+              value={form.minimumRepayment}
+              onValueChange={v => setForm({ ...form, minimumRepayment: v, repaymentOverridden: true })}
+              placeholder="0"
+            />
+            {isMortgageCategory(form.category) && form.repaymentOverridden && form.currentBalance && form.interestRatePA && (
+              <button
+                className="text-xs text-primary hover:underline"
+                onClick={() => {
+                  const calc = autoCalcRepayment(form.currentBalance, form.interestRatePA, form.mortgageType, form.loanTermYears)
+                  setForm({ ...form, minimumRepayment: calc, repaymentOverridden: false })
+                }}
+              >
+                Reset to calculated amount
+              </button>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Frequency</Label>
+            <Select value={form.repaymentFrequency} onValueChange={(v: 'weekly' | 'fortnightly' | 'monthly') => setForm({ ...form, repaymentFrequency: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Button onClick={handleAdd} disabled={!form.name || !form.currentBalance} className="w-full gap-2">
+          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Debt</>}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <div className="space-y-6">
       <StepHeader
@@ -1277,29 +1408,32 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">From Properties</p>
           {mortgages.map(m => (
-            <Card key={m.id} className="bg-muted/30">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${LIA_ICONS.mortgage.color} flex items-center justify-center`}>
-                    <Home className="w-5 h-5" />
+            <div key={m.id} className="space-y-2">
+              <Card className="bg-muted/30">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${LIA_ICONS.mortgage.color} flex items-center justify-center`}>
+                      <Home className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{m.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatPercent(m.interestRatePA)} interest &middot; {formatCurrency(m.minimumRepayment)}/month
+                        {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
+                        {m.loanTermYears ? ` · ${m.loanTermYears}yr term` : ''}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{m.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatPercent(m.interestRatePA)} interest &middot; {formatCurrency(m.minimumRepayment)}/month
-                      {m.mortgageType === 'interest_only' ? ' · Interest Only' : ' · P&I'}
-                      {m.loanTermYears ? ` · ${m.loanTermYears}yr term` : ''}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(m)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold tabular-nums text-red-400">{formatCurrency(m.currentBalance)}</p>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(m)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              {editingId === m.id && showForm && renderLiabilityForm()}
+            </div>
           ))}
         </div>
       )}
@@ -1310,28 +1444,31 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Debts</p>
           )}
           {otherDebts.map(lia => (
-            <Card key={lia.id} className="card-hover">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${LIA_ICONS[lia.category].color} flex items-center justify-center`}>
-                    <CreditCard className="w-5 h-5" />
+            <div key={lia.id} className="space-y-2">
+              <Card className="card-hover">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${LIA_ICONS[lia.category].color} flex items-center justify-center`}>
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{lia.name}</p>
+                      <p className="text-xs text-muted-foreground">{LIABILITY_LABELS[lia.category]}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{lia.name}</p>
-                    <p className="text-xs text-muted-foreground">{LIABILITY_LABELS[lia.category]}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold tabular-nums text-red-400">{formatCurrency(lia.currentBalance)}</p>
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(lia)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeLiability(lia.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold tabular-nums text-red-400">{formatCurrency(lia.currentBalance)}</p>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(lia)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeLiability(lia.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              {editingId === lia.id && showForm && renderLiabilityForm()}
+            </div>
           ))}
         </div>
       )}
@@ -1367,123 +1504,7 @@ function LiabilitiesStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {showForm && (
-        <Card className="border-primary/30">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Debt' : 'Add Debt'}</h3>
-              <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Name</Label>
-                <Input
-                  placeholder={isMortgageCategory(form.category) ? 'e.g. ANZ Home Loan' : 'e.g. ANZ Credit Card'}
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Type</Label>
-                <Select value={form.category} onValueChange={(v: LiabilityCategory) => updateLoanField({ category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(LIABILITY_LABELS) as [LiabilityCategory, string][])
-                      .filter(([k]) => k !== 'mortgage')
-                      .map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {isMortgageCategory(form.category) && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Loan Type</Label>
-                    <Select
-                      value={form.mortgageType}
-                      onValueChange={(v: MortgageType) => updateLoanField({ mortgageType: v })}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
-                        <SelectItem value="interest_only">Interest Only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {form.mortgageType === 'principal_and_interest' && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Loan Term (years)</Label>
-                      <Input
-                        type="number" min="1" max="40"
-                        value={form.loanTermYears}
-                        onChange={e => updateLoanField({ loanTermYears: e.target.value })}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Balance Owing</Label>
-                <CurrencyInput
-                  value={form.currentBalance}
-                  onValueChange={v => updateLoanField({ currentBalance: v })}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Interest Rate (% p.a.)</Label>
-                <Input
-                  type="number" step="0.01" min="0" max="50"
-                  value={form.interestRatePA}
-                  onChange={e => updateLoanField({ interestRatePA: e.target.value })}
-                  onBlur={e => updateLoanField({ interestRatePA: parseFloat(e.target.value || '0').toFixed(2) })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  Min. Monthly Repayment
-                  {isMortgageCategory(form.category) && !form.repaymentOverridden && form.minimumRepayment ? ' (auto-calculated)' : ''}
-                </Label>
-                <CurrencyInput
-                  value={form.minimumRepayment}
-                  onValueChange={v => setForm({ ...form, minimumRepayment: v, repaymentOverridden: true })}
-                  placeholder="0"
-                />
-                {isMortgageCategory(form.category) && form.repaymentOverridden && form.currentBalance && form.interestRatePA && (
-                  <button
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => {
-                      const calc = autoCalcRepayment(form.currentBalance, form.interestRatePA, form.mortgageType, form.loanTermYears)
-                      setForm({ ...form, minimumRepayment: calc, repaymentOverridden: false })
-                    }}
-                  >
-                    Reset to calculated amount
-                  </button>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Frequency</Label>
-                <Select value={form.repaymentFrequency} onValueChange={(v: 'weekly' | 'fortnightly' | 'monthly') => setForm({ ...form, repaymentFrequency: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="fortnightly">Fortnightly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Button onClick={handleAdd} disabled={!form.name || !form.currentBalance} className="w-full gap-2">
-              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Debt</>}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {showForm && !editingId && renderLiabilityForm()}
 
       {liabilities.length === 0 && !showForm && (
         <p className="text-center text-sm text-muted-foreground">
@@ -1653,6 +1674,53 @@ function IncomeStep({ store }: { store: FinanceState }) {
 
   const hasAutoIncome = rentalIncomes.length > 0 || interestIncomes.length > 0 || dividendIncomes.length > 0
 
+  const renderIncomeForm = () => (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Other Income'}</h3>
+          <Button variant="ghost" size="icon" onClick={resetForm}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name</Label>
+            <Input
+              placeholder="e.g. Side hustle"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Category</Label>
+            <Select value={form.category} onValueChange={(v: IncomeCategory) => setForm({ ...form, category: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][])
+                  .filter(([k]) => k !== 'salary')
+                  .map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs">Monthly Amount</Label>
+            <CurrencyInput
+              value={form.monthlyAmount}
+              onValueChange={v => setForm({ ...form, monthlyAmount: v })}
+              placeholder="0"
+            />
+          </div>
+        </div>
+        <Button onClick={handleAdd} disabled={!form.name || !form.monthlyAmount} className="w-full gap-2">
+          {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Income</>}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <div className="space-y-6">
       <StepHeader
@@ -1811,31 +1879,34 @@ function IncomeStep({ store }: { store: FinanceState }) {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Other Income</p>
           {nonSalaryIncomes.map((inc: IncomeItem) => (
-            <Card key={inc.id} className="card-hover">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-blue-500" />
+            <div key={inc.id} className="space-y-2">
+              <Card className="card-hover">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{inc.name}</p>
+                      <p className="text-xs text-muted-foreground">{INCOME_LABELS[inc.category]}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{inc.name}</p>
-                    <p className="text-xs text-muted-foreground">{INCOME_LABELS[inc.category]}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
+                      <p className="text-xs text-muted-foreground">/month</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(inc)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeIncome(inc.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <p className="font-semibold tabular-nums">{formatCurrency(inc.monthlyAmount)}</p>
-                    <p className="text-xs text-muted-foreground">/month</p>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(inc)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeIncome(inc.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              {editingId === inc.id && showForm && renderIncomeForm()}
+            </div>
           ))}
         </div>
       )}
@@ -1848,53 +1919,10 @@ function IncomeStep({ store }: { store: FinanceState }) {
         </div>
       )}
 
-      {/* Add/Edit form for other income */}
-      {showForm ? (
-        <Card className="border-primary/30">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{editingId ? 'Edit Income Source' : 'Add Other Income'}</h3>
-              <Button variant="ghost" size="icon" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Name</Label>
-                <Input
-                  placeholder="e.g. Side hustle"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category} onValueChange={(v: IncomeCategory) => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(INCOME_LABELS) as [IncomeCategory, string][])
-                      .filter(([k]) => k !== 'salary')
-                      .map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs">Monthly Amount</Label>
-                <CurrencyInput
-                  value={form.monthlyAmount}
-                  onValueChange={v => setForm({ ...form, monthlyAmount: v })}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <Button onClick={handleAdd} disabled={!form.name || !form.monthlyAmount} className="w-full gap-2">
-              {editingId ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Income</>}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
+      {/* Add/Edit form for other income — only at bottom for NEW items */}
+      {showForm && !editingId ? (
+        renderIncomeForm()
+      ) : !showForm && (
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
           className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
