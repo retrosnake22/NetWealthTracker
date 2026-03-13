@@ -405,7 +405,7 @@ export function DashboardPage() {
                     cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                   />
                   <Bar dataKey="amount" fill="#f59e0b" name="Living Expenses" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="amount" position="top" fill="#a1a1aa" fontSize={12} formatter={(v: number) => `${v.toLocaleString()}`} />
+                    <LabelList dataKey="amount" position="top" fill="#a1a1aa" fontSize={12} formatter={(v: unknown) => `${Number(v).toLocaleString()}`} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
