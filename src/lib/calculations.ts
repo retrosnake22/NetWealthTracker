@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode } from '@/types/models'
+import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -217,16 +217,23 @@ export interface DashboardMetrics {
 function getEffectiveMonthlyExpenses(
   budgets: ExpenseBudget[],
   actuals: ExpenseActual[],
+  expenseCalcSource: ExpenseCalcSource = 'budget',
 ): { total: number; usingActuals: boolean } {
-  if (!actuals || actuals.length === 0) {
-    return { total: calculateMonthlyExpenses(budgets), usingActuals: false }
+  const budgetTotal = calculateMonthlyExpenses(budgets)
+
+  // If user explicitly chose "budget", always use budget total
+  if (expenseCalcSource === 'budget') {
+    return { total: budgetTotal, usingActuals: false }
   }
 
-  // Get current month in YYYY-MM format
+  // User chose "actuals" — use actuals for current month if any exist
+  if (!actuals || actuals.length === 0) {
+    return { total: budgetTotal, usingActuals: false }
+  }
+
   const now = new Date()
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-  // Build map of current month actuals by budgetId
   const actualMap = new Map<string, number>()
   for (const a of actuals) {
     if (a.month === currentMonth) {
@@ -235,10 +242,10 @@ function getEffectiveMonthlyExpenses(
   }
 
   if (actualMap.size === 0) {
-    return { total: calculateMonthlyExpenses(budgets), usingActuals: false }
+    return { total: budgetTotal, usingActuals: false }
   }
 
-  // When actuals exist, use ONLY the actual amounts (no budget fallback)
+  // Sum only actual amounts
   let total = 0
   for (const [, amount] of actualMap) {
     total += amount
@@ -256,6 +263,7 @@ export function calculateDashboardMetrics(
   expenseActuals?: ExpenseActual[],
   budgetMode?: BudgetMode,
   estimatedMonthlyExpenses?: number,
+  expenseCalcSource?: ExpenseCalcSource,
 ): DashboardMetrics {
   // Income: base + rental
   const baseIncome = calculateMonthlyIncome(incomes)
@@ -267,7 +275,7 @@ export function calculateDashboardMetrics(
   // Expenses: if in estimate mode and we have an estimate, use that as base expenses
   // Otherwise use detailed budgets (or actuals if available)
   const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
-  const { total: detailedExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [])
+  const { total: detailedExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [], expenseCalcSource ?? 'budget')
   const baseExpenses = useEstimate ? estimatedMonthlyExpenses! : detailedExpenses
   // Exclude car_loan liabilities — their repayments are tracked as ExpenseBudget items
   const mortgageExpenses = liabilities

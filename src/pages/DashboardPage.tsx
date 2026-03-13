@@ -197,7 +197,7 @@ export function DashboardPage() {
   const netWealth         = netWealthIncSuper - superTotal
 
   // Use shared metrics so dashboard and breakdown dialogs always match
-  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource)
   const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } = metrics
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 

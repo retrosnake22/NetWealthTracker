@@ -4,7 +4,7 @@ import type {
   Asset,
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
   SurplusAllocation, ProjectionSettings, AssetCategory,
-  UserProfile, ProfileType, BudgetMode,
+  UserProfile, ProfileType, BudgetMode, ExpenseCalcSource,
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
@@ -28,6 +28,7 @@ export interface FinanceState {
   setIndividualName: (name: string) => void
   setEstimatedMonthlyExpenses: (amount: number) => void
   setBudgetMode: (mode: BudgetMode) => void
+  setExpenseCalcSource: (source: ExpenseCalcSource) => void
   dismissNotification: (id: string) => void
   addHouseholdMember: (name: string) => void
   updateHouseholdMember: (id: string, name: string) => void
@@ -85,6 +86,7 @@ const DEFAULT_PROFILE: UserProfile = {
   profileType: 'individual',
   householdMembers: [],
   budgetMode: 'estimate',
+  expenseCalcSource: 'budget',
   estimatedMonthlyExpenses: 0,
   dismissedNotifications: [],
 }
@@ -145,6 +147,9 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       setBudgetMode: (mode: BudgetMode) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, budgetMode: mode },
+      })),
+      setExpenseCalcSource: (source: ExpenseCalcSource) => set((state: FinanceState) => ({
+        userProfile: { ...state.userProfile, expenseCalcSource: source },
       })),
       dismissNotification: (id: string) => set((state: FinanceState) => ({
         userProfile: {

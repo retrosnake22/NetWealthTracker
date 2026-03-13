@@ -45,9 +45,10 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
 ]
 
 export function LivingExpensesPage() {
-  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode, setEstimatedMonthlyExpenses } = useFinanceStore()
+  const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode, setEstimatedMonthlyExpenses, setExpenseCalcSource } = useFinanceStore()
   const budgetMode = userProfile?.budgetMode ?? 'estimate'
   const estimatedMonthlyExpenses = userProfile?.estimatedMonthlyExpenses ?? 0
+  const expenseCalcSource = userProfile?.expenseCalcSource ?? 'budget'
 
   // Custom expense dialog state
   const [showCustomExpense, setShowCustomExpense] = useState(false)
@@ -260,9 +261,35 @@ export function LivingExpensesPage() {
             </div>
           )}
           {budgetMode === 'detailed' && (
-            <p className="text-xs text-muted-foreground mt-2.5 pl-0 sm:pl-[108px]">
-              Using your itemised budget total of <span className="font-semibold text-foreground">{formatCurrency(summary.total)}/mo</span> in all cashflow and projection calculations.
-            </p>
+            <div className="mt-3 pl-0 sm:pl-[108px] space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm text-muted-foreground shrink-0">Use in calculations:</span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={expenseCalcSource === 'budget' ? 'default' : 'outline'}
+                    onClick={() => setExpenseCalcSource('budget')}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    Budget Amount
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={expenseCalcSource === 'actuals' ? 'default' : 'outline'}
+                    onClick={() => setExpenseCalcSource('actuals')}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    Actuals
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {expenseCalcSource === 'budget'
+                  ? <>Using your itemised budget total of <span className="font-semibold text-foreground">{formatCurrency(summary.total)}/mo</span> in all cashflow and projection calculations.</>
+                  : <>Using your actual spending for the current month in all cashflow and projection calculations. Falls back to budget if no actuals are entered.</>
+                }
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
