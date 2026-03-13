@@ -313,7 +313,13 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
-            <CashflowBar label="Living Expenses" amount={monthlyExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+            <CashflowBar label="Living Expenses" amount={metrics.baseExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+              {metrics.mortgageExpenses > 0 && (
+                <CashflowBar label="Loan Repayments" amount={metrics.mortgageExpenses} max={cashflowMax} color="bg-red-300" icon={ArrowDownRight} />
+              )}
+              {metrics.propertyRunningCosts > 0 && (
+                <CashflowBar label="Property Costs" amount={metrics.propertyRunningCosts} max={cashflowMax} color="bg-red-200" icon={ArrowDownRight} />
+              )}
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Surplus</span>
