@@ -131,6 +131,9 @@ export function SetupWizardPage() {
   const finishWizard = async () => {
     const { data } = await supabase.auth.getSession()
     const uid = data?.session?.user?.id ?? 'anonymous'
+    // Persist in cloud-synced store (survives across browsers/devices)
+    useFinanceStore.getState().setSetupComplete(true)
+    // Keep localStorage as fast fallback for initial load
     localStorage.setItem(`nwt-wizard-complete-${uid}`, 'true')
     window.location.href = '/'
   }

@@ -159,6 +159,7 @@ export interface UserProfile {
   expenseCalcSource: ExpenseCalcSource
   hideEmptyActuals?: boolean
   dismissedNotifications: string[]
+  setupComplete?: boolean
 }
 
 export interface MonthlySnapshot {

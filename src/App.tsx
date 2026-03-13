@@ -110,12 +110,22 @@ function App() {
     )
   }
 
-  const wizardComplete = localStorage.getItem(`nwt-wizard-complete-${session?.user?.id}`)
+  // Check cloud-synced flag first (survives across browsers), fall back to localStorage
+  const storeSetupComplete = useFinanceStore((s) => s.userProfile.setupComplete)
+  const localStorageFlag = localStorage.getItem(`nwt-wizard-complete-${session?.user?.id}`)
+  const wizardComplete = storeSetupComplete || !!localStorageFlag
+
+  // Migrate: if localStorage says complete but cloud doesn't know yet, sync it up
+  useEffect(() => {
+    if (localStorageFlag && !storeSetupComplete) {
+      useFinanceStore.getState().setSetupComplete(true)
+    }
+  }, [localStorageFlag, storeSetupComplete])
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/setup" element={<SetupWizardPage />} />
+        <Route path="/setup" element={wizardComplete ? <Navigate to="/" replace /> : <SetupWizardPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
