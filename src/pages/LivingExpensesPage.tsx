@@ -44,6 +44,32 @@ const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; cat
   { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'accounting_fees', 'other'] },
 ]
 
+// ─── Section color maps ───
+
+const SECTION_BORDER_COLORS: Record<string, string> = {
+  'Housing': 'border-l-cyan-500',
+  'Insurance': 'border-l-violet-500',
+  'Living': 'border-l-teal-500',
+  'Lifestyle': 'border-l-pink-500',
+  'Financial': 'border-l-amber-500',
+}
+
+const SECTION_TOTAL_COLORS: Record<string, string> = {
+  'Housing': 'text-cyan-600 dark:text-cyan-400',
+  'Insurance': 'text-violet-600 dark:text-violet-400',
+  'Living': 'text-teal-600 dark:text-teal-400',
+  'Lifestyle': 'text-pink-600 dark:text-pink-400',
+  'Financial': 'text-amber-600 dark:text-amber-400',
+}
+
+const SECTION_BADGE_COLORS: Record<string, string> = {
+  'Housing': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400',
+  'Insurance': 'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-400',
+  'Living': 'bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-400',
+  'Lifestyle': 'bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-400',
+  'Financial': 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400',
+}
+
 export function LivingExpensesPage() {
   const { expenseBudgets, addExpenseBudget, updateExpenseBudget, removeExpenseBudget, userProfile, setBudgetMode, setEstimatedMonthlyExpenses, setExpenseCalcSource } = useFinanceStore()
   const budgetMode = userProfile?.budgetMode ?? 'estimate'
@@ -219,83 +245,81 @@ export function LivingExpensesPage() {
       </div>
 
       {/* Mode toggle */}
-      <Card className="border-border/60">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground shrink-0">Tracking mode:</span>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={budgetMode === 'estimate' ? 'default' : 'outline'}
-                onClick={() => handleSetBudgetMode('estimate')}
-                className="gap-1.5"
-              >
-                <Calculator className="h-3.5 w-3.5" />
-                Monthly Estimate
-                {budgetMode === 'estimate' && estimatedMonthlyExpenses > 0 && (
-                  <span className="ml-1 opacity-80">({formatCurrency(estimatedMonthlyExpenses)})</span>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant={budgetMode === 'detailed' ? 'default' : 'outline'}
-                onClick={() => handleSetBudgetMode('detailed')}
-                className="gap-1.5"
-              >
-                <ClipboardList className="h-3.5 w-3.5" />
-                Detailed Budget
-                {budgetMode === 'detailed' && summary.total > 0 && (
-                  <span className="ml-1 opacity-80">({formatCurrency(summary.total)})</span>
-                )}
-              </Button>
-            </div>
+      <div className="rounded-xl border-2 border-primary/20 dark:border-white/10 bg-gradient-to-r from-primary/5 to-transparent dark:from-white/[0.04] dark:to-transparent shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-sm font-medium text-muted-foreground shrink-0">Tracking mode:</span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={budgetMode === 'estimate' ? 'default' : 'outline'}
+              onClick={() => handleSetBudgetMode('estimate')}
+              className="gap-1.5"
+            >
+              <Calculator className="h-3.5 w-3.5" />
+              Monthly Estimate
+              {budgetMode === 'estimate' && estimatedMonthlyExpenses > 0 && (
+                <span className="ml-1 opacity-80">({formatCurrency(estimatedMonthlyExpenses)})</span>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant={budgetMode === 'detailed' ? 'default' : 'outline'}
+              onClick={() => handleSetBudgetMode('detailed')}
+              className="gap-1.5"
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Detailed Budget
+              {budgetMode === 'detailed' && summary.total > 0 && (
+                <span className="ml-1 opacity-80">({formatCurrency(summary.total)})</span>
+              )}
+            </Button>
           </div>
-          {budgetMode === 'estimate' && (
-            <div className="mt-3 pl-0 sm:pl-[108px] flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-sm text-muted-foreground">Monthly estimate used in calculations:</span>
-              <div className="w-48">
-                <CurrencyInput
-                  value={String(estimatedMonthlyExpenses || '')}
-                  onValueChange={(v) => { const n = parseFloat(v); setEstimatedMonthlyExpenses(isNaN(n) ? 0 : n) }}
-                  placeholder="Enter estimate"
-                />
-              </div>
-              <span className="text-xs text-muted-foreground">({formatCurrency((estimatedMonthlyExpenses || 0) * 12)}/year)</span>
+        </div>
+        {budgetMode === 'estimate' && (
+          <div className="mt-3 pl-0 sm:pl-[108px] flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-sm text-muted-foreground">Monthly estimate used in calculations:</span>
+            <div className="w-48">
+              <CurrencyInput
+                value={String(estimatedMonthlyExpenses || '')}
+                onValueChange={(v) => { const n = parseFloat(v); setEstimatedMonthlyExpenses(isNaN(n) ? 0 : n) }}
+                placeholder="Enter estimate"
+              />
             </div>
-          )}
-          {budgetMode === 'detailed' && (
-            <div className="mt-3 pl-0 sm:pl-[108px] space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-sm text-muted-foreground shrink-0">Use in calculations:</span>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={expenseCalcSource === 'budget' ? 'default' : 'outline'}
-                    onClick={() => setExpenseCalcSource('budget')}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    Budget Amount
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={expenseCalcSource === 'actuals' ? 'default' : 'outline'}
-                    onClick={() => setExpenseCalcSource('actuals')}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    Actuals
-                  </Button>
-                </div>
+            <span className="text-xs text-muted-foreground">({formatCurrency((estimatedMonthlyExpenses || 0) * 12)}/year)</span>
+          </div>
+        )}
+        {budgetMode === 'detailed' && (
+          <div className="mt-3 pl-0 sm:pl-[108px] space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm text-muted-foreground shrink-0">Use in calculations:</span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={expenseCalcSource === 'budget' ? 'default' : 'outline'}
+                  onClick={() => setExpenseCalcSource('budget')}
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  Budget Amount
+                </Button>
+                <Button
+                  size="sm"
+                  variant={expenseCalcSource === 'actuals' ? 'default' : 'outline'}
+                  onClick={() => setExpenseCalcSource('actuals')}
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  Actuals
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {expenseCalcSource === 'budget'
-                  ? <>Using your itemised budget total of <span className="font-semibold text-foreground">{formatCurrency(summary.total)}/mo</span> in all cashflow and projection calculations.</>
-                  : <>Using your actual spending for the current month in all cashflow and projection calculations. Falls back to budget if no actuals are entered.</>
-                }
-              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground">
+              {expenseCalcSource === 'budget'
+                ? <>Using your itemised budget total of <span className="font-semibold text-foreground">{formatCurrency(summary.total)}/mo</span> in all cashflow and projection calculations.</>
+                : <>Using your actual spending for the current month in all cashflow and projection calculations. Falls back to budget if no actuals are entered.</>
+              }
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Only show detailed budget & actuals tabs when in detailed mode */}
       {budgetMode === 'detailed' && (
@@ -318,7 +342,7 @@ export function LivingExpensesPage() {
                     <Plus className="h-3.5 w-3.5" /> Add Custom Expense
                   </Button>
                 ) : (
-                  <Card className="w-full">
+                  <Card className="w-full dark:bg-white/[0.04]">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-sm">Add Custom Expense</h3>
@@ -365,29 +389,31 @@ export function LivingExpensesPage() {
                 )}
               </div>
 
-              {/* Summary strip */}
+              {/* Summary strip — gradient KPI cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Total Monthly</p>
-                    <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(summary.total)}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(summary.total * 12)}/year</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Categories Used</p>
-                    <p className="text-2xl font-extrabold tabular-nums tracking-tight">{summary.filledCount}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">of {summary.totalCategories} available</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Daily Equivalent</p>
-                    <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(summary.total / 30.44)}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">per day average</p>
-                  </CardContent>
-                </Card>
+                {/* Total Monthly */}
+                <div className="rounded-xl p-5 text-white bg-gradient-to-br from-rose-700 to-orange-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 pointer-events-none" />
+                  <p className="text-sm font-medium text-white/80 dark:text-muted-foreground">Total Monthly</p>
+                  <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-rose-400">{formatCurrency(summary.total)}</p>
+                  <p className="text-xs text-white/70 dark:text-muted-foreground mt-0.5">{formatCurrency(summary.total * 12)}/year</p>
+                </div>
+
+                {/* Categories Used */}
+                <div className="rounded-xl p-5 text-white bg-gradient-to-br from-amber-700 to-amber-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 pointer-events-none" />
+                  <p className="text-sm font-medium text-white/80 dark:text-muted-foreground">Categories Used</p>
+                  <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{summary.filledCount}</p>
+                  <p className="text-xs text-white/70 dark:text-muted-foreground mt-0.5">of {summary.totalCategories} available</p>
+                </div>
+
+                {/* Daily Equivalent */}
+                <div className="rounded-xl p-5 text-white bg-gradient-to-br from-orange-700 to-orange-400 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 pointer-events-none" />
+                  <p className="text-sm font-medium text-white/80 dark:text-muted-foreground">Daily Equivalent</p>
+                  <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(summary.total / 30.44)}</p>
+                  <p className="text-xs text-white/70 dark:text-muted-foreground mt-0.5">per day average</p>
+                </div>
               </div>
 
               {/* Save/Reset actions */}
@@ -405,123 +431,122 @@ export function LivingExpensesPage() {
               {/* Inline budget editor grouped by super-category */}
               <div className="space-y-3">
                 {groupSummaries.map(group => (
-                  <Card key={group.label}>
-                    <CardContent className="p-0">
-                      <div className="flex items-center justify-between px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">{group.icon}</span>
-                              <span className="font-semibold">{group.label}</span>
-                              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                                {group.filledCount}/{group.categories.length}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold tabular-nums">
-                            {formatCurrency(group.groupTotal)}
-                            <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-border/50">
-                        {/* Column headers — bold and prominent */}
-                        <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
-                          <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
-                          <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
-                        </div>
-
-                        {group.categories.map((cat, idx) => {
-                          const value = editValues[cat] || ''
-                          const hasValue = parseFloat(value) > 0
-
-                          return (
-                            <div
-                              key={cat}
-                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                                idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                  {CATEGORY_LABELS[cat]}
-                                </span>
-                              </div>
-                              <div className="flex justify-end">
-                                <div className="w-[140px] sm:w-[160px]">
-                                  <CurrencyInput
-                                    value={value}
-                                    onChange={(v) => handleValueChange(cat, v)}
-                                    placeholder="—"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Custom Expenses */}
-              {customBudgets.length > 0 && (
-                <Card>
-                  <CardContent className="p-0">
+                  <div
+                    key={group.label}
+                    className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${SECTION_BORDER_COLORS[group.label]} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}
+                  >
                     <div className="flex items-center justify-between px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="text-left">
                           <div className="flex items-center gap-2">
-                            <span className="text-base">📌</span>
-                            <span className="font-semibold">Custom Expenses</span>
-                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                              {customBudgets.length}
+                            <span className="text-base">{group.icon}</span>
+                            <span className="font-semibold">{group.label}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${SECTION_BADGE_COLORS[group.label]}`}>
+                              {group.filledCount}/{group.categories.length}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums">
-                          {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
+                        <p className={`text-lg font-extrabold tabular-nums ${SECTION_TOTAL_COLORS[group.label]}`}>
+                          {formatCurrency(group.groupTotal)}
                           <span className="text-sm font-normal text-muted-foreground">/mo</span>
                         </p>
+                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
                       </div>
                     </div>
+
                     <div className="border-t border-border/50">
-                      {/* Column headers for custom */}
-                      <div className="grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                      {/* Column headers — bold and prominent */}
+                      <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
                         <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
                         <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
-                        <span />
                       </div>
-                      {customBudgets.map((b, idx) => (
-                        <div
-                          key={b.id}
-                          className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                            idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
-                          }`}
-                        >
-                          <span className="text-sm font-semibold truncate">{b.label}</span>
-                          <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ))}
+
+                      {group.categories.map((cat, idx) => {
+                        const value = editValues[cat] || ''
+                        const hasValue = parseFloat(value) > 0
+
+                        return (
+                          <div
+                            key={cat}
+                            className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                              idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                {CATEGORY_LABELS[cat]}
+                              </span>
+                            </div>
+                            <div className="flex justify-end">
+                              <div className="w-[140px] sm:w-[160px]">
+                                <CurrencyInput
+                                  value={value}
+                                  onChange={(v) => handleValueChange(cat, v)}
+                                  placeholder="—"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                ))}
+              </div>
+
+              {/* Custom Expenses */}
+              {customBudgets.length > 0 && (
+                <div className="rounded-xl border border-border/60 dark:border-white/10 border-l-4 border-l-slate-400 bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">📌</span>
+                          <span className="font-semibold">Custom Expenses</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-400">
+                            {customBudgets.length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-extrabold tabular-nums text-slate-600 dark:text-slate-400">
+                        {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
+                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50">
+                    {/* Column headers for custom */}
+                    <div className="grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
+                      <span />
+                    </div>
+                    {customBudgets.map((b, idx) => (
+                      <div
+                        key={b.id}
+                        className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                          idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
+                        }`}
+                      >
+                        <span className="text-sm font-semibold truncate">{b.label}</span>
+                        <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Sticky save bar */}
               {hasChanges && (
                 <div className="sticky bottom-4 flex justify-center">
-                  <div className="bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
+                  <div className="bg-card dark:bg-slate-800 border border-border dark:border-white/10 shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
                     <span className="text-sm text-muted-foreground">Unsaved changes</span>
                     <Button size="sm" onClick={handleSave}>
                       <Check className="h-4 w-4 mr-1" /> Save Budget

@@ -41,6 +41,15 @@ const CATEGORY_ICONS: Record<IncomeCategory, React.ElementType> = {
   other: HelpCircle,
 }
 
+const CATEGORY_SECTION_STYLES: Record<IncomeCategory, { border: string; badge: string; total: string }> = {
+  salary:     { border: 'border-l-green-500',  badge: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400',   total: 'text-green-600 dark:text-green-400' },
+  rental:     { border: 'border-l-teal-500',   badge: 'bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-400',      total: 'text-teal-600 dark:text-teal-400' },
+  dividends:  { border: 'border-l-violet-500', badge: 'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-400', total: 'text-violet-600 dark:text-violet-400' },
+  interest:   { border: 'border-l-amber-500',  badge: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400',   total: 'text-amber-600 dark:text-amber-400' },
+  side_hustle: { border: 'border-l-pink-500',  badge: 'bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-400',      total: 'text-pink-600 dark:text-pink-400' },
+  other:      { border: 'border-l-slate-400',  badge: 'bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-400',   total: 'text-slate-600 dark:text-slate-400' },
+}
+
 // ─── Auto-generated item shape ────────────────────────────────────────────────
 
 interface AutoIncomeItem {
@@ -315,25 +324,27 @@ export function IncomePage() {
 
       {/* ── Summary strip ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Monthly Income</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(grandTotal)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(grandTotal * 12)}/year</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Manually Entered</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(manualTotal)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Auto-Generated</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(autoTotal)}</p>
-          </CardContent>
-        </Card>
+        {/* Total Monthly Income */}
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-green-800 to-green-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Total Monthly Income</p>
+          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-green-400">{formatCurrency(grandTotal)}</p>
+          <p className="text-xs opacity-70 dark:opacity-100 dark:text-slate-400 mt-0.5">{formatCurrency(grandTotal * 12)}/year</p>
+        </div>
+
+        {/* Manually Entered */}
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-teal-800 to-teal-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Manually Entered</p>
+          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(manualTotal)}</p>
+        </div>
+
+        {/* Auto-Generated */}
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-emerald-700 to-emerald-400 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Auto-Generated</p>
+          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(autoTotal)}</p>
+        </div>
       </div>
 
       {/* ── Salary section (always first) ── */}
@@ -341,49 +352,53 @@ export function IncomePage() {
         const salaryItems = manualGrouped.get('salary')
         if (!salaryItems || salaryItems.length === 0) return null
         const Icon = CATEGORY_ICONS.salary
+        const styles = CATEGORY_SECTION_STYLES.salary
         const catTotal = salaryItems.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
         return (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-muted">
+          <div className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${styles.border} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}>
+            {/* Section header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/[0.06]">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <h3 className="text-sm font-medium">{CATEGORY_LABELS.salary}</h3>
-                <span className="text-xs text-muted-foreground">({salaryItems.length})</span>
+                <h3 className="font-bold text-[15px] text-slate-900 dark:text-white">{CATEGORY_LABELS.salary}</h3>
+                <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>{salaryItems.length}</span>
               </div>
-              <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+              <p className={`text-lg font-extrabold tabular-nums ${styles.total}`}>{formatCurrency(catTotal)}/mo</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+            {/* Items */}
+            <div>
               {salaryItems.map(item => {
                 const memberName = getMemberName(item.memberId)
                 return (
-                  <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                            {!item.isActive && <Badge variant="outline">Inactive</Badge>}
-                            {memberName && (
-                              <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
-                            )}
-                          </div>
-                          <p className="font-semibold text-sm">{item.name}</p>
-                          <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
-                          {item.grossAnnualSalary && (
-                            <p className="text-xs text-muted-foreground">
-                              {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
-                            </p>
+                  <div
+                    key={item.id}
+                    className={`group p-4 border-b border-border/20 dark:border-white/5 last:border-0 hover:bg-muted/30 dark:hover:bg-white/[0.02] transition-colors${!item.isActive ? ' opacity-50' : ''}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                          {!item.isActive && <Badge variant="outline">Inactive</Badge>}
+                          {memberName && (
+                            <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
                           )}
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        </div>
+                        <p className="font-semibold text-sm">{item.name}</p>
+                        <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                        {item.grossAnnualSalary && (
+                          <p className="text-xs text-muted-foreground">
+                            {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
+                          </p>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -395,46 +410,47 @@ export function IncomePage() {
       {autoItems.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold">Auto-Generated Income</h2>
-            <span className="text-xs text-muted-foreground">Based on your assets and properties</span>
+            <h2 className="text-lg font-semibold">Auto-Generated Income</h2>
+            <span className="text-sm text-muted-foreground">Based on your assets and properties</span>
           </div>
 
           {CATEGORY_ORDER.map(cat => {
             const items = autoGrouped.get(cat)
             if (!items || items.length === 0) return null
             const Icon = CATEGORY_ICONS[cat]
+            const styles = CATEGORY_SECTION_STYLES[cat]
             const catTotal = items.reduce((s, i) => s + i.monthlyAmount, 0)
 
             return (
-              <div key={cat} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-muted">
+              <div key={cat} className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${styles.border} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}>
+                {/* Section header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/[0.06]">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <h3 className="text-sm font-medium">{CATEGORY_LABELS[cat]}</h3>
-                    <span className="text-xs text-muted-foreground">({items.length})</span>
+                    <h3 className="font-bold text-[15px] text-slate-900 dark:text-white">{CATEGORY_LABELS[cat]}</h3>
+                    <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>{items.length}</span>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+                  <p className={`text-lg font-extrabold tabular-nums ${styles.total}`}>{formatCurrency(catTotal)}/mo</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+                {/* Items */}
+                <div>
                   {items.map(item => (
-                    <Card key={item.key} className="bg-muted/30 border-dashed">
-                      <CardContent className="p-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                              🔗 Auto
-                            </Badge>
-                          </div>
-                          <p className="font-semibold text-sm">{item.name}</p>
-                          <p className="text-lg font-bold tabular-nums text-blue-400">
-                            {formatCurrency(item.monthlyAmount)}/mo
-                          </p>
-                          <p className="text-xs text-muted-foreground">{item.note}</p>
+                    <div key={item.key} className="p-4 border-b border-border/20 dark:border-white/5 last:border-0">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs border border-dashed border-muted-foreground/30 px-1.5 py-0.5 rounded text-muted-foreground">
+                            🔗 Auto
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <p className="font-semibold text-sm">{item.name}</p>
+                        <p className="text-lg font-bold tabular-nums text-blue-400">
+                          {formatCurrency(item.monthlyAmount)}/mo
+                        </p>
+                        <p className="text-xs text-muted-foreground">{item.note}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -445,7 +461,7 @@ export function IncomePage() {
 
       {/* ── Other Manually Entered Income (non-salary, grouped by category) ── */}
       {incomes.length === 0 && autoItems.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
+        <div className="rounded-xl border border-dashed border-border dark:border-white/10 p-8 text-center dark:bg-white/[0.02]">
           <TrendingUp className="h-12 w-12 mx-auto text-primary mb-4" />
           <h3 className="text-lg font-semibold mb-2">No income sources yet</h3>
           <p className="text-muted-foreground mb-4">Add your salary, rental income, dividends, etc.</p>
@@ -453,56 +469,60 @@ export function IncomePage() {
         </div>
       ) : incomes.filter(i => i.category !== 'salary').length > 0 ? (
         <div className="space-y-4">
-          <h2 className="text-base font-semibold">Other Income</h2>
+          <h2 className="text-lg font-semibold">Other Income</h2>
 
           {CATEGORY_ORDER.filter(c => c !== 'salary').map(cat => {
             const items = manualGrouped.get(cat)
             if (!items || items.length === 0) return null
             const Icon = CATEGORY_ICONS[cat]
+            const styles = CATEGORY_SECTION_STYLES[cat]
             const catTotal = items.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
 
             return (
-              <div key={cat} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-muted">
+              <div key={cat} className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${styles.border} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}>
+                {/* Section header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/[0.06]">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <h3 className="text-sm font-medium">{CATEGORY_LABELS[cat]}</h3>
-                    <span className="text-xs text-muted-foreground">({items.length})</span>
+                    <h3 className="font-bold text-[15px] text-slate-900 dark:text-white">{CATEGORY_LABELS[cat]}</h3>
+                    <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>{items.length}</span>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums text-blue-400">{formatCurrency(catTotal)}/mo</p>
+                  <p className={`text-lg font-extrabold tabular-nums ${styles.total}`}>{formatCurrency(catTotal)}/mo</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-9">
+                {/* Items */}
+                <div>
                   {items.map(item => {
                     const memberName = getMemberName(item.memberId)
                     return (
-                      <Card key={item.id} className={`card-hover group${!item.isActive ? ' opacity-50' : ''}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
-                                {!item.isActive && <Badge variant="outline">Inactive</Badge>}
-                                {memberName && (
-                                  <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
-                                )}
-                              </div>
-                              <p className="font-semibold text-sm">{item.name}</p>
-                              <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
-                              {item.grossAnnualSalary && (
-                                <p className="text-xs text-muted-foreground">
-                                  {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
-                                </p>
+                      <div
+                        key={item.id}
+                        className={`group p-4 border-b border-border/20 dark:border-white/5 last:border-0 hover:bg-muted/30 dark:hover:bg-white/[0.02] transition-colors${!item.isActive ? ' opacity-50' : ''}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge className={CATEGORY_COLORS[item.category]}>{CATEGORY_LABELS[item.category]}</Badge>
+                              {!item.isActive && <Badge variant="outline">Inactive</Badge>}
+                              {memberName && (
+                                <Badge variant="outline" className="text-xs">👤 {memberName}</Badge>
                               )}
                             </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </div>
+                            <p className="font-semibold text-sm">{item.name}</p>
+                            <p className="text-lg font-bold tabular-nums text-blue-400">{formatCurrency(item.monthlyAmount)}/mo</p>
+                            {item.grossAnnualSalary && (
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrency(item.grossAnnualSalary)} gross p.a. {item.includesSuper ? '(incl. super)' : '(excl. super)'} · after tax
+                              </p>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
