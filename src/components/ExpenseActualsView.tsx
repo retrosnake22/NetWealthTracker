@@ -141,7 +141,7 @@ export function ExpenseActualsView() {
         if (!budget && actualVal > 0) {
           // Auto-create a $0 budget so we have a budgetId to link the actual to
           const label = CATEGORY_LABELS[cat] || cat
-          store.addExpenseBudget({ category: cat, label, monthlyBudget: 0, isCustom: false })
+          store.addExpenseBudget({ category: cat, label, monthlyBudget: 0 })
           // Get the newly created budget
           const newBudgets = useFinanceStore.getState().expenseBudgets
           const newBudget = newBudgets.find(b => b.category === cat && !b.linkedPropertyId && !b.linkedAssetId)
