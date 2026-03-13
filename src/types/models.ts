@@ -157,6 +157,7 @@ export interface UserProfile {
   estimatedMonthlyExpenses?: number
   budgetMode: BudgetMode
   expenseCalcSource: ExpenseCalcSource
+  hideEmptyActuals?: boolean
   dismissedNotifications: string[]
 }
 

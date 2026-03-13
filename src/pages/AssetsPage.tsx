@@ -187,7 +187,7 @@ export default function AssetsPage() {
 				marginLoanLiability = liabilities.find(l => l.id === linkedLiabilityId) ?? null
 			}
 			if (!marginLoanLiability) {
-				marginLoanLiability = liabilities.find(l => l.category === 'personal_loan' && l.name === `${a.name} Margin Loan`) ?? null
+				marginLoanLiability = liabilities.find(l => l.category === 'personal_loan' && l.name === `${a.name} Loan`) ?? null
 			}
 		}
 		setAssetForm({
@@ -425,7 +425,7 @@ export default function AssetsPage() {
 				}
 				return liabilities.find(l =>
 					l.category === 'personal_loan' &&
-					(l.name === `${editingAsset?.name} Margin Loan` || l.name === `${assetName} Margin Loan`)
+					(l.name === `${editingAsset?.name} Loan` || l.name === `${assetName} Loan`)
 				)
 			}
 
@@ -444,7 +444,7 @@ export default function AssetsPage() {
 				const existingMarginLoan = findMarginLoanLiability()
 				if (existingMarginLoan) {
 					updateLiability(existingMarginLoan.id, {
-						name: `${assetName} Margin Loan`,
+						name: `${assetName} Loan`,
 						currentBalance: marginBalance,
 						interestRatePA: marginRateDecimal,
 						minimumRepayment: roundedMarginRepayment,
@@ -454,7 +454,7 @@ export default function AssetsPage() {
 				} else {
 					// Create a new margin loan liability
 					addLiability({
-						name: `${assetName} Margin Loan`,
+						name: `${assetName} Loan`,
 						category: 'personal_loan',
 						currentBalance: marginBalance,
 						interestRatePA: marginRateDecimal,
@@ -1043,13 +1043,13 @@ export default function AssetsPage() {
 						)}
 
 						<div className="flex gap-2 justify-end">
-							{/* Stocks Margin Loan Section — only for stock assets */}
+							{/* Stocks Loan Section — only for stock assets */}
 				{assetForm.category === 'stocks' && (
 					<div className="border-t pt-4">
 						<div className="flex items-center justify-between mb-3">
 							<div>
-								<h4 className="font-semibold text-sm">Margin Loan</h4>
-								<p className="text-xs text-muted-foreground">Borrowed funds used to invest</p>
+								<h4 className="font-semibold text-sm">Loan</h4>
+								<p className="text-xs text-muted-foreground">Add a loan against this stock investment</p>
 							</div>
 							<button
 								type="button"
@@ -1069,7 +1069,7 @@ export default function AssetsPage() {
 							return (
 								<div className="space-y-3">
 									<p className="text-xs text-muted-foreground">
-										A margin loan liability will be created automatically
+										A loan liability will be created automatically
 									</p>
 									<div>
 										<Label>Loan Balance ($)</Label>

@@ -56,10 +56,11 @@ function shiftMonth(monthStr: string, delta: number): string {
 }
 
 export function ExpenseActualsView() {
-  const { expenseBudgets, expenseActuals, bulkUpsertExpenseActuals } = useFinanceStore()
+  const { expenseBudgets, expenseActuals, bulkUpsertExpenseActuals, userProfile, setHideEmptyActuals } = useFinanceStore()
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth)
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [hasChanges, setHasChanges] = useState(false)
+  const hideEmpty = userProfile?.hideEmptyActuals ?? false
 
   // Only show manual living expenses (not property-linked auto expenses)
   const livingBudgets = useMemo(() =>
@@ -265,6 +266,9 @@ export function ExpenseActualsView() {
           <Button variant="outline" size="sm" onClick={handleCopyBudget} className="text-xs">
             Copy Budget Values
           </Button>
+          <Button variant={hideEmpty ? 'default' : 'outline'} size="sm" onClick={() => setHideEmptyActuals(!hideEmpty)} className="text-xs">
+            {hideEmpty ? 'Show All' : 'Hide Empty'}
+          </Button>
           {hasChanges && (
             <>
               <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs">
@@ -334,6 +338,18 @@ export function ExpenseActualsView() {
             if (editValues[cat] && editValues[cat] !== '') groupFilledCount++
           }
 
+          // Compute which categories are visible when hideEmpty is on
+          const visibleCategories = group.categories.filter(cat => {
+            if (!hideEmpty) return true
+            const budget = budgetByCategory.get(cat)
+            const budgetAmt = budget?.monthlyBudget ?? 0
+            const actualStr = editValues[cat] || ''
+            return budgetAmt > 0 || actualStr !== ''
+          })
+
+          // Hide the entire group card if no categories are visible
+          if (hideEmpty && visibleCategories.length === 0) return null
+
           return (
             <Card key={group.label}>
               <CardContent className="p-0">
@@ -359,8 +375,8 @@ export function ExpenseActualsView() {
                   <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
                 </div>
 
-                {/* Show EVERY category in this group */}
-                {group.categories.map((cat, idx) => {
+                {/* Show filtered categories */}
+                {visibleCategories.map((cat, idx) => {
                   const budget = budgetByCategory.get(cat)
                   const budgetAmount = budget?.monthlyBudget ?? 0
                   const actualStr = editValues[cat] || ''
@@ -373,7 +389,7 @@ export function ExpenseActualsView() {
                     <div
                       key={cat}
                       className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                        idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                        idx !== visibleCategories.length - 1 ? 'border-b border-border/20' : ''
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -416,7 +432,10 @@ export function ExpenseActualsView() {
         })}
 
         {/* Custom Expenses */}
-        {customBudgets.length > 0 && (
+        {customBudgets.length > 0 && !(hideEmpty && customBudgets.every(b => {
+          const actualStr = editValues[`custom_${b.id}`] || ''
+          return b.monthlyBudget === 0 && actualStr === ''
+        })) && (
           <Card>
             <CardContent className="p-0">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
@@ -443,7 +462,11 @@ export function ExpenseActualsView() {
                 <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
               </div>
 
-              {customBudgets.map((b, idx) => {
+              {customBudgets.filter(b => {
+                if (!hideEmpty) return true
+                const actualStr = editValues[`custom_${b.id}`] || ''
+                return b.monthlyBudget > 0 || actualStr !== ''
+              }).map((b, idx, arr) => {
                 const key = `custom_${b.id}`
                 const actualStr = editValues[key] || ''
                 const actualNum = parseFloat(actualStr) || 0
@@ -454,7 +477,7 @@ export function ExpenseActualsView() {
                   <div
                     key={b.id}
                     className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                      idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
+                      idx !== arr.length - 1 ? 'border-b border-border/20' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">

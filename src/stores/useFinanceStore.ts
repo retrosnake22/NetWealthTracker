@@ -29,6 +29,7 @@ export interface FinanceState {
   setEstimatedMonthlyExpenses: (amount: number) => void
   setBudgetMode: (mode: BudgetMode) => void
   setExpenseCalcSource: (source: ExpenseCalcSource) => void
+  setHideEmptyActuals: (hide: boolean) => void
   dismissNotification: (id: string) => void
   addHouseholdMember: (name: string) => void
   updateHouseholdMember: (id: string, name: string) => void
@@ -87,6 +88,7 @@ const DEFAULT_PROFILE: UserProfile = {
   householdMembers: [],
   budgetMode: 'estimate',
   expenseCalcSource: 'budget',
+  hideEmptyActuals: false,
   estimatedMonthlyExpenses: 0,
   dismissedNotifications: [],
 }
@@ -150,6 +152,9 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       setExpenseCalcSource: (source: ExpenseCalcSource) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, expenseCalcSource: source },
+      })),
+      setHideEmptyActuals: (hide: boolean) => set((state: FinanceState) => ({
+        userProfile: { ...state.userProfile, hideEmptyActuals: hide },
       })),
       dismissNotification: (id: string) => set((state: FinanceState) => ({
         userProfile: {
