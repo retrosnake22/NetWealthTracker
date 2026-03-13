@@ -118,17 +118,18 @@ function CashflowBar({ label, amount, max, colorClass, icon: Icon }: {
 }
 
 function KpiCard({
-  label, value, tag, tagColor, ratio, icon: Icon, accentColor, accentColorClass, onClick,
+  label, value, tag, tagColor, ratio, icon: Icon, accentColor, accentColorClass, onClick, subtitle,
 }: {
   label: string
   value: string
   tag: string
   tagColor: 'green' | 'amber' | 'red'
-  ratio: number
+  ratio?: number
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
   accentColorClass: string
   onClick?: () => void
+  subtitle?: string
 }) {
   const tagStyles = {
     green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
@@ -152,12 +153,16 @@ function KpiCard({
           </span>
         </div>
         <p className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900 dark:text-white mb-3">{value}</p>
-        <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${accentColorClass} transition-all duration-500`}
-            style={{ width: `${Math.min(Math.max(ratio * 100, 0), 100)}%` }}
-          />
-        </div>
+        {ratio !== undefined ? (
+          <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+            <div
+              className={`h-full rounded-full ${accentColorClass} transition-all duration-500`}
+              style={{ width: `${Math.min(Math.max(ratio * 100, 0), 100)}%` }}
+            />
+          </div>
+        ) : subtitle ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+        ) : null}
       </div>
       {/* Bottom accent bar */}
       <div className={`h-1 w-full ${accentColorClass}`} style={{ opacity: 0.8 }} />
@@ -615,7 +620,7 @@ export function DashboardPage() {
               value={formatCurrency(metrics.negGearingBenefitPA)}
               tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'}
               tagColor={metrics.negGearingBenefitPA > 0 ? 'green' : 'amber'}
-              ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0}
+              subtitle={metrics.negGearingDeductiblePA > 0 ? `Total deductible: ${formatCurrency(metrics.negGearingDeductiblePA)}/yr` : 'No negatively geared properties'}
               icon={TrendingUp}
               accentColor="#8b5cf6"
               accentColorClass="bg-violet-500"

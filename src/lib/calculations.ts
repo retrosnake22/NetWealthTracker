@@ -138,11 +138,12 @@ export function calculateTotalNegativeGearingBenefit(
   liabilities: Liability[],
   assets: CashAsset[],
   grossSalary: number
-): number {
-  if (grossSalary <= 0) return 0
+): { benefit: number; totalDeductible: number } {
+  if (grossSalary <= 0) return { benefit: 0, totalDeductible: 0 }
   const marginalRate = getMarginalTaxRate(grossSalary)
 
   let totalBenefit = 0
+  let totalDeductible = 0
   for (const prop of properties) {
     if (prop.type !== 'investment' || !prop.weeklyRent) continue
 
@@ -174,11 +175,13 @@ export function calculateTotalNegativeGearingBenefit(
 
     const netCashflow = netRentPA - expenses - interestPA
     if (netCashflow < 0) {
-      totalBenefit += Math.abs(netCashflow) * marginalRate
+      const loss = Math.abs(netCashflow)
+      totalDeductible += loss
+      totalBenefit += loss * marginalRate
     }
   }
 
-  return totalBenefit
+  return { benefit: totalBenefit, totalDeductible }
 }
 
 // --- Shared Dashboard Metrics ---
@@ -202,6 +205,8 @@ export interface DashboardMetrics {
   monthlyExpenses: number
   /** Annual negative-gearing tax benefit */
   negGearingBenefitPA: number
+  /** Total annual deductible loss (before tax benefit) */
+  negGearingDeductiblePA: number
   /** monthlyIncome - monthlyExpenses + negGearing/12 */
   monthlyCashflow: number
   /** monthlyCashflow / monthlyIncome × 100 (percentage, e.g. 20.7) */
@@ -338,7 +343,9 @@ export function calculateDashboardMetrics(
   const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
   const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
   const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
-  const negGearingBenefitPA = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
+  const negGearingResult = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
+  const negGearingBenefitPA = negGearingResult.benefit
+  const negGearingDeductiblePA = negGearingResult.totalDeductible
 
   const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
   const savingsRate = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
@@ -346,7 +353,7 @@ export function calculateDashboardMetrics(
   return {
     baseIncome, rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
-    negGearingBenefitPA, monthlyCashflow, savingsRate, usingActuals,
+    negGearingBenefitPA, negGearingDeductiblePA, monthlyCashflow, savingsRate, usingActuals,
   }
 }
 
@@ -399,7 +406,7 @@ export function projectNetWealth(
   const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
   const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
   const cashAssets = (assets.filter(a => a.category === 'cash') as CashAsset[])
-  const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary) / 12
+  const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary).benefit / 12
 
   // When using estimate mode, replace budget-based expenses with the flat estimate
   // Filter to living budgets only for projection too
