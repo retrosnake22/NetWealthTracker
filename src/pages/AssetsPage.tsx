@@ -32,6 +32,16 @@ const CATEGORY_ICONS: Record<AssetCategory, string> = {
 	other: '📦',
 }
 
+// Color accents per category for the visual refresh
+const CATEGORY_COLORS: Record<string, { border: string; badge: string; badgeText: string; total: string; darkTotal: string }> = {
+	cash:     { border: 'border-l-amber-400',  badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',  badgeText: '', total: 'text-amber-600', darkTotal: 'dark:text-amber-400' },
+	stocks:   { border: 'border-l-violet-500',  badge: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300', badgeText: '', total: 'text-violet-600', darkTotal: 'dark:text-violet-400' },
+	super:    { border: 'border-l-pink-500',    badge: 'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300',     badgeText: '', total: 'text-pink-600', darkTotal: 'dark:text-pink-400' },
+	vehicles: { border: 'border-l-orange-500',  badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300', badgeText: '', total: 'text-orange-600', darkTotal: 'dark:text-orange-400' },
+	other:    { border: 'border-l-slate-400',   badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',    badgeText: '', total: 'text-slate-600', darkTotal: 'dark:text-slate-400' },
+	property: { border: 'border-l-teal-500',    badge: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',     badgeText: '', total: 'text-teal-600', darkTotal: 'dark:text-teal-400' },
+}
+
 export default function AssetsPage() {
 	const store = useFinanceStore() as FinanceState
 	const { assets, properties, liabilities, incomes, expenseBudgets, addAsset, updateAsset, removeAsset, addProperty, updateProperty, removeProperty, updateLiability, addLiability, removeLiability, addExpenseBudget, removeExpenseBudget, } = store
@@ -614,32 +624,28 @@ export default function AssetsPage() {
 
 			{/* Summary Strip */}
 			<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Total Assets</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight text-blue-400'>
-							{formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
-						</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Financial Assets</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalAssets)}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Properties</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalProperties)}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className='p-4'>
-						<p className='text-sm text-muted-foreground'>Total Equity</p>
-						<p className='text-2xl font-extrabold tabular-nums tracking-tight text-emerald-400'>{formatCurrency(totalEquity)}</p>
-					</CardContent>
-				</Card>
+				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#1e3a5f] to-[#3b82f6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Total Assets</p>
+					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>
+						{formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
+					</p>
+				</div>
+				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#5b21b6] to-[#8b5cf6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Financial Assets</p>
+					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalAssets)}</p>
+				</div>
+				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#0f766e] to-[#14b8a6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Properties</p>
+					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalProperties)}</p>
+				</div>
+				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#065f46] to-[#10b981] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Total Equity</p>
+					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-emerald-400'>{formatCurrency(totalEquity)}</p>
+				</div>
 			</div>
 
 			{/* Financial Assets — grouped by category */}
@@ -655,43 +661,39 @@ export default function AssetsPage() {
 					}))
 					.filter(g => g.items.length > 0)
 
-				return grouped.map(group => (
-					<Card key={group.category} className="card-hover">
-						<CardHeader className="pb-2">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2.5">
-									<span className="text-xl">{group.icon}</span>
-									<CardTitle className="text-lg">{group.label}</CardTitle>
-									<span className="text-xs text-muted-foreground">({group.items.length})</span>
-								</div>
-								<span className="text-sm font-bold tabular-nums">{formatCurrency(group.subtotal)}</span>
+				return grouped.map(group => {
+				const colors = CATEGORY_COLORS[group.category] ?? CATEGORY_COLORS.other
+				return (
+					<div key={group.category} className={`rounded-xl bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border-l-4 ${colors.border} overflow-hidden`}>
+						<div className="flex items-center justify-between px-5 py-4">
+							<div className="flex items-center gap-2.5">
+								<span className="text-[22px]">{group.icon}</span>
+								<span className="font-bold text-[15px] text-slate-900 dark:text-white">{group.label}</span>
+								<span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors.badge}`}>{group.items.length}</span>
 							</div>
-						</CardHeader>
-						<CardContent className="divide-y">
+							<span className={`font-extrabold text-lg tabular-nums ${colors.total} ${colors.darkTotal}`}>{formatCurrency(group.subtotal)}</span>
+						</div>
+						<div className="border-t border-slate-100 dark:border-white/[0.06]">
 							{group.items.map(a => {
 								const isOffset = a.category === 'cash' && (a as any).isOffset
 								const offsetMortgage = isOffset && (a as any).linkedMortgageId
 									? liabilities.find(l => l.id === (a as any).linkedMortgageId)
 									: null
 								return (
-									<div key={a.id} className="flex items-center justify-between py-3">
-										<div className="flex items-center gap-3">
-											<div>
-												<p className="font-medium">
-													{a.name}
-													{isOffset && (
-														<Shield className="inline h-3.5 w-3.5 ml-1.5 text-blue-400" />
-													)}
-												</p>
-												<p className="text-xs text-muted-foreground">
-													{isOffset && offsetMortgage && (
-														<span className="text-blue-400">Offset on {offsetMortgage.name}</span>
-													)}
-												</p>
-											</div>
+									<div key={a.id} className="flex items-center justify-between px-5 py-3 border-b border-slate-50 dark:border-white/[0.04] last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+										<div>
+											<p className="font-medium text-slate-900 dark:text-slate-200">
+												{a.name}
+												{isOffset && (
+													<Shield className="inline h-3.5 w-3.5 ml-1.5 text-blue-400" />
+												)}
+											</p>
+											{isOffset && offsetMortgage && (
+												<p className="text-xs text-blue-500 dark:text-blue-400">Offset on {offsetMortgage.name}</p>
+											)}
 										</div>
 										<div className="flex items-center gap-2">
-											<span className="font-semibold tabular-nums">{formatCurrency(a.currentValue)}</span>
+											<span className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCurrency(a.currentValue)}</span>
 											<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAsset(a)}>
 												<Pencil className="h-3.5 w-3.5" />
 											</Button>
@@ -702,85 +704,90 @@ export default function AssetsPage() {
 									</div>
 								)
 							})}
-						</CardContent>
-					</Card>
-				))
+						</div>
+					</div>
+				)
+			})
 			})()}
 
 			{/* Properties */}
-			{showProperties && properties.length > 0 && (
-				<Card className="card-hover">
-					<CardHeader className="pb-2">
-						<CardTitle className="text-lg">Properties</CardTitle>
-					</CardHeader>
-					<CardContent className="divide-y">
-						{properties.map(p => {
-							const isInvestment = p.type === 'investment'
-							const isExpanded = expandedPnL.has(p.id)
-							const mortgage = findMortgage(p)
-							const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
-					const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
-							return (
-								<div key={p.id} className="py-3">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<span className="text-xl">🏠</span>
-											<div>
-												<p className="font-medium">{p.name}</p>
-												<p className="text-xs text-muted-foreground">
-													{isInvestment ? 'Investment' : 'Primary Residence'}
-													{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
-										{mortgage && <> · Equity: {formatCurrency(equity)}</>}
-												</p>
+			{showProperties && properties.length > 0 && (() => {
+				const colors = CATEGORY_COLORS.property
+				return (
+					<div className={`rounded-xl bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border-l-4 ${colors.border} overflow-hidden`}>
+						<div className="flex items-center justify-between px-5 py-4">
+							<div className="flex items-center gap-2.5">
+								<span className="text-[22px]">🏠</span>
+								<span className="font-bold text-[15px] text-slate-900 dark:text-white">Properties</span>
+								<span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors.badge}`}>{properties.length}</span>
+							</div>
+							<span className={`font-extrabold text-lg tabular-nums ${colors.total} ${colors.darkTotal}`}>{formatCurrency(totalProperties)}</span>
+						</div>
+						<div className="border-t border-slate-100 dark:border-white/[0.06]">
+							{properties.map(p => {
+								const isInvestment = p.type === 'investment'
+								const isExpanded = expandedPnL.has(p.id)
+								const mortgage = findMortgage(p)
+								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
+								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
+								return (
+									<div key={p.id} className="px-5 py-3 border-b border-slate-50 dark:border-white/[0.04] last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-3">
+												<span className="text-xl">🏠</span>
+												<div>
+													<p className="font-medium text-slate-900 dark:text-slate-200">{p.name}</p>
+													<p className="text-xs text-muted-foreground">
+														{isInvestment ? 'Investment' : 'Primary Residence'}
+														{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
+														{mortgage && <> · <span className="text-emerald-600 dark:text-emerald-400 font-medium">Equity: {formatCurrency(equity)}</span></>}
+													</p>
+												</div>
+											</div>
+											<div className="flex items-center gap-2">
+												<span className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCurrency(p.currentValue)}</span>
+												{isInvestment && (
+													<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
+														{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+													</Button>
+												)}
+												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
+													<Pencil className="h-3.5 w-3.5" />
+												</Button>
+												<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
+													<Trash2 className="h-3.5 w-3.5" />
+												</Button>
 											</div>
 										</div>
-										<div className="flex items-center gap-2">
-											<span className="font-semibold tabular-nums">{formatCurrency(p.currentValue)}</span>
-											{isInvestment && (
-												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
-													{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-												</Button>
-											)}
-											<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
-												<Pencil className="h-3.5 w-3.5" />
-											</Button>
-											<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
-												<Trash2 className="h-3.5 w-3.5" />
-											</Button>
-										</div>
+										{isInvestment && isExpanded && (
+											<div className="mt-3 ml-9">
+												<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
+											</div>
+										)}
 									</div>
-									{isInvestment && isExpanded && (
-										<div className="mt-3 ml-9">
-											<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
-										</div>
-									)}
-								</div>
-							)
-						})}
-					</CardContent>
-				</Card>
-			)}
+								)
+							})}
+						</div>
+					</div>
+				)
+			})()}
 
 			{/* Empty states */}
 			{showAssets && filteredAssets.length === 0 && (
-				<Card className="border-dashed">
-					<CardContent className="py-8 text-center text-muted-foreground">
-						<p>No assets yet</p>
-						<Button onClick={openAddAsset} variant="outline" size="sm" className="mt-3">
-							<Plus className="h-4 w-4 mr-1" /> Add Your First Asset
-						</Button>
-					</CardContent>
-				</Card>
+				<div className="rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 py-10 text-center">
+					<p className="text-muted-foreground">No assets yet</p>
+					<Button onClick={openAddAsset} size="sm" className="mt-3">
+						<Plus className="h-4 w-4 mr-1" /> Add Your First Asset
+					</Button>
+				</div>
 			)}
 			{showProperties && properties.length === 0 && (
-				<Card className="border-dashed">
-					<CardContent className="py-8 text-center text-muted-foreground">
-						<p>No properties yet</p>
-						<Button onClick={openAddProperty} variant="outline" size="sm" className="mt-3">
-							<Home className="h-4 w-4 mr-1" /> Add Your First Property
-						</Button>
-					</CardContent>
-				</Card>
+				<div className="rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 py-10 text-center">
+					<p className="text-muted-foreground">No properties yet</p>
+					<Button onClick={openAddProperty} size="sm" className="mt-3">
+						<Home className="h-4 w-4 mr-1" /> Add Your First Property
+					</Button>
+				</div>
 			)}
 
 			{/* Add/Edit Asset Dialog */}
