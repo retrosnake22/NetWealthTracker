@@ -240,8 +240,22 @@ function getEffectiveMonthlyExpenses(
 
   // Use actual where available, budget as fallback
   let total = 0
+  const matchedActualIds = new Set<string>()
   for (const b of budgets) {
-    total += actualMap.has(b.id) ? actualMap.get(b.id)! : b.monthlyBudget
+    if (actualMap.has(b.id)) {
+      total += actualMap.get(b.id)!
+      matchedActualIds.add(b.id)
+    } else {
+      total += b.monthlyBudget
+    }
+  }
+
+  // Also include any actuals that don't have a matching budget entry
+  // (e.g. user entered spending for a category they didn't budget for)
+  for (const [budgetId, amount] of actualMap) {
+    if (!matchedActualIds.has(budgetId)) {
+      total += amount
+    }
   }
 
   return { total, usingActuals: true }
