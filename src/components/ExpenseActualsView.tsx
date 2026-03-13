@@ -132,14 +132,27 @@ export function ExpenseActualsView() {
 
   const handleSave = useCallback(() => {
     const entries: { budgetId: string; actualAmount: number }[] = []
-    // Standard categories
+    const store = useFinanceStore.getState()
+    // Standard categories — auto-create $0 budget if actual entered but no budget exists
     for (const group of SUPER_CATEGORIES) {
       for (const cat of group.categories) {
-        const budget = budgetByCategory.get(cat)
+        let budget = budgetByCategory.get(cat)
+        const actualVal = parseFloat(editValues[cat] || '0') || 0
+        if (!budget && actualVal > 0) {
+          // Auto-create a $0 budget so we have a budgetId to link the actual to
+          const label = CATEGORY_LABELS[cat] || cat
+          store.addExpenseBudget({ category: cat, label, monthlyBudget: 0, isCustom: false })
+          // Get the newly created budget
+          const newBudgets = useFinanceStore.getState().expenseBudgets
+          const newBudget = newBudgets.find(b => b.category === cat && !b.linkedPropertyId && !b.linkedAssetId)
+          if (newBudget) {
+            budget = { id: newBudget.id, monthlyBudget: 0, label }
+          }
+        }
         if (budget) {
           entries.push({
             budgetId: budget.id,
-            actualAmount: parseFloat(editValues[cat] || '0') || 0,
+            actualAmount: actualVal,
           })
         }
       }
