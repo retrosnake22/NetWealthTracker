@@ -316,8 +316,8 @@ export function DashboardPage() {
   const isEmpty = assets.length === 0 && properties.length === 0 && liabilities.length === 0
 
   // KPI tags
-  const savingsTag = savingsRate > 20 ? 'Excellent' : savingsRate > 10 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
-  const savingsColor = savingsRate > 20 ? 'green' as const : savingsRate > 10 ? 'green' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const savingsTag = savingsRate >= 50 ? 'Excellent' : savingsRate >= 30 ? 'Moderate' : savingsRate > 0 ? 'Low' : 'None'
+  const savingsColor = savingsRate >= 50 ? 'green' as const : savingsRate >= 30 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
   const debtColor = debtRatio < 0.3 ? 'green' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
