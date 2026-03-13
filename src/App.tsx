@@ -26,6 +26,9 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
 
+  // Must be called before any early returns (Rules of Hooks)
+  const storeSetupComplete = useFinanceStore((s) => s.userProfile.setupComplete)
+
   // Load cloud data when user logs in
   useEffect(() => {
     if (!session?.user?.id) {
@@ -76,6 +79,16 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Migrate: if localStorage says wizard complete but cloud doesn't know yet, sync it up
+  useEffect(() => {
+    if (session?.user?.id) {
+      const localFlag = localStorage.getItem(`nwt-wizard-complete-${session.user.id}`)
+      if (localFlag && !storeSetupComplete) {
+        useFinanceStore.getState().setSetupComplete(true)
+      }
+    }
+  }, [session?.user?.id, storeSetupComplete])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -110,17 +123,9 @@ function App() {
     )
   }
 
-  // Check cloud-synced flag first (survives across browsers), fall back to localStorage
-  const storeSetupComplete = useFinanceStore((s) => s.userProfile.setupComplete)
+  // Check cloud-synced flag first, fall back to localStorage
   const localStorageFlag = localStorage.getItem(`nwt-wizard-complete-${session?.user?.id}`)
   const wizardComplete = storeSetupComplete || !!localStorageFlag
-
-  // Migrate: if localStorage says complete but cloud doesn't know yet, sync it up
-  useEffect(() => {
-    if (localStorageFlag && !storeSetupComplete) {
-      useFinanceStore.getState().setSetupComplete(true)
-    }
-  }, [localStorageFlag, storeSetupComplete])
 
   return (
     <BrowserRouter>
