@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
-import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
 import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/KpiBreakdownDialog'
@@ -91,26 +90,26 @@ function SortableWidget({ id, children }: { id: string; children: React.ReactNod
   )
 }
 
-function CashflowBar({ label, amount, max, color, icon: Icon }: {
+function CashflowBar({ label, amount, max, colorClass, icon: Icon }: {
   label: string
   amount: number
   max: number
-  color: string
+  colorClass: string
   icon: React.ComponentType<{ className?: string }>
 }) {
   const pct = max > 0 ? Math.min((amount / max) * 100, 100) : 0
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${color.includes('blue') ? 'text-blue-400' : 'text-red-400'}`} />
-          <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          <Icon className={`h-4 w-4 ${colorClass.includes('green') || colorClass.includes('blue') ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`} />
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{label}</span>
         </div>
-        <span className="text-sm font-bold tabular-nums">{formatCurrency(amount)}</span>
+        <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-white">{formatCurrency(amount)}</span>
       </div>
-      <div className="h-3 rounded-full bg-muted overflow-hidden">
+      <div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
         <div
-          className={`h-full rounded-full ${color} progress-fill`}
+          className={`h-full rounded-full ${colorClass} transition-all duration-500`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -119,49 +118,50 @@ function CashflowBar({ label, amount, max, color, icon: Icon }: {
 }
 
 function KpiCard({
-  label, value, tag, tagColor, ratio, icon: Icon, accentColor, onClick,
+  label, value, tag, tagColor, ratio, icon: Icon, accentColor, accentColorClass, onClick,
 }: {
   label: string
   value: string
   tag: string
-  tagColor: 'blue' | 'amber' | 'red'
+  tagColor: 'green' | 'amber' | 'red'
   ratio: number
   icon: React.ComponentType<{ className?: string }>
   accentColor: string
+  accentColorClass: string
   onClick?: () => void
 }) {
-  const barColor = { blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' }[tagColor]
-  const tagBg = {
-    blue: 'bg-blue-500/10 text-blue-400',
-    amber: 'bg-amber-500/10 text-amber-500',
-    red: 'bg-red-500/10 text-red-500',
+  const tagStyles = {
+    green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+    red: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
   }[tagColor]
 
   return (
-    <Card
-      className={`rounded-xl bg-card card-hover card-accent-left h-full ${onClick ? 'cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all' : ''}`}
-      style={{ '--accent-color': accentColor } as React.CSSProperties}
+    <div
+      className={`relative rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm h-full ${onClick ? 'cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all' : ''}`}
       onClick={onClick}
     >
-      <CardContent className="p-5 pl-6">
+      <div className="p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+            <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
           </div>
-          <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${tagBg}`}>
+          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${tagStyles}`}>
             {tag}
           </span>
         </div>
-        <p className="text-2xl font-extrabold tabular-nums tracking-tight mb-3 animate-count">{value}</p>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <p className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900 dark:text-white mb-3">{value}</p>
+        <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
           <div
-            className={`h-full rounded-full progress-fill ${barColor}`}
+            className={`h-full rounded-full ${accentColorClass} transition-all duration-500`}
             style={{ width: `${Math.min(Math.max(ratio * 100, 0), 100)}%` }}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      {/* Bottom accent bar */}
+      <div className={`h-1 w-full ${accentColorClass}`} style={{ opacity: 0.8 }} />
+    </div>
   )
 }
 
@@ -248,9 +248,9 @@ export function DashboardPage() {
 
   // KPI tags
   const savingsTag = savingsRate > 20 ? 'Excellent' : savingsRate > 10 ? 'Good' : savingsRate > 0 ? 'Low' : 'None'
-  const savingsColor = savingsRate > 20 ? 'blue' as const : savingsRate > 10 ? 'blue' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
+  const savingsColor = savingsRate > 20 ? 'green' as const : savingsRate > 10 ? 'green' as const : savingsRate > 0 ? 'amber' as const : 'red' as const
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
-  const debtColor = debtRatio < 0.3 ? 'blue' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
+  const debtColor = debtRatio < 0.3 ? 'green' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
 
   // Projection assumption labels
@@ -291,98 +291,185 @@ export function DashboardPage() {
     hero: (
       <>
         {isEmpty && (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center animate-fade-up">
-            <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Welcome to Net Wealth Tracker</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/10 p-8 text-center">
+            <DollarSign className="h-12 w-12 mx-auto text-slate-400 dark:text-slate-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-white">Welcome to Net Wealth Tracker</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-4">
               Start by adding your properties, assets, income, and expenses to see your financial picture.
             </p>
           </div>
         )}
-        <div className="animate-fade-up cursor-pointer" onClick={() => setBreakdownOpen('net-wealth')}>
-          <MetricCard
-            variant="hero"
-            title="Net Wealth (excl. Super)"
-            value={formatCurrency(netWealth)}
-            subtitle={`Incl. Super: ${formatCurrency(netWealthIncSuper)}`}
-            icon={DollarSign}
-            trend={netWealth >= 0 ? 'up' : 'down'}
-            breakdownItems={[
-              { label: 'Total Assets',     value: formatCurrency(totalAssets),      color: '#60A5FA' },
-              { label: 'Total Liabilities', value: formatCurrency(totalLiabilities), color: '#f87171' },
-              { label: 'Monthly Surplus',  value: formatCurrency(monthlyCashflow),  color: monthlyCashflow >= 0 ? '#3b82f6' : '#f59e0b' },
-            ]}
-          />
+
+        {/* Hero Net Wealth Banner */}
+        <div
+          className="relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-lg"
+          onClick={() => setBreakdownOpen('net-wealth')}
+        >
+          {/* Light mode: gradient background */}
+          <div className="hidden dark:hidden sm:block absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-600 to-blue-500" />
+          {/* Dark mode: glass background */}
+          <div className="hidden dark:block absolute inset-0 bg-white/[0.04] border border-white/10" />
+          {/* Decorative circles */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 dark:bg-white/[0.03]" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 dark:bg-white/[0.02]" />
+
+          <div className="relative p-6 sm:p-8">
+            {/* Mobile: simple card */}
+            <div className="sm:hidden">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Net Wealth (excl. Super)</span>
+              </div>
+              <p className="text-3xl font-extrabold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(netWealth)}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Incl. Super: {formatCurrency(netWealthIncSuper)}</p>
+            </div>
+
+            {/* Desktop: full gradient banner */}
+            <div className="hidden sm:block">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-2 w-2 rounded-full bg-white/80 dark:bg-blue-400" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 dark:text-slate-400">Net Wealth (excl. Super)</span>
+                  </div>
+                  <p className="text-4xl sm:text-5xl font-extrabold tabular-nums text-white dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-blue-400 dark:to-blue-300">
+                    {formatCurrency(netWealth)}
+                  </p>
+                  <p className="text-sm text-white/60 dark:text-slate-400 mt-2">Incl. Super: {formatCurrency(netWealthIncSuper)}</p>
+                </div>
+                <div className="hidden lg:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 dark:bg-white/[0.06]">
+                  <DollarSign className="h-8 w-8 text-white/80 dark:text-blue-400" />
+                </div>
+              </div>
+
+              {/* Sub-stats bar */}
+              <div className="mt-6 pt-4 border-t border-white/15 dark:border-white/10 grid grid-cols-3 gap-4">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 dark:text-slate-500">Total Assets</span>
+                  <p className="text-lg font-bold tabular-nums text-blue-200 dark:text-blue-400">{formatCurrency(totalAssets)}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 dark:text-slate-500">Total Liabilities</span>
+                  <p className="text-lg font-bold tabular-nums text-rose-300 dark:text-rose-400">{formatCurrency(totalLiabilities)}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 dark:text-slate-500">Monthly Surplus</span>
+                  <p className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-300 dark:text-emerald-400' : 'text-amber-300 dark:text-amber-400'}`}>
+                    {formatCurrency(monthlyCashflow)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </>
     ),
 
     'cashflow-kpis': (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
-        <Card
-          className="rounded-xl bg-card lg:col-span-1 animate-fade-up animate-delay-1 h-full flex flex-col cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all"
+        {/* Monthly Cashflow Card */}
+        <div
+          className="relative rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm lg:col-span-1 h-full flex flex-col cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all"
           onClick={() => setBreakdownOpen('cashflow')}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">Monthly Cashflow{usingActuals && <span className="text-[10px] font-medium text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Actuals</span>}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
-            <CashflowBar label={livingExpenseLabel} amount={metrics.baseExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+          <div className="p-5 flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-semibold text-slate-800 dark:text-white">Monthly Cashflow</span>
+              {usingActuals && (
+                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-full">Actuals</span>
+              )}
+            </div>
+            <div className="space-y-3">
+              <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} colorClass="bg-emerald-500" icon={ArrowUpRight} />
+              <CashflowBar label={livingExpenseLabel} amount={metrics.baseExpenses} max={cashflowMax} colorClass="bg-rose-500" icon={ArrowDownRight} />
               {metrics.mortgageExpenses > 0 && (
-                <CashflowBar label="Loan Repayments" amount={metrics.mortgageExpenses} max={cashflowMax} color="bg-red-300" icon={ArrowDownRight} />
+                <CashflowBar label="Loan Repayments" amount={metrics.mortgageExpenses} max={cashflowMax} colorClass="bg-amber-500" icon={ArrowDownRight} />
               )}
               {metrics.propertyRunningCosts > 0 && (
-                <CashflowBar label="Property Costs" amount={metrics.propertyRunningCosts} max={cashflowMax} color="bg-red-200" icon={ArrowDownRight} />
+                <CashflowBar label="Property Costs" amount={metrics.propertyRunningCosts} max={cashflowMax} colorClass="bg-violet-400" icon={ArrowDownRight} />
               )}
-            <div className="pt-3 border-t border-border/50">
+            </div>
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Surplus</span>
-                <span className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Surplus</span>
+                <span className={`text-lg font-extrabold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {formatCurrency(monthlyCashflow)}
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          {/* Bottom accent */}
+          <div className="h-1 w-full bg-blue-500" />
+        </div>
 
+        {/* 3 KPI Cards */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-          <div className="animate-fade-up animate-delay-2 h-full">
-            <KpiCard label="Savings Rate" value={formatPercent(savingsRate / 100)} tag={savingsTag} tagColor={savingsColor} ratio={savingsRate / 100} icon={PiggyBank} accentColor="#3B82F6" onClick={() => setBreakdownOpen('savings-rate')} />
+          <div className="h-full">
+            <KpiCard
+              label="Savings Rate"
+              value={formatPercent(savingsRate / 100)}
+              tag={savingsTag}
+              tagColor={savingsColor}
+              ratio={savingsRate / 100}
+              icon={PiggyBank}
+              accentColor="#10b981"
+              accentColorClass="bg-emerald-500"
+              onClick={() => setBreakdownOpen('savings-rate')}
+            />
           </div>
-          <div className="animate-fade-up animate-delay-3 h-full">
-            <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" onClick={() => setBreakdownOpen('debt-ratio')} />
+          <div className="h-full">
+            <KpiCard
+              label="Debt Ratio"
+              value={formatPercent(debtRatio)}
+              tag={debtTag}
+              tagColor={debtColor}
+              ratio={debtRatio}
+              icon={BarChart3}
+              accentColor="#f59e0b"
+              accentColorClass="bg-amber-500"
+              onClick={() => setBreakdownOpen('debt-ratio')}
+            />
           </div>
-          <div className="animate-fade-up animate-delay-4 h-full">
-            <KpiCard label="Neg. Gearing Benefit" value={formatCurrency(metrics.negGearingBenefitPA)} tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'} tagColor={metrics.negGearingBenefitPA > 0 ? 'blue' : 'amber'} ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0} icon={TrendingUp} accentColor="#10b981" onClick={() => setBreakdownOpen('neg-gearing')} />
+          <div className="h-full">
+            <KpiCard
+              label="Neg. Gearing Benefit"
+              value={formatCurrency(metrics.negGearingBenefitPA)}
+              tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'}
+              tagColor={metrics.negGearingBenefitPA > 0 ? 'green' : 'amber'}
+              ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0}
+              icon={TrendingUp}
+              accentColor="#8b5cf6"
+              accentColorClass="bg-violet-500"
+              onClick={() => setBreakdownOpen('neg-gearing')}
+            />
           </div>
         </div>
       </div>
     ),
 
     'expenses-chart': (
-      <Card className="rounded-xl bg-card animate-fade-up">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold">Living Expenses Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm">
+        <div className="p-5 pb-2">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Living Expenses Trend</h3>
+        </div>
+        <div className="px-5 pb-5">
           {expensesChartData.length <= 1 ? (
-            <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="h-[200px] flex items-center justify-center text-sm text-slate-400 dark:text-slate-500">
               Track monthly actuals to see your expense trend over time.
             </div>
           ) : (
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={expensesChartData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: '#71717a', fontSize: 12 }}
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#71717a', fontSize: 12 }}
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                     width={55}
@@ -402,30 +489,34 @@ export function DashboardPage() {
                       boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
                       backdropFilter: 'blur(8px)',
                     }}
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    cursor={{ fill: 'rgba(148,163,184,0.08)' }}
                   />
-                  <Bar dataKey="amount" fill="#f59e0b" name="Living Expenses" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="amount" position="top" fill="#a1a1aa" fontSize={12} formatter={(v: unknown) => `${Number(v).toLocaleString()}`} />
+                  <Bar dataKey="amount" fill="#f59e0b" name="Living Expenses" radius={[6, 6, 0, 0]}>
+                    <LabelList dataKey="amount" position="top" fill="#94a3b8" fontSize={12} formatter={(v: unknown) => `$${Number(v).toLocaleString()}`} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     ),
 
     charts: (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        <div className="lg:col-span-2 h-full animate-fade-up animate-delay-5">
-          <WealthChart data={projectionData} />
-          <p className="text-xs text-muted-foreground mt-2 px-1">
+        <div className="lg:col-span-2 h-full">
+          <div className="rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm h-full">
+            <WealthChart data={projectionData} />
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 px-1">
             Projection assumes {propGrowth}% p.a. property growth, {stockGrowth}% p.a. shares/super growth, and current monthly surplus reinvested.
-            {' '}Adjust in <a href="/projections" className="underline hover:text-foreground">Projections</a>.
+            {' '}Adjust in <Link to="/projections" className="underline hover:text-slate-600 dark:hover:text-slate-300">Projections</Link>.
           </p>
         </div>
-        <div className="h-full animate-fade-up animate-delay-6">
-          <AssetBreakdown data={breakdownData} />
+        <div className="h-full">
+          <div className="rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm h-full">
+            <AssetBreakdown data={breakdownData} />
+          </div>
         </div>
       </div>
     ),
@@ -434,20 +525,20 @@ export function DashboardPage() {
   return (
     <>
       {showBudgetBanner && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3 animate-fade-up">
+        <div className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm">Complete Your Setup</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h3 className="font-semibold text-sm text-slate-800 dark:text-white">Complete Your Setup</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Your expenses are based on a monthly estimate. Activate the detailed budget in Living Expenses for category-level tracking.
             </p>
             <div className="flex items-center gap-4 mt-2">
-              <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400">
+              <Link to="/expenses/living" className="inline-flex items-center gap-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
                 Set Up Budget <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => dismissNotification('budget-not-activated')}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 Dismiss
               </button>
