@@ -670,7 +670,7 @@ export function DashboardPage() {
                     }}
                     cursor={{ fill: 'rgba(148,163,184,0.08)' }}
                   />
-                  <Bar dataKey="amount" fill="#f59e0b" name="Living Expenses" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="amount" fill="#818cf8" name="Living Expenses" radius={[6, 6, 0, 0]}>
                     <LabelList dataKey="amount" position="top" fill="#94a3b8" fontSize={12} formatter={(v: unknown) => `$${Number(v).toLocaleString()}`} />
                   </Bar>
                 </BarChart>
