@@ -313,7 +313,29 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
-            <CashflowBar label="Expenses" amount={monthlyExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+            <div className="space-y-1.5">
+                <CashflowBar label="Total Expenses" amount={monthlyExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+                <div className="pl-6 space-y-1 text-xs text-muted-foreground">
+                  {metrics.baseExpenses > 0 && (
+                    <div className="flex justify-between">
+                      <span>{usingActuals ? 'Living (Actuals)' : userProfile?.budgetMode === 'estimate' ? 'Living (Estimate)' : 'Living (Budget)'}</span>
+                      <span className="tabular-nums">{formatCurrency(metrics.baseExpenses)}</span>
+                    </div>
+                  )}
+                  {metrics.mortgageExpenses > 0 && (
+                    <div className="flex justify-between">
+                      <span>Loan Repayments</span>
+                      <span className="tabular-nums">{formatCurrency(metrics.mortgageExpenses)}</span>
+                    </div>
+                  )}
+                  {metrics.propertyRunningCosts > 0 && (
+                    <div className="flex justify-between">
+                      <span>Property Costs</span>
+                      <span className="tabular-nums">{formatCurrency(metrics.propertyRunningCosts)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Surplus</span>
