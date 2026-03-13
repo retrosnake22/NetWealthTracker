@@ -265,9 +265,11 @@ function getEffectiveMonthlyExpenses(
   const now = new Date()
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
+  // Only count actuals whose budgetId belongs to a living expense budget
+  const livingBudgetIds = new Set(livingBudgets.map(b => b.id))
   const actualMap = new Map<string, number>()
   for (const a of actuals) {
-    if (a.month === currentMonth) {
+    if (a.month === currentMonth && livingBudgetIds.has(a.budgetId)) {
       actualMap.set(a.budgetId, a.actualAmount)
     }
   }
@@ -276,7 +278,7 @@ function getEffectiveMonthlyExpenses(
     return { total: budgetTotal, usingActuals: false }
   }
 
-  // Sum only actual amounts
+  // Sum only living expense actuals
   let total = 0
   for (const [, amount] of actualMap) {
     total += amount
