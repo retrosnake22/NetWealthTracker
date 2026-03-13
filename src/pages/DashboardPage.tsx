@@ -1,7 +1,7 @@
 // NWT Dashboard
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
+import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle, Target, Home, Landmark, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { WealthChart } from '@/components/dashboard/WealthChart'
@@ -35,7 +35,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'cashflow-kpis', 'expenses-chart', 'charts']
+const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'expenses-chart', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -165,6 +165,51 @@ function KpiCard({
   )
 }
 
+// --- SVG Progress Ring for FI Tracker ---
+function ProgressRing({ percent, size = 140, strokeWidth = 10 }: { percent: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const clampedPct = Math.min(Math.max(percent, 0), 100)
+  const offset = circumference - (clampedPct / 100) * circumference
+
+  // Color based on progress
+  const strokeColor = clampedPct >= 100
+    ? '#10b981' // emerald-500
+    : clampedPct >= 50
+      ? '#3b82f6' // blue-500
+      : clampedPct >= 25
+        ? '#f59e0b' // amber-500
+        : '#ef4444' // red-500
+
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      {/* Background track */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        fill="none"
+        className="text-slate-100 dark:text-white/10"
+      />
+      {/* Progress arc */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        className="transition-all duration-700 ease-out"
+      />
+    </svg>
+  )
+}
+
 export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
@@ -201,6 +246,24 @@ export function DashboardPage() {
   const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource)
   const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } = metrics
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
+
+  // --- Financial Independence Tracker ---
+  // Passive income = rental + dividends + interest (income that doesn't require active work)
+  const passiveFromIncomes = incomes
+    .filter(i => i.isActive && ['dividends', 'interest'].includes(i.category))
+    .reduce((s, i) => s + i.monthlyAmount, 0)
+  const passiveIncome = passiveFromIncomes + metrics.rentalIncome
+  const fiPercent = monthlyExpenses > 0 ? Math.min((passiveIncome / monthlyExpenses) * 100, 100) : 0
+  const fiRemaining = Math.max(monthlyExpenses - passiveIncome, 0)
+  const fiAchieved = passiveIncome >= monthlyExpenses && monthlyExpenses > 0
+
+  // Passive income breakdown for display
+  const fiBreakdown: { label: string; amount: number; icon: React.ComponentType<{ className?: string }> }[] = []
+  if (metrics.rentalIncome > 0) fiBreakdown.push({ label: 'Rental Income', amount: metrics.rentalIncome, icon: Home })
+  const dividendIncome = incomes.filter(i => i.isActive && i.category === 'dividends').reduce((s, i) => s + i.monthlyAmount, 0)
+  if (dividendIncome > 0) fiBreakdown.push({ label: 'Dividends', amount: dividendIncome, icon: BarChart3 })
+  const interestIncome = incomes.filter(i => i.isActive && i.category === 'interest').reduce((s, i) => s + i.monthlyAmount, 0)
+  if (interestIncome > 0) fiBreakdown.push({ label: 'Interest', amount: interestIncome, icon: Landmark })
 
   // Dynamic label for Living Expenses based on budget mode and calc source
   const isEstimateMode = (userProfile?.budgetMode ?? 'estimate') === 'estimate'
@@ -363,6 +426,122 @@ export function DashboardPage() {
           </div>
         </div>
       </>
+    ),
+
+    'fi-tracker': (
+      <div className="rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm">
+        <div className="p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+                <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Financial Independence</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Passive income covering expenses</p>
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${
+              fiAchieved
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                : fiPercent >= 50
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400'
+                  : fiPercent >= 25
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                    : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400'
+            }`}>
+              {fiAchieved ? 'Achieved!' : fiPercent >= 50 ? 'On Track' : fiPercent > 0 ? 'Building' : 'Not Started'}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            {/* Progress Ring */}
+            <div className="relative shrink-0">
+              <ProgressRing percent={fiPercent} size={140} strokeWidth={10} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
+                  {fiPercent.toFixed(0)}%
+                </span>
+                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  Covered
+                </span>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="flex-1 w-full space-y-4">
+              {/* Income vs Expenses bars */}
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Passive Income</span>
+                    <span className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatCurrency(passiveIncome)}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">/mo</span></span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${monthlyExpenses > 0 ? Math.min((passiveIncome / monthlyExpenses) * 100, 100) : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Expenses</span>
+                    <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(monthlyExpenses)}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">/mo</span></span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-slate-300 dark:bg-white/20 w-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Gap / Surplus */}
+              <div className="pt-3 border-t border-slate-100 dark:border-white/10">
+                {fiAchieved ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Monthly Surplus</span>
+                    <span className="text-lg font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">
+                      +{formatCurrency(passiveIncome - monthlyExpenses)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Still Needed</span>
+                    <span className="text-lg font-extrabold tabular-nums text-rose-500 dark:text-rose-400">
+                      {formatCurrency(fiRemaining)}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">/mo</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Passive income sources breakdown */}
+              {fiBreakdown.length > 0 && (
+                <div className="pt-3 border-t border-slate-100 dark:border-white/10 space-y-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Income Sources</span>
+                  {fiBreakdown.map(item => (
+                    <div key={item.label} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                        <span className="text-xs text-slate-600 dark:text-slate-400">{item.label}</span>
+                      </div>
+                      <span className="text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(item.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {passiveIncome === 0 && monthlyExpenses === 0 && (
+                <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-2">
+                  Add income and expenses to track your path to financial independence.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Bottom accent */}
+        <div className={`h-1 w-full ${fiAchieved ? 'bg-emerald-500' : fiPercent >= 50 ? 'bg-blue-500' : fiPercent >= 25 ? 'bg-amber-500' : 'bg-slate-300 dark:bg-white/10'}`} />
+      </div>
     ),
 
     'cashflow-kpis': (
