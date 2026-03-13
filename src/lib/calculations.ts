@@ -192,7 +192,7 @@ export interface DashboardMetrics {
   rentalIncome: number
   /** baseIncome + rentalIncome */
   monthlyIncome: number
-  /** Budget-based expenses (ExpenseBudget entries) */
+  /** Living expenses only (from budget, estimate, or actuals) */
   baseExpenses: number
   /** Total mortgage / liability repayments */
   mortgageExpenses: number
@@ -211,15 +211,33 @@ export interface DashboardMetrics {
 }
 
 /**
- * Get the current month's expense amount — uses actuals if available, otherwise budget.
- * For each budget item, if there's an actual entry for the current month, use that instead.
+ * Filter expense budgets to only LIVING expenses.
+ * Excludes auto-generated vehicle loan/lease entries and property-linked entries
+ * since those are tracked separately as mortgageExpenses and propertyRunningCosts.
+ */
+function filterLivingBudgets(budgets: ExpenseBudget[]): ExpenseBudget[] {
+  return budgets.filter(b =>
+    !b.linkedPropertyId &&
+    !b.linkedAssetId &&
+    !b.label.endsWith('Car Loan Repayment') &&
+    !b.label.endsWith('Lease Payment') &&
+    !b.label.endsWith('Margin Loan')
+  )
+}
+
+/**
+ * Get the effective monthly living expense amount based on user settings.
+ * - 'budget' source: sum of living expense budget entries only
+ * - 'actuals' source: sum of actuals for current month (falls back to budget if none)
  */
 function getEffectiveMonthlyExpenses(
   budgets: ExpenseBudget[],
   actuals: ExpenseActual[],
   expenseCalcSource: ExpenseCalcSource = 'budget',
 ): { total: number; usingActuals: boolean } {
-  const budgetTotal = calculateMonthlyExpenses(budgets)
+  // IMPORTANT: Only count living expense budgets, not vehicle/property-linked ones
+  const livingBudgets = filterLivingBudgets(budgets)
+  const budgetTotal = calculateMonthlyExpenses(livingBudgets)
 
   // If user explicitly chose "budget", always use budget total
   if (expenseCalcSource === 'budget') {
@@ -272,20 +290,22 @@ export function calculateDashboardMetrics(
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
   const monthlyIncome = baseIncome + rentalIncome
 
-  // Expenses: if in estimate mode and we have an estimate, use that as base expenses
-  // Otherwise use detailed budgets (or actuals if available)
+  // Living Expenses: use estimate, budget, or actuals depending on user settings
+  // getEffectiveMonthlyExpenses already filters to living-only budgets internally
   const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
   const { total: detailedExpenses, usingActuals } = getEffectiveMonthlyExpenses(expenseBudgets, expenseActuals ?? [], expenseCalcSource ?? 'budget')
   const baseExpenses = useEstimate ? estimatedMonthlyExpenses! : detailedExpenses
-  // Exclude car_loan liabilities — their repayments are tracked as ExpenseBudget items
+
+  // Loan repayments: ALL liabilities (mortgages, personal loans, car loans, etc.)
   const mortgageExpenses = liabilities
-    .filter(l => l.category !== 'car_loan')
     .reduce((sum, l) => {
       const repayment = l.minimumRepayment ?? 0
       if (l.repaymentFrequency === 'weekly') return sum + (repayment * 52) / 12
       if (l.repaymentFrequency === 'fortnightly') return sum + (repayment * 26) / 12
       return sum + repayment
     }, 0)
+
+  // Property running costs: council rates, water, insurance, strata, etc.
   const propertyRunningCosts = properties.reduce((sum, p) => {
     return sum
       + (p.councilRatesPA ?? 0) / 12
@@ -296,6 +316,7 @@ export function calculateDashboardMetrics(
       + ((p.propertyManagementPct ?? 0) / 100) * (p.weeklyRent ?? 0) * 52 / 12
       + (p.landTaxPA ?? 0) / 12
   }, 0)
+
   const monthlyExpenses = baseExpenses + mortgageExpenses + propertyRunningCosts
 
   // Negative gearing benefit
@@ -364,11 +385,14 @@ export function projectNetWealth(
   const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
   const cashAssets = (assets.filter(a => a.category === 'cash') as CashAsset[])
   const negGearingBenefitMonthly = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary) / 12
+
   // When using estimate mode, replace budget-based expenses with the flat estimate
-    const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
-    const monthlyExpenseTotal = useEstimate ? estimatedMonthlyExpenses! : calculateMonthlyExpenses(budgets)
-    const propertyExpenses = calculateMonthlyPropertyExpenses(properties, liabilities)
-    const monthlySurplus = calculateMonthlyIncome(incomes) - monthlyExpenseTotal - propertyExpenses + negGearingBenefitMonthly
+  // Filter to living budgets only for projection too
+  const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
+  const livingBudgets = filterLivingBudgets(budgets)
+  const monthlyExpenseTotal = useEstimate ? estimatedMonthlyExpenses! : calculateMonthlyExpenses(livingBudgets)
+  const propertyExpenses = calculateMonthlyPropertyExpenses(properties, liabilities)
+  const monthlySurplus = calculateMonthlyIncome(incomes) - monthlyExpenseTotal - propertyExpenses + negGearingBenefitMonthly
 
   for (let m = 0; m <= months; m++) {
     if (m % 12 === 0) {
