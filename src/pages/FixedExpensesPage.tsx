@@ -13,6 +13,46 @@ interface AutoExpenseItem {
   monthlyAmount: number
 }
 
+/* ── Expense-type colour map ── */
+const EXPENSE_COLORS: Record<string, { badge: string; dot: string }> = {
+  mortgage_repayment: {
+    badge: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300',
+    dot: 'bg-blue-500',
+  },
+  council_rates: {
+    badge: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+    dot: 'bg-amber-500',
+  },
+  water_rates: {
+    badge: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300',
+    dot: 'bg-cyan-500',
+  },
+  building_insurance: {
+    badge: 'bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300',
+    dot: 'bg-purple-500',
+  },
+  property_management: {
+    badge: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
+    dot: 'bg-rose-500',
+  },
+  strata: {
+    badge: 'bg-teal-50 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300',
+    dot: 'bg-teal-500',
+  },
+  land_tax: {
+    badge: 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300',
+    dot: 'bg-orange-500',
+  },
+  maintenance: {
+    badge: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+    dot: 'bg-emerald-500',
+  },
+}
+const DEFAULT_EXPENSE_COLOR = {
+  badge: 'bg-slate-50 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300',
+  dot: 'bg-slate-500',
+}
+
 const LIABILITY_LABELS: Record<string, string> = {
   personal_loan: 'Personal Loan',
   credit_card: 'Credit Card',
@@ -133,6 +173,19 @@ export function FixedExpensesPage() {
     }))
   }, [autoPropertyExpenses])
 
+  // Collect unique expense categories for the legend
+  const uniqueCategories = useMemo(() => {
+    const seen = new Set<string>()
+    const result: { category: string; label: string }[] = []
+    for (const item of autoPropertyExpenses) {
+      if (!seen.has(item.category)) {
+        seen.add(item.category)
+        result.push({ category: item.category, label: item.label })
+      }
+    }
+    return result
+  }, [autoPropertyExpenses])
+
   const hasAnyExpenses = autoPropertyExpenses.length > 0 || autoVehicleExpenses.length > 0 || autoLoanExpenses.length > 0
 
   return (
@@ -195,12 +248,27 @@ export function FixedExpensesPage() {
                   <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
                     {autoByProperty.length}
                   </span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{'\u{1F517}'} Auto-generated</span>
                 </div>
                 <span className="text-base font-bold tabular-nums text-blue-600 dark:text-blue-400">
                   {formatCurrency(propertyTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
                 </span>
               </div>
+
+              {/* Expense type legend */}
+              {uniqueCategories.length > 1 && (
+                <div className="flex flex-wrap items-center gap-2 px-1">
+                  {uniqueCategories.map(({ category, label }) => {
+                    const colors = EXPENSE_COLORS[category] ?? DEFAULT_EXPENSE_COLOR
+                    return (
+                      <span key={category} className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+                        {label}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
 
               {autoByProperty.map(({ name, items, total: propTotal }) => (
                 <div
@@ -223,22 +291,26 @@ export function FixedExpensesPage() {
                     </div>
                   </div>
                   <div className="border-t border-slate-100 dark:border-white/5">
-                    {items.map((item, idx) => (
-                      <div
-                        key={item.key}
-                        className={`flex items-center justify-between px-5 py-3 pl-16 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
-                          idx !== items.length - 1 ? 'border-b border-slate-50 dark:border-white/5' : ''
-                        }`}
-                      >
-                        <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
-                          {item.label}
-                        </span>
-                        <div className="text-right">
-                          <span className="text-sm font-semibold tabular-nums dark:text-white">{formatCurrency(item.monthlyAmount)}</span>
-                          <span className="text-xs text-slate-400 ml-1">/mo</span>
+                    {items.map((item, idx) => {
+                      const colors = EXPENSE_COLORS[item.category] ?? DEFAULT_EXPENSE_COLOR
+                      return (
+                        <div
+                          key={item.key}
+                          className={`flex items-center justify-between px-5 py-3 pl-16 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
+                            idx !== items.length - 1 ? 'border-b border-slate-50 dark:border-white/5' : ''
+                          }`}
+                        >
+                          <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${colors.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+                            {item.label}
+                          </span>
+                          <div className="text-right">
+                            <span className="text-sm font-semibold tabular-nums dark:text-white">{formatCurrency(item.monthlyAmount)}</span>
+                            <span className="text-xs text-slate-400 ml-1">/mo</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               ))}
@@ -255,7 +327,7 @@ export function FixedExpensesPage() {
                   <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
                     {autoVehicleExpenses.length}
                   </span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{'\u{1F517}'} Auto-generated</span>
                 </div>
                 <span className="text-base font-bold tabular-nums text-orange-600 dark:text-orange-400">
                   {formatCurrency(vehicleExpenseTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
@@ -310,7 +382,7 @@ export function FixedExpensesPage() {
                   <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
                     {autoLoanExpenses.length}
                   </span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{'\u{1F517}'} Auto-generated</span>
                 </div>
                 <span className="text-base font-bold tabular-nums text-violet-600 dark:text-violet-400">
                   {formatCurrency(loanExpenseTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
