@@ -76,9 +76,11 @@ export function LivingExpensesPage() {
   // Track inline edit values: category → string amount
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [hasChanges, setHasChanges] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
-  // Initialize edit values from existing budgets
+  // Initialize edit values from existing budgets — only on first load or after save/reset
   useEffect(() => {
+    if (initialized && hasChanges) return // Don't overwrite user's unsaved typing
     const values: Record<string, string> = {}
     for (const group of LIVING_SUPER_CATEGORIES) {
       for (const cat of group.categories) {
@@ -88,6 +90,7 @@ export function LivingExpensesPage() {
     }
     setEditValues(values)
     setHasChanges(false)
+    setInitialized(true)
   }, [budgetByCategory])
 
   const handleValueChange = useCallback((category: string, value: string) => {
