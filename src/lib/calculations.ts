@@ -215,13 +215,26 @@ export interface DashboardMetrics {
  * Excludes auto-generated vehicle loan/lease entries and property-linked entries
  * since those are tracked separately as mortgageExpenses and propertyRunningCosts.
  */
+// Whitelist of categories that count as "living expenses" — must match
+// LIVING_SUPER_CATEGORIES in LivingExpensesPage.tsx exactly.
+const LIVING_EXPENSE_CATEGORIES = new Set([
+  // Housing
+  'rent', 'electricity', 'water', 'rates', 'security', 'home_improvements', 'repairs_maintenance', 'gardening',
+  // Insurance
+  'insurance_health', 'insurance_car', 'insurance_life', 'home_insurance', 'insurance_other',
+  // Living
+  'groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs',
+  // Lifestyle
+  'subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations',
+  // Financial
+  'hecs_repayment', 'tax', 'accounting_fees', 'other',
+])
+
 function filterLivingBudgets(budgets: ExpenseBudget[]): ExpenseBudget[] {
   return budgets.filter(b =>
+    LIVING_EXPENSE_CATEGORIES.has(b.category) &&
     !b.linkedPropertyId &&
-    !b.linkedAssetId &&
-    !b.label.endsWith('Car Loan Repayment') &&
-    !b.label.endsWith('Lease Payment') &&
-    !b.label.endsWith('Margin Loan')
+    !b.linkedAssetId
   )
 }
 
