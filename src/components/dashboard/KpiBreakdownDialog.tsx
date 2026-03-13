@@ -12,7 +12,7 @@ import type { CashAsset } from '@/types/models'
 import { getMarginalTaxRate } from '@/lib/ausTax'
 import { useNavigate } from 'react-router-dom'
 
-export type BreakdownType = 'net-wealth' | 'cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | 'neg-gearing' | null
+export type BreakdownType = 'net-wealth' | 'cashflow' | 'yearly-cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | 'neg-gearing' | null
 
 interface Props {
   open: BreakdownType
@@ -113,6 +113,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
     'cashflow': 'Monthly Cashflow Breakdown',
     'savings-rate': 'Savings Rate Breakdown',
     'debt-ratio': 'Debt Ratio Breakdown',
+    'yearly-cashflow': 'Yearly Cashflow Breakdown',
     'surplus': 'Monthly Surplus Breakdown',
     'neg-gearing': 'Negative Gearing Breakdown',
   }
@@ -224,6 +225,113 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
 
               <div className="h-3" />
               <Row label="Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
+
+              <NavLink to="/income" label="Income" />
+            </div>
+          )
+        })()}
+
+        {open === 'yearly-cashflow' && (() => {
+          const budgetModeY = userProfile?.budgetMode ?? 'estimate'
+          const isEstimateY = budgetModeY === 'estimate'
+          const expenseLabelY = isEstimateY ? 'Living Expenses (estimate)' : (metrics.usingActuals ? 'Living Expenses (actuals)' : 'Living Expenses (budget)')
+
+          const yearlyIncome = monthlyIncome * 12
+          const yearlyBaseExpenses = baseExpenses * 12
+          const yearlyMortgage = mortgageExpenses * 12
+          const yearlyPropertyCosts = propertyRunningCosts * 12
+          const yearlyTotalExpenses = monthlyExpenses * 12
+          const yearlyEffectiveIncome = yearlyIncome + negGearingPA
+          const yearlySurplus = yearlyEffectiveIncome - yearlyTotalExpenses
+
+          // Break down loan repayments by type (annualised)
+          const mortgageRepaymentsY = liabilities
+            .filter(l => ['mortgage', 'home_loan'].includes(l.category))
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + r * 52
+              if (l.repaymentFrequency === 'fortnightly') return sum + r * 26
+              return sum + r * 12
+            }, 0)
+          const personalLoanRepaymentsY = liabilities
+            .filter(l => l.category === 'personal_loan')
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + r * 52
+              if (l.repaymentFrequency === 'fortnightly') return sum + r * 26
+              return sum + r * 12
+            }, 0)
+          const otherLoanRepaymentsY = liabilities
+            .filter(l => !['mortgage', 'home_loan', 'personal_loan', 'car_loan'].includes(l.category))
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + r * 52
+              if (l.repaymentFrequency === 'fortnightly') return sum + r * 26
+              return sum + r * 12
+            }, 0)
+
+          // Yearly income breakdown
+          const yearlyIncomeBySource = incomes.filter(i => i.isActive).map(i => ({
+            label: i.name,
+            amount: i.monthlyAmount * 12,
+          }))
+          if (rentalIncome > 0) {
+            properties
+              .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
+              .forEach(p => {
+                yearlyIncomeBySource.push({
+                  label: `${p.name} (rent)`,
+                  amount: (p.weeklyRent ?? 0) * 52,
+                })
+              })
+          }
+
+          return (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Annual Income</p>
+              {yearlyIncomeBySource.map(i => (
+                <Row key={i.label} label={i.label} value={formatCurrency(i.amount)} indent />
+              ))}
+              <Row label="Total Income" value={formatCurrency(yearlyIncome)} bold color="text-blue-400" />
+
+              <div className="h-3" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Annual Expenses</p>
+              <Row label={expenseLabelY} value={formatCurrency(yearlyBaseExpenses)} indent />
+              {mortgageRepaymentsY > 0 && (
+                <Row label="Mortgage repayments" value={formatCurrency(mortgageRepaymentsY)} indent />
+              )}
+              {personalLoanRepaymentsY > 0 && (
+                <Row label="Personal loan repayments" value={formatCurrency(personalLoanRepaymentsY)} indent />
+              )}
+              {otherLoanRepaymentsY > 0 && (
+                <Row label="Other loan repayments" value={formatCurrency(otherLoanRepaymentsY)} indent />
+              )}
+              {yearlyPropertyCosts > 0 && (
+                <Row label="Property running costs" value={formatCurrency(yearlyPropertyCosts)} indent />
+              )}
+              <Row label="Total Expenses" value={formatCurrency(yearlyTotalExpenses)} bold color="text-red-400" />
+
+              {negGearingPA > 0 && (
+                <>
+                  <div className="h-3" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tax Benefits</p>
+                  <Row label="Neg. gearing benefit" value={formatCurrency(negGearingPA)} indent color="text-green-400" />
+                  <Row label="Effective Income (incl. benefits)" value={formatCurrency(yearlyEffectiveIncome)} bold color="text-blue-400" />
+                </>
+              )}
+
+              <div className="h-3" />
+              <Row label="Annual Surplus" value={formatCurrency(yearlySurplus)} bold color={yearlySurplus >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+              <Row label="Monthly Equivalent" value={formatCurrency(yearlySurplus / 12)} color="text-muted-foreground" />
+
+              <div className="h-3" />
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">
+                  {negGearingPA > 0
+                    ? `Your negative gearing benefit of ${formatCurrency(negGearingPA)}/yr is included as income, as it reduces your tax liability.`
+                    : 'This view annualises your monthly income and expenses to show your full-year cashflow position.'}
+                </p>
+              </div>
 
               <NavLink to="/income" label="Income" />
             </div>

@@ -1,7 +1,7 @@
 // NWT Dashboard
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle, Target, Home, Landmark, TrendingDown } from 'lucide-react'
+import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle, Target, Home, Landmark, TrendingDown, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { WealthChart } from '@/components/dashboard/WealthChart'
@@ -35,7 +35,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'expenses-chart', 'charts']
+const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'expenses-chart', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -321,6 +321,14 @@ export function DashboardPage() {
   const debtTag = debtRatio < 0.3 ? 'Healthy' : debtRatio < 0.5 ? 'Moderate' : 'High'
   const debtColor = debtRatio < 0.3 ? 'green' as const : debtRatio < 0.5 ? 'amber' as const : 'red' as const
   const cashflowMax = Math.max(monthlyIncome, monthlyExpenses)
+
+    // --- Yearly Cashflow ---
+    const yearlyIncome = monthlyIncome * 12
+    const yearlyExpenses = monthlyExpenses * 12
+    const negGearingBenefitPA = metrics.negGearingBenefitPA ?? 0
+    const yearlyEffectiveIncome = yearlyIncome + negGearingBenefitPA
+    const yearlyCashflow = yearlyEffectiveIncome - yearlyExpenses
+    const yearlyMax = Math.max(yearlyEffectiveIncome, yearlyExpenses)
 
   // Projection assumption labels
   const propGrowth = ((projectionSettings.propertyGrowthOverride ?? 0.07) * 100).toFixed(0)
@@ -646,6 +654,40 @@ export function DashboardPage() {
             />
           </div>
         </div>
+      </div>
+    ),
+
+    'yearly-cashflow': (
+      <div
+        className="relative rounded-xl overflow-hidden bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all"
+        onClick={() => setBreakdownOpen('yearly-cashflow')}
+      >
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="h-4 w-4 text-indigo-500" />
+            <span className="text-sm font-semibold text-slate-800 dark:text-white">Yearly Cashflow</span>
+            {negGearingBenefitPA > 0 && (
+              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-full">Incl. Tax Benefits</span>
+            )}
+          </div>
+          <div className="space-y-3">
+            <CashflowBar label="Income" amount={yearlyIncome} max={yearlyMax} colorClass="bg-emerald-500" icon={ArrowUpRight} />
+            {negGearingBenefitPA > 0 && (
+              <CashflowBar label="Neg. Gearing Benefit" amount={negGearingBenefitPA} max={yearlyMax} colorClass="bg-teal-500" icon={TrendingUp} />
+            )}
+            <CashflowBar label="Expenses" amount={yearlyExpenses} max={yearlyMax} colorClass="bg-rose-500" icon={ArrowDownRight} />
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Annual Surplus</span>
+              <span className={`text-lg font-extrabold tabular-nums ${yearlyCashflow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                {formatCurrency(yearlyCashflow)}
+              </span>
+            </div>
+          </div>
+        </div>
+        {/* Bottom accent */}
+        <div className="h-1 w-full bg-indigo-500" />
       </div>
     ),
 
