@@ -46,7 +46,7 @@ export function calculatePropertyNetYield(
 export function calculatePropertyCashflow(
   property: Property,
   mortgage?: Liability,
-  _offsetAccounts?: CashAsset[]
+  offsetAccounts?: CashAsset[]
 ): number {
   if (property.type !== 'investment' || !property.weeklyRent) return 0
 
@@ -91,16 +91,20 @@ export function calculateMonthlyExpenses(budgets: ExpenseBudget[]): number {
   return budgets.reduce((sum, b) => sum + b.monthlyBudget, 0)
 }
 
-export function calculateMonthlyPropertyExpenses(properties: Property[], liabilities: Liability[]): number {
+export function calculateMonthlyPropertyExpenses(properties: Property[], liabilities: Liability[], cashAssets?: CashAsset[]): number {
   // Only include mortgage interest (not principal — that's debt reduction, not spending).
   // Running costs (council rates, water, insurance, etc.) are already captured
   // as auto-generated expenses in the budgets array, so we don't add them here.
+  // Offset accounts reduce the effective balance used to calculate interest.
   let total = 0
   for (const prop of properties) {
     if (prop.mortgageId) {
       const lia = liabilities.find(l => l.id === prop.mortgageId)
       if (lia && lia.interestRatePA > 0) {
-        total += (lia.currentBalance * lia.interestRatePA) / 12
+        const effectiveBalance = cashAssets
+          ? calculateEffectiveMortgageBalance(lia, cashAssets.filter(a => a.isOffset && a.linkedMortgageId === lia.id))
+          : lia.currentBalance
+        total += (effectiveBalance * lia.interestRatePA) / 12
       }
     }
   }
@@ -207,6 +211,8 @@ export interface DashboardMetrics {
   negGearingBenefitPA: number
   /** Total annual deductible loss (before tax benefit) */
   negGearingDeductiblePA: number
+  /** Monthly interest saved by offset accounts */
+  offsetInterestSavedMonthly: number
   /** monthlyIncome - monthlyExpenses + negGearing/12 */
   monthlyCashflow: number
   /** monthlyCashflow / monthlyIncome × 100 (percentage, e.g. 20.7) */
@@ -347,13 +353,29 @@ export function calculateDashboardMetrics(
   const negGearingBenefitPA = negGearingResult.benefit
   const negGearingDeductiblePA = negGearingResult.totalDeductible
 
+  // Calculate interest saved by offset accounts
+  // For each mortgage with linked offset accounts, calculate how much interest
+  // is saved per month by reducing the effective loan balance.
+  const offsetInterestSavedMonthly = properties.reduce((saved, prop) => {
+    if (!prop.mortgageId) return saved
+    const lia = liabilities.find(l => l.id === prop.mortgageId)
+    if (!lia || lia.interestRatePA <= 0) return saved
+    const offsets = cashAssets.filter(a => a.isOffset && a.linkedMortgageId === lia.id)
+    const totalOffset = offsets.reduce((sum, a) => sum + a.currentValue, 0)
+    if (totalOffset <= 0) return saved
+    // Interest saved = min(offset, balance) * rate / 12
+    const cappedOffset = Math.min(totalOffset, lia.currentBalance)
+    return saved + (cappedOffset * lia.interestRatePA) / 12
+  }, 0)
+
   const monthlyCashflow = monthlyIncome - monthlyExpenses + negGearingBenefitPA / 12
   const savingsRate = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
 
   return {
     baseIncome, rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
-    negGearingBenefitPA, negGearingDeductiblePA, monthlyCashflow, savingsRate, usingActuals,
+    negGearingBenefitPA, negGearingDeductiblePA, offsetInterestSavedMonthly,
+    monthlyCashflow, savingsRate, usingActuals,
   }
 }
 
@@ -413,7 +435,7 @@ export function projectNetWealth(
   const useEstimate = budgetMode === 'estimate' && (estimatedMonthlyExpenses ?? 0) > 0
   const livingBudgets = filterLivingBudgets(budgets)
   const monthlyExpenseTotal = useEstimate ? estimatedMonthlyExpenses! : calculateMonthlyExpenses(livingBudgets)
-  const propertyExpenses = calculateMonthlyPropertyExpenses(properties, liabilities)
+  const propertyExpenses = calculateMonthlyPropertyExpenses(properties, liabilities, cashAssets)
   const monthlySurplus = calculateMonthlyIncome(incomes) - monthlyExpenseTotal - propertyExpenses + negGearingBenefitMonthly
 
   for (let m = 0; m <= months; m++) {

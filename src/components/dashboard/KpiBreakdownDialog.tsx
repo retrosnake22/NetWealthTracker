@@ -54,7 +54,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   const {
     rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
-    negGearingBenefitPA: negGearingPA, monthlyCashflow, savingsRate,
+    negGearingBenefitPA: negGearingPA, offsetInterestSavedMonthly, monthlyCashflow, savingsRate,
   } = metrics
   const debtRatio = totalAssets > 0 ? totalLiabilities / totalAssets : 0
 
@@ -209,7 +209,16 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
               {negGearingPA > 0 && (
                 <>
                   <div className="h-3" />
-                  <Row label="Neg. gearing tax benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
+                  <Row label="Neg. gearing benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
+                </>
+              )}
+
+              {offsetInterestSavedMonthly > 0 && (
+                <>
+                  <div className="h-3" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Offset Savings</p>
+                  <Row label="Interest saved by offsets" value={formatCurrency(offsetInterestSavedMonthly)} indent color="text-emerald-400" />
+                  <p className="text-xs text-muted-foreground mt-1 pl-4">Your offset accounts reduce the interest charged on linked mortgages. This doesn't change your repayment amount but more goes to principal.</p>
                 </>
               )}
 
