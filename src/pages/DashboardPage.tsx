@@ -261,6 +261,7 @@ export function DashboardPage() {
   const fiPercent = monthlyExpenses > 0 ? Math.min((passiveIncome / monthlyExpenses) * 100, 100) : 0
   const fiRemaining = Math.max(monthlyExpenses - passiveIncome, 0)
   const fiAchieved = passiveIncome >= monthlyExpenses && monthlyExpenses > 0
+  const fiCapitalNeeded = fiRemaining > 0 ? (fiRemaining * 12) / 0.06 : 0
 
   // Passive income breakdown for display
   const fiBreakdown: { label: string; amount: number; icon: React.ComponentType<{ className?: string }> }[] = []
@@ -519,7 +520,24 @@ export function DashboardPage() {
                 )}
               </div>
 
-              {/* Passive income sources breakdown */}
+              {/* Capital needed callout */}
+                {!fiAchieved && fiCapitalNeeded > 0 && (
+                  <div className="mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                    <div className="flex items-start gap-2">
+                      <Target className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                          {formatCurrency(fiCapitalNeeded)} in capital needed
+                        </p>
+                        <p className="text-[11px] text-blue-600/70 dark:text-blue-400/60 mt-0.5">
+                          At 6% annual return to cover remaining {formatCurrency(fiRemaining)}/mo in expenses
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Passive income sources breakdown */}
               {fiBreakdown.length > 0 && (
                 <div className="pt-3 border-t border-slate-100 dark:border-white/10 space-y-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Income Sources</span>
