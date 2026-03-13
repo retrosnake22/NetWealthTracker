@@ -44,6 +44,8 @@ export interface StockAsset extends Asset {
   ticker?: string
   units?: number
   avgBuyPrice?: number
+  hasMarginLoan?: boolean
+  linkedLiabilityId?: string
 }
 
 export interface SuperAsset extends Asset {

@@ -88,6 +88,10 @@ export default function AssetsPage() {
 		cashType: 'bank' as 'cash' | 'bank',
 		bankName: '',
 		interestRate: '3.0',
+		hasMarginLoan: false,
+		marginLoanBalance: '',
+		marginLoanRate: '',
+		marginLoanTerm: '5',
 	})
 
 	// Property editing
@@ -155,6 +159,10 @@ export default function AssetsPage() {
 			cashType: 'bank' as 'cash' | 'bank',
 			bankName: '',
 			interestRate: '3.0',
+			hasMarginLoan: false,
+			marginLoanBalance: '',
+			marginLoanRate: '',
+			marginLoanTerm: '5',
 		})
 		setEditingAsset(null)
 		setShowAddAsset(true)
@@ -166,6 +174,16 @@ export default function AssetsPage() {
 		let linkedLiability = linkedLiabilityId ? liabilities.find(l => l.id === linkedLiabilityId) : null
 		if (!linkedLiability && a.category === 'vehicles') {
 			linkedLiability = liabilities.find(l => l.category === 'car_loan' && l.name === `${a.name} Car Loan`) ?? null
+		}
+		// Populate margin loan fields for stocks
+		let marginLoanLiability = null
+		if (a.category === 'stocks') {
+			if (linkedLiabilityId) {
+				marginLoanLiability = liabilities.find(l => l.id === linkedLiabilityId) ?? null
+			}
+			if (!marginLoanLiability) {
+				marginLoanLiability = liabilities.find(l => l.category === 'personal_loan' && l.name === `${a.name} Margin Loan`) ?? null
+			}
 		}
 		setAssetForm({
 			name: a.name, value: String(a.currentValue), category: a.category,
@@ -180,6 +198,10 @@ export default function AssetsPage() {
 			cashType: (a as any).cashType || 'bank',
 			bankName: (a as any).bankName || '',
 			interestRate: (a as any).cashType === 'cash' ? '0' : (a.growthRatePA * 100).toFixed(1),
+			hasMarginLoan: !!marginLoanLiability,
+			marginLoanBalance: marginLoanLiability ? String(marginLoanLiability.currentBalance) : '',
+			marginLoanRate: marginLoanLiability ? String(marginLoanLiability.interestRatePA * 100) : '',
+			marginLoanTerm: marginLoanLiability?.loanTermYears ? String(marginLoanLiability.loanTermYears) : '5',
 		})
 		setEditingAsset(a)
 		setShowAddAsset(true)
@@ -382,6 +404,65 @@ export default function AssetsPage() {
 					linkedExpenseId: undefined,
 					leaseMonthlyPayment: undefined,
 				} as any)
+			}
+		}
+
+		// Handle stocks margin loan
+		if (assetForm.category === 'stocks' && assetId) {
+			const assetName = assetForm.name
+			const oldLinkedLiabilityId = editingAsset ? (editingAsset as any).linkedLiabilityId : undefined
+
+			// Helper: find existing margin loan liability (by linked ID or name match)
+			const findMarginLoanLiability = () => {
+				if (oldLinkedLiabilityId) {
+					const byId = liabilities.find(l => l.id === oldLinkedLiabilityId)
+					if (byId) return byId
+				}
+				return liabilities.find(l =>
+					l.category === 'personal_loan' &&
+					(l.name === `${editingAsset?.name} Margin Loan` || l.name === `${assetName} Margin Loan`)
+				)
+			}
+
+			if (!assetForm.hasMarginLoan) {
+				// Remove margin loan if it exists
+				const existingMarginLoan = findMarginLoanLiability()
+				if (existingMarginLoan) removeLiability(existingMarginLoan.id)
+				updateAsset(assetId, { linkedLiabilityId: undefined, hasMarginLoan: false } as any)
+			} else {
+				const marginBalance = parseFloat(assetForm.marginLoanBalance) || 0
+				const marginRateDecimal = (parseFloat(assetForm.marginLoanRate) || 0) / 100
+				const marginTermYears = parseFloat(assetForm.marginLoanTerm) || 5
+				const marginRepayment = calcMonthlyRepayment(marginBalance, marginRateDecimal, marginTermYears)
+				const roundedMarginRepayment = Math.round(marginRepayment * 100) / 100
+
+				const existingMarginLoan = findMarginLoanLiability()
+				if (existingMarginLoan) {
+					updateLiability(existingMarginLoan.id, {
+						name: `${assetName} Margin Loan`,
+						currentBalance: marginBalance,
+						interestRatePA: marginRateDecimal,
+						minimumRepayment: roundedMarginRepayment,
+						loanTermYears: marginTermYears,
+					})
+					updateAsset(assetId, { linkedLiabilityId: existingMarginLoan.id, hasMarginLoan: true } as any)
+				} else {
+					// Create a new margin loan liability
+					addLiability({
+						name: `${assetName} Margin Loan`,
+						category: 'personal_loan',
+						currentBalance: marginBalance,
+						interestRatePA: marginRateDecimal,
+						minimumRepayment: roundedMarginRepayment,
+						repaymentFrequency: 'monthly',
+						loanTermYears: marginTermYears,
+					})
+					const newLiabilities = useFinanceStore.getState().liabilities
+					const newMarginLoan = newLiabilities[newLiabilities.length - 1]
+					if (newMarginLoan) {
+						updateAsset(assetId, { linkedLiabilityId: newMarginLoan.id, hasMarginLoan: true } as any)
+					}
+				}
 			}
 		}
 
@@ -627,6 +708,7 @@ export default function AssetsPage() {
 							const isExpanded = expandedPnL.has(p.id)
 							const mortgage = findMortgage(p)
 							const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
+					const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
 							return (
 								<div key={p.id} className="py-3">
 									<div className="flex items-center justify-between">
@@ -637,6 +719,7 @@ export default function AssetsPage() {
 												<p className="text-xs text-muted-foreground">
 													{isInvestment ? 'Investment' : 'Primary Residence'}
 													{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
+										{mortgage && <> · Equity: {formatCurrency(equity)}</>}
 												</p>
 											</div>
 										</div>
@@ -949,7 +1032,83 @@ export default function AssetsPage() {
 						)}
 
 						<div className="flex gap-2 justify-end">
-							<Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
+							{/* Stocks Margin Loan Section — only for stock assets */}
+				{assetForm.category === 'stocks' && (
+					<div className="border-t pt-4">
+						<div className="flex items-center justify-between mb-3">
+							<div>
+								<h4 className="font-semibold text-sm">Margin Loan</h4>
+								<p className="text-xs text-muted-foreground">Borrowed funds used to invest</p>
+							</div>
+							<button
+								type="button"
+								role="switch"
+								aria-checked={assetForm.hasMarginLoan}
+								onClick={() => setAssetForm(f => ({ ...f, hasMarginLoan: !f.hasMarginLoan }))}
+								className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.hasMarginLoan ? 'bg-blue-500' : 'bg-muted'}`}
+							>
+								<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.hasMarginLoan ? 'translate-x-5' : 'translate-x-0'}`} />
+							</button>
+						</div>
+						{assetForm.hasMarginLoan && (() => {
+							const bal = parseFloat(assetForm.marginLoanBalance) || 0
+							const rate = (parseFloat(assetForm.marginLoanRate) || 0) / 100
+							const term = parseFloat(assetForm.marginLoanTerm) || 5
+							const autoRepayment = calcMonthlyRepayment(bal, rate, term)
+							return (
+								<div className="space-y-3">
+									<p className="text-xs text-muted-foreground">
+										A margin loan liability will be created automatically
+									</p>
+									<div>
+										<Label>Loan Balance ($)</Label>
+										<Input
+											type="number"
+											value={assetForm.marginLoanBalance}
+											onChange={e => setAssetForm(f => ({ ...f, marginLoanBalance: e.target.value }))}
+											placeholder="e.g. 50000"
+										/>
+									</div>
+									<div>
+										<Label>Interest Rate (% p.a.)</Label>
+										<Input
+											type="number"
+											step="0.01"
+											value={assetForm.marginLoanRate}
+											onChange={e => setAssetForm(f => ({ ...f, marginLoanRate: e.target.value }))}
+											placeholder="e.g. 7.5"
+										/>
+									</div>
+									<div>
+										<Label>Loan Term (years)</Label>
+										<Input
+											type="number"
+											step="1"
+											min="1"
+											max="30"
+											value={assetForm.marginLoanTerm}
+											onChange={e => setAssetForm(f => ({ ...f, marginLoanTerm: e.target.value }))}
+											placeholder="e.g. 5"
+										/>
+									</div>
+									{autoRepayment > 0 && (
+										<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+											<div className="flex justify-between">
+												<span className="text-muted-foreground">Calculated Monthly Repayment</span>
+												<span className="font-semibold text-blue-400">{formatCurrency(autoRepayment)}</span>
+											</div>
+											<p className="text-xs text-muted-foreground">
+												Based on {formatCurrency(bal)} over {term} years at {(rate * 100).toFixed(1)}% p.a.
+											</p>
+										</div>
+									)}
+								</div>
+							)
+						})()}
+					</div>
+				)}
+
+				<Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
 							<Button onClick={saveAsset} disabled={!assetForm.name || !assetForm.value}>
 								{editingAsset ? 'Save Changes' : 'Add Asset'}
 							</Button>

@@ -54,14 +54,6 @@ const CATEGORY_GROUPS = [
     filterKey: 'mortgage',
   },
   {
-    key: 'home_loans',
-    label: 'Home Loans',
-    icon: Home,
-    color: 'text-red-400',
-    categories: ['home_loan'] as LiabilityCategory[],
-    filterKey: 'home_loan',
-  },
-  {
     key: 'car_loans',
     label: 'Car Loans',
     icon: Wallet,
@@ -117,6 +109,8 @@ export function LiabilitiesPage() {
     interestRatePA: '',
     minimumRepayment: '',
     repaymentFrequency: 'monthly' as 'weekly' | 'fortnightly' | 'monthly',
+    mortgageType: 'principal_and_interest' as 'interest_only' | 'principal_and_interest',
+    loanTermYears: '',
   })
 
   // Filter liabilities based on URL category param
@@ -131,18 +125,44 @@ export function LiabilitiesPage() {
     setForm({
       name: '', category: (categoryFilter as LiabilityCategory) || 'personal_loan', currentBalance: '',
       interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly',
+      mortgageType: 'principal_and_interest', loanTermYears: '',
     })
     setEditId(null)
   }
 
+  const calcMonthlyRepayment = (
+    balance: number,
+    annualRate: number,
+    termYears: number,
+    type: 'principal_and_interest' | 'interest_only',
+  ): number => {
+    if (balance <= 0 || annualRate <= 0) return 0
+    const r = annualRate / 12
+    if (type === 'interest_only') return balance * r
+    if (termYears <= 0) return 0
+    const n = termYears * 12
+    return (balance * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+  }
+
   const handleSave = () => {
+    const balance = parseFloat(form.currentBalance) || 0
+    const annualRate = (parseFloat(form.interestRatePA) || 0) / 100
+    const termYears = parseFloat(form.loanTermYears) || 0
+    const isAutoCalcCategory = ['personal_loan', 'mortgage', 'home_loan'].includes(form.category)
+    const autoRepayment = isAutoCalcCategory
+      ? calcMonthlyRepayment(balance, annualRate, termYears, form.mortgageType)
+      : null
     const data = {
       name: form.name,
       category: form.category,
-      currentBalance: parseFloat(form.currentBalance) || 0,
-      interestRatePA: (parseFloat(form.interestRatePA) || 0) / 100,
-      minimumRepayment: parseFloat(form.minimumRepayment) || 0,
+      currentBalance: balance,
+      interestRatePA: annualRate,
+      minimumRepayment: autoRepayment !== null && autoRepayment > 0
+        ? autoRepayment
+        : parseFloat(form.minimumRepayment) || 0,
       repaymentFrequency: form.repaymentFrequency,
+      mortgageType: form.mortgageType,
+      loanTermYears: termYears || undefined,
     }
     if (editId) updateLiability(editId, data)
     else addLiability(data)
@@ -160,6 +180,8 @@ export function LiabilitiesPage() {
       interestRatePA: String(item.interestRatePA * 100),
       minimumRepayment: String(item.minimumRepayment),
       repaymentFrequency: item.repaymentFrequency,
+      mortgageType: (item as any).mortgageType ?? 'principal_and_interest',
+      loanTermYears: (item as any).loanTermYears ? String((item as any).loanTermYears) : '',
     })
     setEditId(id)
     setOpen(true)
@@ -280,6 +302,63 @@ export function LiabilitiesPage() {
                     </Select>
                   </div>
                 </div>
+                {(['personal_loan', 'mortgage', 'home_loan'] as LiabilityCategory[]).includes(form.category) && (() => {
+                  const previewBalance = parseFloat(form.currentBalance) || 0
+                  const previewRate = (parseFloat(form.interestRatePA) || 0) / 100
+                  const previewTerm = parseFloat(form.loanTermYears) || 0
+                  const autoAmt = calcMonthlyRepayment(previewBalance, previewRate, previewTerm, form.mortgageType)
+                  return (
+                    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 block">Repayment Type</Label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setForm({...form, mortgageType: 'principal_and_interest'})}
+                            className={`flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                              form.mortgageType === 'principal_and_interest'
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-background text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            P&I
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm({...form, mortgageType: 'interest_only'})}
+                            className={`flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                              form.mortgageType === 'interest_only'
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-background text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Interest Only
+                          </button>
+                        </div>
+                      </div>
+                      {form.mortgageType === 'principal_and_interest' && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Loan Term (years)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="40"
+                            placeholder="e.g. 25"
+                            value={form.loanTermYears}
+                            onChange={e => setForm({...form, loanTermYears: e.target.value})}
+                          />
+                        </div>
+                      )}
+                      {autoAmt > 0 && (
+                        <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
+                          <p className="text-xs text-muted-foreground">Auto-calculated monthly repayment</p>
+                          <p className="text-base font-bold tabular-nums text-primary">{formatCurrency(autoAmt)}/mo</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">This will replace the manual repayment amount on save.</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
               <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
