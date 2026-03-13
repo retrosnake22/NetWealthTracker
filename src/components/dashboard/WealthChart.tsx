@@ -1,5 +1,6 @@
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LabelList } from 'recharts'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 interface WealthChartProps {
@@ -16,8 +17,50 @@ const tooltipFormatter = (value: any, name: any) => {
   return [formatCurrency(Number(value)), labels[String(name)] || String(name)]
 }
 
+function useIsDesktop(breakpoint = 768) {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= breakpoint : true
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${breakpoint}px)`)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [breakpoint])
+
+  return isDesktop
+}
+
 export function WealthChart({ data }: WealthChartProps) {
   const empty = data.length === 0
+  const isDesktop = useIsDesktop()
+
+  // Custom label renderer — shows at every point on desktop, every 5 years on mobile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderCustomLabel = useCallback((props: any) => {
+    const { x, y, index, value } = props
+    if (value == null || index == null) return null
+
+    // On mobile, only show every 5th year (index 0, 5, 10, ...) and the last point
+    if (!isDesktop) {
+      const isLastPoint = index === data.length - 1
+      if (index % 5 !== 0 && !isLastPoint) return null
+    }
+
+    return (
+      <text
+        x={x}
+        y={y - 12}
+        textAnchor="middle"
+        fill="#94a3b8"
+        fontSize={isDesktop ? 11 : 10}
+        fontWeight={500}
+      >
+        {formatCompact(value)}
+      </text>
+    )
+  }, [isDesktop, data.length])
 
   return (
     <Card className="rounded-xl bg-card overflow-hidden h-full flex flex-col">
@@ -49,7 +92,7 @@ export function WealthChart({ data }: WealthChartProps) {
         ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <ComposedChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3} />
@@ -97,7 +140,12 @@ export function WealthChart({ data }: WealthChartProps) {
                   fill="url(#netWealthGrad)"
                   dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }}
                   activeDot={{ r: 5, fill: '#60A5FA', strokeWidth: 0 }}
-                />
+                >
+                  <LabelList
+                    dataKey="netWealth"
+                    content={renderCustomLabel}
+                  />
+                </Area>
 
                 {/* Assets — subtle secondary line */}
                 <Line
