@@ -622,8 +622,8 @@ export function DashboardPage() {
               tagColor={savingsColor}
               ratio={savingsRate / 100}
               icon={PiggyBank}
-              accentColor="#10b981"
-              accentColorClass="bg-emerald-500"
+              accentColor={savingsColor === 'green' ? '#10b981' : savingsColor === 'amber' ? '#f59e0b' : '#f43f5e'}
+              accentColorClass={savingsColor === 'green' ? 'bg-emerald-500' : savingsColor === 'amber' ? 'bg-amber-500' : 'bg-rose-500'}
               onClick={() => setBreakdownOpen('savings-rate')}
             />
           </div>
