@@ -29,8 +29,8 @@ const CATEGORY_COLORS: Record<LiabilityCategory, string> = {
   home_loan: 'bg-red-500/10 text-red-500 border-red-500/20',
   personal_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   car_loan: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  credit_card: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
-  hecs: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+  credit_card: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  hecs: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
   other: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 }
 
@@ -39,8 +39,8 @@ const CATEGORY_BAR_COLORS: Record<LiabilityCategory, string> = {
   home_loan: 'bg-red-500',
   personal_loan: 'bg-orange-500',
   car_loan: 'bg-orange-500',
-  credit_card: 'bg-pink-500',
-  hecs: 'bg-violet-500',
+  credit_card: 'bg-amber-500',
+  hecs: 'bg-indigo-500',
   other: 'bg-gray-500',
 }
 
@@ -50,6 +50,9 @@ const CATEGORY_GROUPS = [
     label: 'Mortgages',
     icon: Home,
     color: 'text-red-400',
+    borderColor: 'border-l-red-500',
+    badgeBg: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400',
+    totalColor: 'text-red-500 dark:text-red-400',
     categories: ['mortgage'] as LiabilityCategory[],
     filterKey: 'mortgage',
   },
@@ -58,6 +61,9 @@ const CATEGORY_GROUPS = [
     label: 'Car Loans',
     icon: Wallet,
     color: 'text-orange-400',
+    borderColor: 'border-l-orange-500',
+    badgeBg: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400',
+    totalColor: 'text-orange-500 dark:text-orange-400',
     categories: ['car_loan'] as LiabilityCategory[],
     filterKey: 'car_loan',
   },
@@ -66,6 +72,9 @@ const CATEGORY_GROUPS = [
     label: 'Personal Loans',
     icon: Wallet,
     color: 'text-orange-400',
+    borderColor: 'border-l-orange-500',
+    badgeBg: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400',
+    totalColor: 'text-orange-500 dark:text-orange-400',
     categories: ['personal_loan'] as LiabilityCategory[],
     filterKey: 'personal_loan',
   },
@@ -73,7 +82,10 @@ const CATEGORY_GROUPS = [
     key: 'credit',
     label: 'Credit Cards',
     icon: CreditCard,
-    color: 'text-pink-400',
+    color: 'text-amber-400',
+    borderColor: 'border-l-amber-500',
+    badgeBg: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+    totalColor: 'text-amber-500 dark:text-amber-400',
     categories: ['credit_card'] as LiabilityCategory[],
     filterKey: 'credit_card',
   },
@@ -81,7 +93,10 @@ const CATEGORY_GROUPS = [
     key: 'hecs',
     label: 'HECS / Student',
     icon: GraduationCap,
-    color: 'text-violet-400',
+    color: 'text-indigo-400',
+    borderColor: 'border-l-indigo-500',
+    badgeBg: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400',
+    totalColor: 'text-indigo-500 dark:text-indigo-400',
     categories: ['hecs'] as LiabilityCategory[],
     filterKey: 'hecs',
   },
@@ -90,6 +105,9 @@ const CATEGORY_GROUPS = [
     label: 'Other',
     icon: CircleDot,
     color: 'text-gray-400',
+    borderColor: 'border-l-gray-400',
+    badgeBg: 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400',
+    totalColor: 'text-gray-500 dark:text-gray-400',
     categories: ['other'] as LiabilityCategory[],
     filterKey: 'other',
   },
@@ -369,32 +387,29 @@ export function LiabilitiesPage() {
         </div>
       </div>
 
-      {/* Summary Strip */}
+      {/* Summary Strip — Gradient (light) / Glass (dark) */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-        <Card>
-          <CardContent className='p-4'>
-            <p className='text-sm text-muted-foreground'>{activeFilterLabel ? `${activeFilterLabel} Total` : 'Total Liabilities'}</p>
-            <p className='text-2xl font-extrabold tabular-nums tracking-tight text-red-400'>{formatCurrency(total)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='p-4'>
-            <p className='text-sm text-muted-foreground'>Monthly Repayments</p>
-            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(monthlyRepayments)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='p-4'>
-            <p className='text-sm text-muted-foreground'>Avg Interest Rate</p>
-            <p className='text-2xl font-extrabold tabular-nums tracking-tight'>{total > 0 ? formatPercent(weightedRate) : '—'}</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#7f1d1d] to-[#ef4444] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>{activeFilterLabel ? `${activeFilterLabel} Total` : 'Total Liabilities'}</p>
+          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-red-400'>{formatCurrency(total)}</p>
+        </div>
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#9a3412] to-[#f97316] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Monthly Repayments</p>
+          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-orange-400'>{formatCurrency(monthlyRepayments)}</p>
+        </div>
+        <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#1e3a5f] to-[#3b82f6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Avg Interest Rate</p>
+          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>{total > 0 ? formatPercent(weightedRate) : '—'}</p>
+        </div>
       </div>
 
       {/* Grouped Liabilities */}
       {filteredLiabilities.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <CreditCard className="h-12 w-12 mx-auto text-primary mb-4" />
+        <div className="rounded-xl border-2 border-dashed border-border/60 p-10 text-center bg-white/50 dark:bg-white/[0.03]">
+          <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
           <h3 className="text-lg font-semibold mb-2">
             {activeFilterLabel ? `No ${activeFilterLabel.toLowerCase()} yet` : 'No liabilities yet'}
           </h3>
@@ -402,38 +417,47 @@ export function LiabilitiesPage() {
           <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add Your First Liability</Button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {groupedLiabilities.map(group => {
             const Icon = group.icon
             return (
-              <div key={group.key} className="space-y-3">
-                {/* Group Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-card border border-border ${group.color}`}>
-                      <Icon className="h-4 w-4" />
+              <div key={group.key}>
+                {/* Section wrapper with colored left border */}
+                <div className={`rounded-xl border-l-4 ${group.borderColor} bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none dark:border dark:border-white/[0.06] overflow-hidden`}>
+                  {/* Group Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/[0.06] ${group.color}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <h3 className="font-bold text-[15px] text-slate-900 dark:text-white">{group.label}</h3>
+                      <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${group.badgeBg}`}>
+                        {group.items.length}
+                      </span>
                     </div>
-                    <h3 className="font-semibold text-sm">{group.label}</h3>
-                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
+                    <div className="text-right">
+                      <p className={`text-[17px] font-extrabold tabular-nums ${group.totalColor}`}>{formatCurrency(group.subtotal)}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.monthlyRepay)}/mo repayments</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold tabular-nums text-foreground">{formatCurrency(group.subtotal)}</p>
-                    <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.monthlyRepay)}/mo repayments</p>
-                  </div>
-                </div>
 
-                {/* Group Items */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {group.items.map(item => {
-                    const linkedProperty = getLinkedProperty(item.id)
-                    const groupShare = group.subtotal > 0
-                      ? Math.round((item.currentBalance / group.subtotal) * 100)
-                      : 0
-                    const barColor = CATEGORY_BAR_COLORS[item.category]
+                  {/* Group Items */}
+                  <div className="grid grid-cols-1 md:grid-cols-2">
+                    {group.items.map((item, idx) => {
+                      const linkedProperty = getLinkedProperty(item.id)
+                      const groupShare = group.subtotal > 0
+                        ? Math.round((item.currentBalance / group.subtotal) * 100)
+                        : 0
+                      const barColor = CATEGORY_BAR_COLORS[item.category]
+                      const isLastOdd = idx === group.items.length - 1 && group.items.length % 2 === 1
 
-                    return (
-                      <Card key={item.id} className="card-hover group overflow-hidden">
-                        <CardContent className="p-4 pb-3">
+                      return (
+                        <div
+                          key={item.id}
+                          className={`group p-4 transition-colors hover:bg-slate-50/80 dark:hover:bg-white/[0.02] ${
+                            idx < group.items.length - (isLastOdd ? 0 : 2) ? 'border-b border-slate-100 dark:border-white/[0.04]' : ''
+                          } ${idx % 2 === 0 && !isLastOdd ? 'md:border-r md:border-slate-100 md:dark:border-white/[0.04]' : ''}`}
+                        >
                           <div className="flex items-start justify-between gap-2">
                             <div className="space-y-1.5 min-w-0 flex-1">
                               {/* Badge row */}
@@ -443,31 +467,39 @@ export function LiabilitiesPage() {
                                   {formatPercent(item.interestRatePA)} p.a.
                                 </span>
                                 {linkedProperty && (
-                                  <Badge variant="outline">🏠 {linkedProperty.name}</Badge>
+                                  <Badge variant="outline" className="text-xs">🏠 {linkedProperty.name}</Badge>
                                 )}
                               </div>
 
                               {/* Name */}
-                              <p className="font-semibold truncate">{item.name}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white truncate">{item.name}</p>
 
                               {/* Balance */}
-                              <p className="text-lg font-bold tabular-nums text-foreground">
+                              <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-white">
                                 {formatCurrency(item.currentBalance)}
                               </p>
 
-                              {/* Repayment detail */}
-                              <p className="text-xs text-muted-foreground">
-                                Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}
-                              </p>
+                              {/* Repayment + type details */}
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span>Repayment: {formatCurrency(item.minimumRepayment)}{frequencyLabel(item.repaymentFrequency)}</span>
+                                {(item as any).mortgageType && (
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                                    {(item as any).mortgageType === 'interest_only' ? 'IO' : 'P&I'}
+                                  </span>
+                                )}
+                                {(item as any).loanTermYears && (
+                                  <span>{(item as any).loanTermYears}yr term</span>
+                                )}
+                              </div>
                             </div>
 
                             {/* Action buttons */}
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}>
-                                <Pencil className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item.id)}>
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget(item)}>
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </div>
                           </div>
@@ -475,7 +507,7 @@ export function LiabilitiesPage() {
                           {/* Progress bar */}
                           {group.items.length > 1 && (
                             <div className="mt-3 space-y-1">
-                              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 opacity-60 ${barColor}`}
                                   style={{ width: `${groupShare}%` }}
@@ -486,10 +518,10 @@ export function LiabilitiesPage() {
                               </p>
                             </div>
                           )}
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )
