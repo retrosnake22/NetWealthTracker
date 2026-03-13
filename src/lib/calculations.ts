@@ -217,7 +217,7 @@ export interface DashboardMetrics {
  */
 // Whitelist of categories that count as "living expenses" — must match
 // LIVING_SUPER_CATEGORIES in LivingExpensesPage.tsx exactly.
-const LIVING_EXPENSE_CATEGORIES = new Set([
+export const LIVING_EXPENSE_CATEGORIES = new Set([
   // Housing
   'rent', 'electricity', 'water', 'rates', 'security', 'home_improvements', 'repairs_maintenance', 'gardening',
   // Insurance

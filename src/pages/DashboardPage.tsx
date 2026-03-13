@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
@@ -14,6 +14,7 @@ import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
   calculateDebtToAssetRatio, projectNetWealth,
   calculateDashboardMetrics,
+  LIVING_EXPENSE_CATEGORIES,
 } from '@/lib/calculations'
 import {
   DndContext,
@@ -259,26 +260,32 @@ export function DashboardPage() {
   const showBudgetBanner = (userProfile?.budgetMode ?? 'estimate') === 'estimate' && !(userProfile?.dismissedNotifications ?? []).includes('budget-not-activated')
 
   const expensesChartData = useMemo(() => {
-    const data: { name: string; living: number; fixed: number }[] = []
+    const data: { name: string; amount: number }[] = []
 
-    // Fixed expenses are constant (property mortgage repayments + running costs)
-    const fixedMonthly = metrics.mortgageExpenses + metrics.propertyRunningCosts
+    // Budget baseline (living expenses only)
+    data.push({ name: 'Budget', amount: metrics.baseExpenses })
 
-    // Budget baseline
-    data.push({ name: 'Budget', living: metrics.baseExpenses, fixed: fixedMonthly })
+    // Get living budget IDs to filter actuals
+    const livingBudgetIds = new Set(
+      expenseBudgets
+        .filter(b => LIVING_EXPENSE_CATEGORIES.has(b.category) && !b.linkedPropertyId && !b.linkedAssetId)
+        .map(b => b.id)
+    )
 
     // Get unique months from actuals, sorted
     const months = [...new Set(expenseActuals.map(a => a.month))].sort()
     for (const month of months) {
-      const monthActuals = expenseActuals.filter(a => a.month === month)
+      const monthActuals = expenseActuals.filter(a => a.month === month && livingBudgetIds.has(a.budgetId))
       const actualTotal = monthActuals.reduce((s, a) => s + a.actualAmount, 0)
-      const [year, mo] = month.split('-')
-      const label = new Date(parseInt(year), parseInt(mo) - 1).toLocaleString('default', { month: 'short' })
-      data.push({ name: label, living: actualTotal, fixed: fixedMonthly })
+      if (actualTotal > 0) {
+        const [year, mo] = month.split('-')
+        const label = new Date(parseInt(year), parseInt(mo) - 1).toLocaleString('default', { month: 'short' })
+        data.push({ name: label, amount: actualTotal })
+      }
     }
 
     return data
-  }, [expenseActuals, metrics])
+  }, [expenseActuals, expenseBudgets, metrics])
 
   const widgets: Record<string, React.ReactNode> = {
     hero: (
@@ -356,19 +363,7 @@ export function DashboardPage() {
     'expenses-chart': (
       <Card className="rounded-xl bg-card animate-fade-up">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Expenses Trend</CardTitle>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-2.5 rounded-sm bg-amber-500 inline-block" />
-                <span>Living</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-2.5 rounded-sm bg-blue-500 inline-block" />
-                <span>Fixed</span>
-              </span>
-            </div>
-          </div>
+          <CardTitle className="text-lg font-semibold">Living Expenses Trend</CardTitle>
         </CardHeader>
         <CardContent>
           {expensesChartData.length <= 1 ? (
@@ -378,7 +373,7 @@ export function DashboardPage() {
           ) : (
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expensesChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <BarChart data={expensesChartData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis
                     dataKey="name"
@@ -394,9 +389,9 @@ export function DashboardPage() {
                     tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value, name) => [
+                    formatter={(value) => [
                       new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Number(value)),
-                      name === 'living' ? 'Living Expenses' : 'Fixed Expenses',
+                      'Living Expenses',
                     ]}
                     contentStyle={{
                       backgroundColor: 'var(--popover)',
@@ -409,8 +404,9 @@ export function DashboardPage() {
                     }}
                     cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                   />
-                  <Bar dataKey="living" stackId="a" fill="#f59e0b" name="Living Expenses" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="fixed" stackId="a" fill="#3b82f6" name="Fixed Expenses" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount" fill="#f59e0b" name="Living Expenses" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="amount" position="top" fill="#a1a1aa" fontSize={12} formatter={(v: number) => `${v.toLocaleString()}`} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
