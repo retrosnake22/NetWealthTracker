@@ -122,7 +122,7 @@ export const useFinanceStore = create<FinanceState>()(
       })),
 
       // Cloud sync — replaces store data with cloud data
-      hydrateFromCloud: (data) => set(() => {
+      hydrateFromCloud: (data: Record<string, unknown>) => set(() => {
         const hydrated: Record<string, unknown> = {}
         const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile']
         for (const key of keys) {
@@ -134,25 +134,25 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Profile
-      setProfileType: (type) => set((state) => ({
+      setProfileType: (type: ProfileType) => set((state) => ({
         userProfile: { ...state.userProfile, profileType: type },
       })),
-      setIndividualName: (name) => set((state) => ({
+      setIndividualName: (name: string) => set((state) => ({
         userProfile: { ...state.userProfile, individualName: name },
       })),
-      setEstimatedMonthlyExpenses: (amount) => set((state) => ({
+      setEstimatedMonthlyExpenses: (amount: number) => set((state) => ({
         userProfile: { ...state.userProfile, estimatedMonthlyExpenses: amount },
       })),
-      setBudgetMode: (mode) => set((state) => ({
+      setBudgetMode: (mode: BudgetMode) => set((state) => ({
         userProfile: { ...state.userProfile, budgetMode: mode },
       })),
-      dismissNotification: (id) => set((state) => ({
+      dismissNotification: (id: string) => set((state) => ({
         userProfile: {
           ...state.userProfile,
           dismissedNotifications: [...(state.userProfile.dismissedNotifications || []), id],
         },
       })),
-      addHouseholdMember: (name) => set((state) => ({
+      addHouseholdMember: (name: string) => set((state) => ({
         userProfile: {
           ...state.userProfile,
           householdMembers: [
@@ -161,61 +161,61 @@ export const useFinanceStore = create<FinanceState>()(
           ],
         },
       })),
-      updateHouseholdMember: (id, name) => set((state) => ({
+      updateHouseholdMember: (id: string, name: string) => set((state) => ({
         userProfile: {
           ...state.userProfile,
-          householdMembers: state.userProfile.householdMembers.map(m =>
+          householdMembers: state.userProfile.householdMembers.map((m: { id: string; name: string }) =>
             m.id === id ? { ...m, name } : m
           ),
         },
       })),
-      removeHouseholdMember: (id) => set((state) => ({
+      removeHouseholdMember: (id: string) => set((state) => ({
         userProfile: {
           ...state.userProfile,
-          householdMembers: state.userProfile.householdMembers.filter(m => m.id !== id),
+          householdMembers: state.userProfile.householdMembers.filter((m: { id: string; name: string }) => m.id !== id),
         },
       })),
 
       // Assets
-      addAsset: (asset) => set((state) => ({
+      addAsset: (asset: Partial<Asset>) => set((state) => ({
         assets: [...state.assets, { ...asset, id: generateId(), createdAt: now(), updatedAt: now() } as Asset]
       })),
-      updateAsset: (id, updates) => set((state) => ({
-        assets: state.assets.map(a => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
+      updateAsset: (id: string, updates: Partial<Asset>) => set((state) => ({
+        assets: state.assets.map((a: Asset) => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
-      removeAsset: (id) => set((state) => ({
-        assets: state.assets.filter(a => a.id !== id),
+      removeAsset: (id: string) => set((state) => ({
+        assets: state.assets.filter((a: Asset) => a.id !== id),
         // Cascade: remove any expense budgets linked to this asset (e.g. vehicle loan/lease repayments)
-        expenseBudgets: state.expenseBudgets.filter(b => b.linkedAssetId !== id),
+        expenseBudgets: state.expenseBudgets.filter((b: ExpenseBudget) => b.linkedAssetId !== id),
       })),
 
       // Properties
-      addProperty: (property) => set((state) => ({
+      addProperty: (property: Partial<Property>) => set((state) => ({
         properties: [...state.properties, { ...property, id: generateId(), createdAt: now(), updatedAt: now() } as Property]
       })),
-      updateProperty: (id, updates) => set((state) => ({
-        properties: state.properties.map(p => p.id === id ? { ...p, ...updates, updatedAt: now() } : p)
+      updateProperty: (id: string, updates: Partial<Property>) => set((state) => ({
+        properties: state.properties.map((p: Property) => p.id === id ? { ...p, ...updates, updatedAt: now() } : p)
       })),
-      removeProperty: (id) => set((state) => ({
-        properties: state.properties.filter(p => p.id !== id)
+      removeProperty: (id: string) => set((state) => ({
+        properties: state.properties.filter((p: Property) => p.id !== id)
       })),
 
       // Liabilities
-      addLiability: (liability) => set((state) => ({
+      addLiability: (liability: Partial<Liability>) => set((state) => ({
         liabilities: [...state.liabilities, { ...liability, id: generateId(), createdAt: now(), updatedAt: now() } as Liability]
       })),
-      updateLiability: (id, updates) => set((state) => ({
-        liabilities: state.liabilities.map(l => l.id === id ? { ...l, ...updates, updatedAt: now() } : l)
+      updateLiability: (id: string, updates: Partial<Liability>) => set((state) => ({
+        liabilities: state.liabilities.map((l: Liability) => l.id === id ? { ...l, ...updates, updatedAt: now() } : l)
       })),
-      removeLiability: (id) => set((state) => {
-        const liability = state.liabilities.find(l => l.id === id)
+      removeLiability: (id: string) => set((state) => {
+        const liability = state.liabilities.find((l: Liability) => l.id === id)
         const result: Partial<FinanceState> = {
-          liabilities: state.liabilities.filter(l => l.id !== id),
+          liabilities: state.liabilities.filter((l: Liability) => l.id !== id),
         }
         // Cascade: if removing a car loan or lease liability, also remove its auto-generated expense budget
         if (liability && (liability.category === 'car_loan')) {
           const loanName = liability.name
-          result.expenseBudgets = state.expenseBudgets.filter(b =>
+          result.expenseBudgets = state.expenseBudgets.filter((b: ExpenseBudget) =>
             !(b.label === `${loanName} Repayment` || b.label.endsWith('Car Loan Repayment') && b.label.startsWith(loanName.replace(' Car Loan', '')))
           )
         }
@@ -223,47 +223,47 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Income
-      addIncome: (income) => set((state) => ({
+      addIncome: (income: Partial<IncomeItem>) => set((state) => ({
         incomes: [...state.incomes, { ...income, id: generateId(), createdAt: now(), updatedAt: now() } as IncomeItem]
       })),
-      updateIncome: (id, updates) => set((state) => ({
-        incomes: state.incomes.map(i => i.id === id ? { ...i, ...updates, updatedAt: now() } : i)
+      updateIncome: (id: string, updates: Partial<IncomeItem>) => set((state) => ({
+        incomes: state.incomes.map((i: IncomeItem) => i.id === id ? { ...i, ...updates, updatedAt: now() } : i)
       })),
-      removeIncome: (id) => set((state) => ({
-        incomes: state.incomes.filter(i => i.id !== id)
+      removeIncome: (id: string) => set((state) => ({
+        incomes: state.incomes.filter((i: IncomeItem) => i.id !== id)
       })),
 
       // Expense Budgets
-      addExpenseBudget: (budget) => set((state) => ({
+      addExpenseBudget: (budget: Partial<ExpenseBudget>) => set((state) => ({
         expenseBudgets: [...state.expenseBudgets, { ...budget, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseBudget]
       })),
-      updateExpenseBudget: (id, updates) => set((state) => ({
-        expenseBudgets: state.expenseBudgets.map(b => b.id === id ? { ...b, ...updates, updatedAt: now() } : b)
+      updateExpenseBudget: (id: string, updates: Partial<ExpenseBudget>) => set((state) => ({
+        expenseBudgets: state.expenseBudgets.map((b: ExpenseBudget) => b.id === id ? { ...b, ...updates, updatedAt: now() } : b)
       })),
-      removeExpenseBudget: (id) => set((state) => ({
-        expenseBudgets: state.expenseBudgets.filter(b => b.id !== id)
+      removeExpenseBudget: (id: string) => set((state) => ({
+        expenseBudgets: state.expenseBudgets.filter((b: ExpenseBudget) => b.id !== id)
       })),
 
       // Expense Actuals
-      addExpenseActual: (actual) => set((state) => ({
+      addExpenseActual: (actual: Partial<ExpenseActual>) => set((state) => ({
         expenseActuals: [...state.expenseActuals, { ...actual, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseActual]
       })),
-      updateExpenseActual: (id, updates) => set((state) => ({
-        expenseActuals: state.expenseActuals.map(a => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
+      updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => set((state) => ({
+        expenseActuals: state.expenseActuals.map((a: ExpenseActual) => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
-      removeExpenseActual: (id) => set((state) => ({
-        expenseActuals: state.expenseActuals.filter(a => a.id !== id)
+      removeExpenseActual: (id: string) => set((state) => ({
+        expenseActuals: state.expenseActuals.filter((a: ExpenseActual) => a.id !== id)
       })),
-      bulkUpsertExpenseActuals: (month, entries) => set((state) => {
+      bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => set((state) => {
         const updated = [...state.expenseActuals]
         for (const entry of entries) {
           if (entry.actualAmount === 0 && !entry.notes) {
             // Remove zero entries to keep data clean
-            const idx = updated.findIndex(a => a.budgetId === entry.budgetId && a.month === month)
+            const idx = updated.findIndex((a: ExpenseActual) => a.budgetId === entry.budgetId && a.month === month)
             if (idx !== -1) updated.splice(idx, 1)
             continue
           }
-          const existing = updated.findIndex(a => a.budgetId === entry.budgetId && a.month === month)
+          const existing = updated.findIndex((a: ExpenseActual) => a.budgetId === entry.budgetId && a.month === month)
           if (existing !== -1) {
             updated[existing] = { ...updated[existing], actualAmount: entry.actualAmount, notes: entry.notes, updatedAt: now() }
           } else {
@@ -278,10 +278,10 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Projection Settings
-      updateProjectionSettings: (settings) => set((state) => ({
+      updateProjectionSettings: (settings: Partial<ProjectionSettings>) => set((state) => ({
         projectionSettings: { ...state.projectionSettings, ...settings }
       })),
-      setSurplusAllocations: (allocations) => set((state) => ({
+      setSurplusAllocations: (allocations: SurplusAllocation[]) => set((state) => ({
         projectionSettings: { ...state.projectionSettings, surplusAllocations: allocations }
       })),
     }),
