@@ -7,9 +7,32 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
 import type { ExpenseCategory } from '@/types/models'
 
+// Match the same labels used in LivingExpensesPage
+const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  mortgage_repayment: 'Mortgage Repayment', rent: 'Rent',
+  council_rates: 'Council Rates', water_rates: 'Water Rates', strata: 'Strata',
+  security: 'Security', home_improvements: 'Home Improvements / Renovations',
+  repairs_maintenance: 'Repairs & Maintenance', gardening: 'Gardening', home_insurance: 'Home Insurance',
+  property_management: 'Property Management', land_tax: 'Land Tax',
+  maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
+  insurance_health: 'Health Insurance',
+  insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
+  insurance_other: 'Other Insurance',
+  electricity: 'Electricity', water: 'Water', rates: 'Rates',
+  groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
+  medical: 'Medical', pharmacy: 'Pharmacy', pet_expenses: 'Pet Costs', school_costs: 'School Costs',
+  subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
+  clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
+  childcare: 'Childcare', phone_internet: 'Phone & Internet',
+  personal_care: 'Personal Care', gifts_donations: 'Gifts & Donations',
+  hecs_repayment: 'HECS Repayment', tax: 'Tax', accounting_fees: 'Accounting Fees',
+  other: 'Other',
+}
+
+// Same super-categories as the budget editor (LivingExpensesPage)
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
-  { label: 'Housing', icon: '🏡', categories: ['rent', 'electricity', 'water', 'rates', 'home_insurance', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
-  { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'insurance_other'] },
+  { label: 'Housing', icon: '🏡', categories: ['rent', 'electricity', 'water', 'rates', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
+  { label: 'Insurance', icon: '🛡️', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'home_insurance', 'insurance_other'] },
   { label: 'Living', icon: '🛒', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
   { label: 'Lifestyle', icon: '✨', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },
   { label: 'Financial', icon: '💰', categories: ['hecs_repayment', 'tax', 'accounting_fees', 'other'] },
@@ -44,6 +67,29 @@ export function ExpenseActualsView() {
     [expenseBudgets]
   )
 
+  // Build lookup: category → budget entry
+  const budgetByCategory = useMemo(() => {
+    const map = new Map<string, { id: string; monthlyBudget: number; label: string }>()
+    for (const b of livingBudgets) {
+      if (b.linkedAssetId) continue
+      if (b.label.endsWith('Car Loan Repayment') || b.label.endsWith('Lease Payment')) continue
+      if (!map.has(b.category)) {
+        map.set(b.category, { id: b.id, monthlyBudget: b.monthlyBudget, label: b.label })
+      }
+    }
+    return map
+  }, [livingBudgets])
+
+  // Custom budgets: items whose label doesn't match standard CATEGORY_LABELS
+  const customBudgets = useMemo(() => {
+    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
+    return livingBudgets.filter(b =>
+      !b.linkedPropertyId && !b.linkedAssetId &&
+      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
+      !standardLabels.has(b.label)
+    )
+  }, [livingBudgets])
+
   // Get actuals for selected month
   const monthActuals = useMemo(() => {
     const map = new Map<string, { actualAmount: number; notes?: string; id: string }>()
@@ -55,87 +101,133 @@ export function ExpenseActualsView() {
     return map
   }, [expenseActuals, selectedMonth])
 
-  // Initialize edit values from saved actuals
+  // Initialize edit values from saved actuals — use budgetId as key for standard, budget.id for custom
   useEffect(() => {
     const values: Record<string, string> = {}
-    for (const budget of livingBudgets) {
-      const actual = monthActuals.get(budget.id)
-      values[budget.id] = actual ? String(actual.actualAmount) : ''
+    // Standard categories: key by category name
+    for (const group of SUPER_CATEGORIES) {
+      for (const cat of group.categories) {
+        const budget = budgetByCategory.get(cat)
+        if (budget) {
+          const actual = monthActuals.get(budget.id)
+          values[cat] = actual ? String(actual.actualAmount) : ''
+        } else {
+          values[cat] = ''
+        }
+      }
+    }
+    // Custom budgets: key by budget id
+    for (const b of customBudgets) {
+      const actual = monthActuals.get(b.id)
+      values[`custom_${b.id}`] = actual ? String(actual.actualAmount) : ''
     }
     setEditValues(values)
     setHasChanges(false)
-  }, [livingBudgets, monthActuals, selectedMonth])
+  }, [budgetByCategory, customBudgets, monthActuals, selectedMonth])
 
-  // Group budgets by super-category
-  const groupedBudgets = useMemo(() => {
-    return SUPER_CATEGORIES.map(group => {
-      const items = livingBudgets.filter(b => group.categories.includes(b.category))
-      return { ...group, items }
-    }).filter(g => g.items.length > 0)
-  }, [livingBudgets])
-
-  const handleValueChange = useCallback((budgetId: string, value: string) => {
-    setEditValues(prev => ({ ...prev, [budgetId]: value }))
+  const handleValueChange = useCallback((key: string, value: string) => {
+    setEditValues(prev => ({ ...prev, [key]: value }))
     setHasChanges(true)
   }, [])
 
   const handleSave = useCallback(() => {
-    const entries = livingBudgets.map(b => ({
-      budgetId: b.id,
-      actualAmount: parseFloat(editValues[b.id] || '0') || 0,
-    }))
+    const entries: { budgetId: string; actualAmount: number }[] = []
+    // Standard categories
+    for (const group of SUPER_CATEGORIES) {
+      for (const cat of group.categories) {
+        const budget = budgetByCategory.get(cat)
+        if (budget) {
+          entries.push({
+            budgetId: budget.id,
+            actualAmount: parseFloat(editValues[cat] || '0') || 0,
+          })
+        }
+      }
+    }
+    // Custom budgets
+    for (const b of customBudgets) {
+      entries.push({
+        budgetId: b.id,
+        actualAmount: parseFloat(editValues[`custom_${b.id}`] || '0') || 0,
+      })
+    }
     bulkUpsertExpenseActuals(selectedMonth, entries)
     setHasChanges(false)
-  }, [livingBudgets, editValues, selectedMonth, bulkUpsertExpenseActuals])
+  }, [budgetByCategory, customBudgets, editValues, selectedMonth, bulkUpsertExpenseActuals])
 
   const handleReset = useCallback(() => {
     const values: Record<string, string> = {}
-    for (const budget of livingBudgets) {
-      const actual = monthActuals.get(budget.id)
-      values[budget.id] = actual ? String(actual.actualAmount) : ''
+    for (const group of SUPER_CATEGORIES) {
+      for (const cat of group.categories) {
+        const budget = budgetByCategory.get(cat)
+        if (budget) {
+          const actual = monthActuals.get(budget.id)
+          values[cat] = actual ? String(actual.actualAmount) : ''
+        } else {
+          values[cat] = ''
+        }
+      }
+    }
+    for (const b of customBudgets) {
+      const actual = monthActuals.get(b.id)
+      values[`custom_${b.id}`] = actual ? String(actual.actualAmount) : ''
     }
     setEditValues(values)
     setHasChanges(false)
-  }, [livingBudgets, monthActuals])
+  }, [budgetByCategory, customBudgets, monthActuals])
 
   // Copy budget values to actuals (quick-fill)
   const handleCopyBudget = useCallback(() => {
     const values: Record<string, string> = {}
-    for (const budget of livingBudgets) {
-      values[budget.id] = String(budget.monthlyBudget)
+    for (const group of SUPER_CATEGORIES) {
+      for (const cat of group.categories) {
+        const budget = budgetByCategory.get(cat)
+        values[cat] = budget ? String(budget.monthlyBudget) : ''
+      }
+    }
+    for (const b of customBudgets) {
+      values[`custom_${b.id}`] = String(b.monthlyBudget)
     }
     setEditValues(values)
     setHasChanges(true)
-  }, [livingBudgets])
+  }, [budgetByCategory, customBudgets])
 
   // Summary calculations
   const summary = useMemo(() => {
     let totalBudget = 0
     let totalActual = 0
     let filledCount = 0
+    let totalCount = 0
 
-    for (const b of livingBudgets) {
+    for (const group of SUPER_CATEGORIES) {
+      for (const cat of group.categories) {
+        const budget = budgetByCategory.get(cat)
+        if (budget) {
+          totalBudget += budget.monthlyBudget
+          totalCount++
+        }
+        const val = parseFloat(editValues[cat] || '0') || 0
+        totalActual += val
+        if (editValues[cat] && editValues[cat] !== '') filledCount++
+      }
+    }
+
+    // Custom budgets
+    for (const b of customBudgets) {
       totalBudget += b.monthlyBudget
-      const val = parseFloat(editValues[b.id] || '0') || 0
+      totalCount++
+      const val = parseFloat(editValues[`custom_${b.id}`] || '0') || 0
       totalActual += val
-      if (editValues[b.id] && editValues[b.id] !== '') filledCount++
+      if (editValues[`custom_${b.id}`] && editValues[`custom_${b.id}`] !== '') filledCount++
     }
 
     const variance = totalActual - totalBudget
     const variancePct = totalBudget > 0 ? (variance / totalBudget) * 100 : 0
 
-    return { totalBudget, totalActual, variance, variancePct, filledCount, totalCount: livingBudgets.length }
-  }, [livingBudgets, editValues])
+    return { totalBudget, totalActual, variance, variancePct, filledCount, totalCount }
+  }, [budgetByCategory, customBudgets, editValues])
 
   const isCurrentMonth = selectedMonth === getCurrentMonth()
-
-  if (livingBudgets.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-border p-8 text-center">
-        <p className="text-muted-foreground">Add budget expenses first, then track actuals against them.</p>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-4">
@@ -214,18 +306,119 @@ export function ExpenseActualsView() {
         </Card>
       </div>
 
-      {/* Quick-entry spreadsheet grouped by category */}
+      {/* Spreadsheet grouped by super-category — show ALL categories like budget tab */}
       <div className="space-y-3">
-        {groupedBudgets.map(group => (
-          <Card key={group.label}>
+        {SUPER_CATEGORIES.map(group => {
+          // Calculate group totals
+          let groupBudgetTotal = 0
+          let groupActualTotal = 0
+          let groupFilledCount = 0
+          for (const cat of group.categories) {
+            const budget = budgetByCategory.get(cat)
+            if (budget) groupBudgetTotal += budget.monthlyBudget
+            const val = parseFloat(editValues[cat] || '0') || 0
+            groupActualTotal += val
+            if (editValues[cat] && editValues[cat] !== '') groupFilledCount++
+          }
+
+          return (
+            <Card key={group.label}>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <span>{group.icon}</span>
+                    <span className="font-semibold text-sm">{group.label}</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                      {groupFilledCount}/{group.categories.length}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-semibold tabular-nums">{formatCurrency(groupBudgetTotal)}</span>
+                    <span className="text-xs text-muted-foreground ml-1">budget</span>
+                  </div>
+                </div>
+
+                {/* Column headers */}
+                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/40">
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
+                </div>
+
+                {/* Show EVERY category in this group */}
+                {group.categories.map((cat, idx) => {
+                  const budget = budgetByCategory.get(cat)
+                  const budgetAmount = budget?.monthlyBudget ?? 0
+                  const actualStr = editValues[cat] || ''
+                  const actualNum = parseFloat(actualStr) || 0
+                  const diff = actualStr !== '' ? actualNum - budgetAmount : null
+                  const hasSavedActual = budget ? monthActuals.has(budget.id) : false
+                  const hasValue = budgetAmount > 0 || actualStr !== ''
+
+                  return (
+                    <div
+                      key={cat}
+                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
+                        idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                          {CATEGORY_LABELS[cat]}
+                        </span>
+                        {hasSavedActual && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">
+                            ✓
+                          </Badge>
+                        )}
+                      </div>
+                      <span className={`text-sm tabular-nums text-right ${budgetAmount > 0 ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                        {budgetAmount > 0 ? formatCurrency(budgetAmount) : '—'}
+                      </span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={actualStr}
+                          onChange={(e) => handleValueChange(cat, e.target.value)}
+                          placeholder="—"
+                          className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <span className={`text-sm tabular-nums text-right ${
+                        diff === null ? 'text-muted-foreground/40' :
+                        diff > 0 ? 'text-red-400' :
+                        diff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
+                      }`}>
+                        {diff === null ? '—' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )
+        })}
+
+        {/* Custom Expenses */}
+        {customBudgets.length > 0 && (
+          <Card>
             <CardContent className="p-0">
-              <div className="px-4 py-3 border-b border-border/50">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
-                  <span>{group.icon}</span>
-                  <span className="font-semibold text-sm">{group.label}</span>
+                  <span>📌</span>
+                  <span className="font-semibold text-sm">Custom Expenses</span>
                   <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                    {group.items.length}
+                    {customBudgets.length}
                   </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-semibold tabular-nums">
+                    {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-1">budget</span>
                 </div>
               </div>
 
@@ -237,38 +430,36 @@ export function ExpenseActualsView() {
                 <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
               </div>
 
-              {/* Rows */}
-              {group.items.map((item, idx) => {
-                const actualStr = editValues[item.id] || ''
+              {customBudgets.map((b, idx) => {
+                const key = `custom_${b.id}`
+                const actualStr = editValues[key] || ''
                 const actualNum = parseFloat(actualStr) || 0
-                const diff = actualStr !== '' ? actualNum - item.monthlyBudget : null
-                const hasSavedActual = monthActuals.has(item.id)
+                const diff = actualStr !== '' ? actualNum - b.monthlyBudget : null
+                const hasSavedActual = monthActuals.has(b.id)
 
                 return (
                   <div
-                    key={item.id}
+                    key={b.id}
                     className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                      idx !== group.items.length - 1 ? 'border-b border-border/20' : ''
+                      idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm truncate">{item.label}</span>
+                      <span className="text-sm font-semibold truncate">{b.label}</span>
                       {hasSavedActual && (
                         <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">
                           ✓
                         </Badge>
                       )}
                     </div>
-                    <span className="text-sm text-muted-foreground tabular-nums text-right">
-                      {formatCurrency(item.monthlyBudget)}
-                    </span>
+                    <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}</span>
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                       <input
                         type="number"
                         inputMode="decimal"
                         value={actualStr}
-                        onChange={(e) => handleValueChange(item.id, e.target.value)}
+                        onChange={(e) => handleValueChange(key, e.target.value)}
                         placeholder="—"
                         className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
@@ -285,7 +476,7 @@ export function ExpenseActualsView() {
               })}
             </CardContent>
           </Card>
-        ))}
+        )}
       </div>
 
       {/* Sticky save bar when changes exist */}
