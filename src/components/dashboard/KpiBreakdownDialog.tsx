@@ -6,10 +6,13 @@ import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateTotalAssets, calculateTotalLiabilities,
   calculateDashboardMetrics,
+  calculateTotalNegativeGearingBenefit,
 } from '@/lib/calculations'
+import type { CashAsset } from '@/types/models'
+import { getMarginalTaxRate } from '@/lib/ausTax'
 import { useNavigate } from 'react-router-dom'
 
-export type BreakdownType = 'net-wealth' | 'cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | null
+export type BreakdownType = 'net-wealth' | 'cashflow' | 'savings-rate' | 'debt-ratio' | 'surplus' | 'neg-gearing' | null
 
 interface Props {
   open: BreakdownType
@@ -111,6 +114,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
     'savings-rate': 'Savings Rate Breakdown',
     'debt-ratio': 'Debt Ratio Breakdown',
     'surplus': 'Monthly Surplus Breakdown',
+    'neg-gearing': 'Negative Gearing Breakdown',
   }
 
   return (
@@ -146,34 +150,76 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
           </div>
         )}
 
-        {open === 'cashflow' && (
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Income</p>
-            {incomeBySource.map(i => (
-              <Row key={i.label} label={i.label} value={formatCurrency(i.amount)} indent />
-            ))}
-            <Row label="Total Income" value={formatCurrency(monthlyIncome)} bold color="text-blue-400" />
+        {open === 'cashflow' && (() => {
+          const budgetMode = userProfile?.budgetMode ?? 'estimate'
+          const isEstimate = budgetMode === 'estimate'
+          const expenseLabel = isEstimate ? 'Estimated expenses' : (metrics.usingActuals ? 'Expenses (actual + budget)' : 'Budget expenses')
 
-            <div className="h-3" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Expenses</p>
-            <Row label="Budget expenses" value={formatCurrency(baseExpenses)} indent />
-            <Row label="Mortgage repayments" value={formatCurrency(mortgageExpenses)} indent />
-            <Row label="Property running costs" value={formatCurrency(propertyRunningCosts)} indent />
-            <Row label="Total Expenses" value={formatCurrency(monthlyExpenses)} bold color="text-red-400" />
+          // Break down loan repayments by type
+          const mortgageRepayments = liabilities
+            .filter(l => ['mortgage', 'home_loan'].includes(l.category))
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + (r * 52) / 12
+              if (l.repaymentFrequency === 'fortnightly') return sum + (r * 26) / 12
+              return sum + r
+            }, 0)
+          const personalLoanRepayments = liabilities
+            .filter(l => l.category === 'personal_loan')
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + (r * 52) / 12
+              if (l.repaymentFrequency === 'fortnightly') return sum + (r * 26) / 12
+              return sum + r
+            }, 0)
+          const otherLoanRepayments = liabilities
+            .filter(l => !['mortgage', 'home_loan', 'personal_loan', 'car_loan'].includes(l.category))
+            .reduce((sum, l) => {
+              const r = l.minimumRepayment ?? 0
+              if (l.repaymentFrequency === 'weekly') return sum + (r * 52) / 12
+              if (l.repaymentFrequency === 'fortnightly') return sum + (r * 26) / 12
+              return sum + r
+            }, 0)
 
-            {negGearingPA > 0 && (
-              <>
-                <div className="h-3" />
-                <Row label="Neg. gearing tax benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
-              </>
-            )}
+          return (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Income</p>
+              {incomeBySource.map(i => (
+                <Row key={i.label} label={i.label} value={formatCurrency(i.amount)} indent />
+              ))}
+              <Row label="Total Income" value={formatCurrency(monthlyIncome)} bold color="text-blue-400" />
 
-            <div className="h-3" />
-            <Row label="Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
+              <div className="h-3" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Expenses</p>
+              <Row label={expenseLabel} value={formatCurrency(baseExpenses)} indent />
+              {mortgageRepayments > 0 && (
+                <Row label="Mortgage repayments" value={formatCurrency(mortgageRepayments)} indent />
+              )}
+              {personalLoanRepayments > 0 && (
+                <Row label="Personal loan repayments" value={formatCurrency(personalLoanRepayments)} indent />
+              )}
+              {otherLoanRepayments > 0 && (
+                <Row label="Other loan repayments" value={formatCurrency(otherLoanRepayments)} indent />
+              )}
+              {propertyRunningCosts > 0 && (
+                <Row label="Property running costs" value={formatCurrency(propertyRunningCosts)} indent />
+              )}
+              <Row label="Total Expenses" value={formatCurrency(monthlyExpenses)} bold color="text-red-400" />
 
-            <NavLink to="/income" label="Income" />
-          </div>
-        )}
+              {negGearingPA > 0 && (
+                <>
+                  <div className="h-3" />
+                  <Row label="Neg. gearing tax benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
+                </>
+              )}
+
+              <div className="h-3" />
+              <Row label="Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
+
+              <NavLink to="/income" label="Income" />
+            </div>
+          )
+        })()}
 
         {open === 'savings-rate' && (
           <div className="space-y-1">
@@ -238,7 +284,85 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
           </div>
         )}
 
-        {open === 'surplus' && (
+        {open === 'neg-gearing' && (() => {
+          const salaryIncome = incomes.find(i => i.isActive && i.category === 'salary')
+          const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
+          const marginalRate = grossSalary > 0 ? getMarginalTaxRate(grossSalary) : 0
+          const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
+          const investmentProperties = properties.filter(p => p.type === 'investment')
+
+          return (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">How It Works</p>
+              <div className="bg-muted/50 rounded-lg p-3 text-center mb-3">
+                <p className="text-xs text-muted-foreground">When investment property expenses exceed rental income, the loss reduces your taxable income at your marginal tax rate.</p>
+              </div>
+
+              <Row label="Gross Salary" value={formatCurrency(grossSalary)} />
+              <Row label="Marginal Tax Rate" value={formatPercent(marginalRate)} />
+
+              <div className="h-3" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Property</p>
+              {investmentProperties.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No investment properties.</p>
+              ) : (
+                investmentProperties.map(prop => {
+                  const grossRentPA = (prop.weeklyRent ?? 0) * 52
+                  const vacancyLoss = grossRentPA * (prop.vacancyRatePA ?? 0) / 100
+                  const netRentPA = grossRentPA - vacancyLoss
+                  const managementFee = netRentPA * (prop.propertyManagementPct ?? 0) / 100
+                  const expensesPA =
+                    managementFee +
+                    (prop.councilRatesPA ?? 0) +
+                    (prop.waterRatesPA ?? 0) +
+                    (prop.insurancePA ?? 0) +
+                    (prop.strataPA ?? 0) +
+                    (prop.landTaxPA ?? 0) +
+                    (prop.maintenanceBudgetPA ?? 0)
+
+                  const mortgage = liabilities.find(l =>
+                    l.linkedPropertyId === prop.id || l.id === prop.mortgageId
+                  )
+                  let interestPA = 0
+                  if (mortgage) {
+                    const offsetAccounts = cashAssets.filter(a => a.isOffset && a.linkedMortgageId === mortgage.id)
+                    const totalOffset = offsetAccounts.reduce((sum, a) => sum + a.currentValue, 0)
+                    const effectiveBalance = Math.max(0, mortgage.currentBalance - totalOffset)
+                    interestPA = effectiveBalance * mortgage.interestRatePA
+                  }
+
+                  const netCashflow = netRentPA - expensesPA - interestPA
+                  const benefit = netCashflow < 0 ? Math.abs(netCashflow) * marginalRate : 0
+
+                  return (
+                    <div key={prop.id} className="space-y-1 mb-3">
+                      <p className="text-sm font-semibold">{prop.name}</p>
+                      <Row label="Gross Rent" value={formatCurrency(netRentPA)} indent />
+                      <Row label="Expenses" value={`(${formatCurrency(expensesPA)})`} indent color="text-red-400" />
+                      <Row label="Interest" value={`(${formatCurrency(interestPA)})`} indent color="text-red-400" />
+                      <Row label="Net Position" value={formatCurrency(netCashflow)} indent color={netCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+                      {benefit > 0 && (
+                        <Row label="Tax Benefit" value={formatCurrency(benefit)} indent color="text-green-400" />
+                      )}
+                    </div>
+                  )
+                })
+              )}
+
+              <div className="h-3" />
+              <Row label="Total Annual Benefit" value={formatCurrency(negGearingPA)} bold color="text-green-400" />
+              <Row label="Monthly Benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
+
+              <NavLink to="/assets?category=property" label="Properties" />
+            </div>
+          )
+        })()}
+
+        {open === 'surplus' && (() => {
+          const budgetMode2 = userProfile?.budgetMode ?? 'estimate'
+          const isEstimate2 = budgetMode2 === 'estimate'
+          const expenseLabel2 = isEstimate2 ? 'Estimated expenses' : (metrics.usingActuals ? 'Expenses (actual + budget)' : 'Budget expenses')
+          return (
           <div className="space-y-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Income</p>
             {incomeBySource.map(i => (
@@ -248,8 +372,8 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
 
             <div className="h-3" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Expenses</p>
-            <Row label="Budget expenses" value={`(${formatCurrency(baseExpenses)})`} indent color="text-red-400" />
-            <Row label="Mortgage repayments" value={`(${formatCurrency(mortgageExpenses)})`} indent color="text-red-400" />
+            <Row label={expenseLabel2} value={`(${formatCurrency(baseExpenses)})`} indent color="text-red-400" />
+            <Row label="Loan & mortgage repayments" value={`(${formatCurrency(mortgageExpenses)})`} indent color="text-red-400" />
             {propertyRunningCosts > 0 && (
               <Row label="Property running costs" value={`(${formatCurrency(propertyRunningCosts)})`} indent color="text-red-400" />
             )}
@@ -269,7 +393,8 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
 
             <NavLink to="/projections" label="Projections" />
           </div>
-        )}
+          )
+        })()}
       </DialogContent>
     </Dialog>
   )

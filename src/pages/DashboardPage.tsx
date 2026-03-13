@@ -333,7 +333,7 @@ export function DashboardPage() {
             <KpiCard label="Debt Ratio" value={formatPercent(debtRatio)} tag={debtTag} tagColor={debtColor} ratio={debtRatio} icon={BarChart3} accentColor="#f87171" onClick={() => setBreakdownOpen('debt-ratio')} />
           </div>
           <div className="animate-fade-up animate-delay-4 h-full">
-            <KpiCard label="Neg. Gearing Benefit" value={formatCurrency(metrics.negGearingBenefitPA)} tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'} tagColor={metrics.negGearingBenefitPA > 0 ? 'blue' : 'amber'} ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0} icon={TrendingUp} accentColor="#10b981" onClick={() => setBreakdownOpen('surplus')} />
+            <KpiCard label="Neg. Gearing Benefit" value={formatCurrency(metrics.negGearingBenefitPA)} tag={metrics.negGearingBenefitPA > 0 ? 'Active' : 'None'} tagColor={metrics.negGearingBenefitPA > 0 ? 'blue' : 'amber'} ratio={metrics.negGearingBenefitPA > 0 ? Math.min(metrics.negGearingBenefitPA / Math.max(monthlyIncome * 12, 1), 1) : 0} icon={TrendingUp} accentColor="#10b981" onClick={() => setBreakdownOpen('neg-gearing')} />
           </div>
         </div>
       </div>

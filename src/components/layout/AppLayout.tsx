@@ -68,7 +68,7 @@ const navSections = [
         label: 'Liabilities',
         subItems: [
           { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', icon: Landmark },
-          { to: '/liabilities?category=home_loan', category: 'home_loan', label: 'Home Loans', icon: Home },
+          
           { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', icon: Car },
           { to: '/liabilities?category=personal_loan', category: 'personal_loan', label: 'Personal Loans', icon: HandCoins },
           { to: '/liabilities?category=credit_card', category: 'credit_card', label: 'Credit Cards', icon: CreditCard },
