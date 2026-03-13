@@ -134,25 +134,25 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Profile
-      setProfileType: (type: ProfileType) => set((state) => ({
+      setProfileType: (type: ProfileType) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, profileType: type },
       })),
-      setIndividualName: (name: string) => set((state) => ({
+      setIndividualName: (name: string) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, individualName: name },
       })),
-      setEstimatedMonthlyExpenses: (amount: number) => set((state) => ({
+      setEstimatedMonthlyExpenses: (amount: number) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, estimatedMonthlyExpenses: amount },
       })),
-      setBudgetMode: (mode: BudgetMode) => set((state) => ({
+      setBudgetMode: (mode: BudgetMode) => set((state: FinanceState) => ({
         userProfile: { ...state.userProfile, budgetMode: mode },
       })),
-      dismissNotification: (id: string) => set((state) => ({
+      dismissNotification: (id: string) => set((state: FinanceState) => ({
         userProfile: {
           ...state.userProfile,
           dismissedNotifications: [...(state.userProfile.dismissedNotifications || []), id],
         },
       })),
-      addHouseholdMember: (name: string) => set((state) => ({
+      addHouseholdMember: (name: string) => set((state: FinanceState) => ({
         userProfile: {
           ...state.userProfile,
           householdMembers: [
@@ -161,7 +161,7 @@ export const useFinanceStore = create<FinanceState>()(
           ],
         },
       })),
-      updateHouseholdMember: (id: string, name: string) => set((state) => ({
+      updateHouseholdMember: (id: string, name: string) => set((state: FinanceState) => ({
         userProfile: {
           ...state.userProfile,
           householdMembers: state.userProfile.householdMembers.map((m: { id: string; name: string }) =>
@@ -169,7 +169,7 @@ export const useFinanceStore = create<FinanceState>()(
           ),
         },
       })),
-      removeHouseholdMember: (id: string) => set((state) => ({
+      removeHouseholdMember: (id: string) => set((state: FinanceState) => ({
         userProfile: {
           ...state.userProfile,
           householdMembers: state.userProfile.householdMembers.filter((m: { id: string; name: string }) => m.id !== id),
@@ -177,37 +177,37 @@ export const useFinanceStore = create<FinanceState>()(
       })),
 
       // Assets
-      addAsset: (asset: Partial<Asset>) => set((state) => ({
+      addAsset: (asset: Partial<Asset>) => set((state: FinanceState) => ({
         assets: [...state.assets, { ...asset, id: generateId(), createdAt: now(), updatedAt: now() } as Asset]
       })),
-      updateAsset: (id: string, updates: Partial<Asset>) => set((state) => ({
+      updateAsset: (id: string, updates: Partial<Asset>) => set((state: FinanceState) => ({
         assets: state.assets.map((a: Asset) => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
-      removeAsset: (id: string) => set((state) => ({
+      removeAsset: (id: string) => set((state: FinanceState) => ({
         assets: state.assets.filter((a: Asset) => a.id !== id),
         // Cascade: remove any expense budgets linked to this asset (e.g. vehicle loan/lease repayments)
         expenseBudgets: state.expenseBudgets.filter((b: ExpenseBudget) => b.linkedAssetId !== id),
       })),
 
       // Properties
-      addProperty: (property: Partial<Property>) => set((state) => ({
+      addProperty: (property: Partial<Property>) => set((state: FinanceState) => ({
         properties: [...state.properties, { ...property, id: generateId(), createdAt: now(), updatedAt: now() } as Property]
       })),
-      updateProperty: (id: string, updates: Partial<Property>) => set((state) => ({
+      updateProperty: (id: string, updates: Partial<Property>) => set((state: FinanceState) => ({
         properties: state.properties.map((p: Property) => p.id === id ? { ...p, ...updates, updatedAt: now() } : p)
       })),
-      removeProperty: (id: string) => set((state) => ({
+      removeProperty: (id: string) => set((state: FinanceState) => ({
         properties: state.properties.filter((p: Property) => p.id !== id)
       })),
 
       // Liabilities
-      addLiability: (liability: Partial<Liability>) => set((state) => ({
+      addLiability: (liability: Partial<Liability>) => set((state: FinanceState) => ({
         liabilities: [...state.liabilities, { ...liability, id: generateId(), createdAt: now(), updatedAt: now() } as Liability]
       })),
-      updateLiability: (id: string, updates: Partial<Liability>) => set((state) => ({
+      updateLiability: (id: string, updates: Partial<Liability>) => set((state: FinanceState) => ({
         liabilities: state.liabilities.map((l: Liability) => l.id === id ? { ...l, ...updates, updatedAt: now() } : l)
       })),
-      removeLiability: (id: string) => set((state) => {
+      removeLiability: (id: string) => set((state: FinanceState) => {
         const liability = state.liabilities.find((l: Liability) => l.id === id)
         const result: Partial<FinanceState> = {
           liabilities: state.liabilities.filter((l: Liability) => l.id !== id),
@@ -223,38 +223,38 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Income
-      addIncome: (income: Partial<IncomeItem>) => set((state) => ({
+      addIncome: (income: Partial<IncomeItem>) => set((state: FinanceState) => ({
         incomes: [...state.incomes, { ...income, id: generateId(), createdAt: now(), updatedAt: now() } as IncomeItem]
       })),
-      updateIncome: (id: string, updates: Partial<IncomeItem>) => set((state) => ({
+      updateIncome: (id: string, updates: Partial<IncomeItem>) => set((state: FinanceState) => ({
         incomes: state.incomes.map((i: IncomeItem) => i.id === id ? { ...i, ...updates, updatedAt: now() } : i)
       })),
-      removeIncome: (id: string) => set((state) => ({
+      removeIncome: (id: string) => set((state: FinanceState) => ({
         incomes: state.incomes.filter((i: IncomeItem) => i.id !== id)
       })),
 
       // Expense Budgets
-      addExpenseBudget: (budget: Partial<ExpenseBudget>) => set((state) => ({
+      addExpenseBudget: (budget: Partial<ExpenseBudget>) => set((state: FinanceState) => ({
         expenseBudgets: [...state.expenseBudgets, { ...budget, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseBudget]
       })),
-      updateExpenseBudget: (id: string, updates: Partial<ExpenseBudget>) => set((state) => ({
+      updateExpenseBudget: (id: string, updates: Partial<ExpenseBudget>) => set((state: FinanceState) => ({
         expenseBudgets: state.expenseBudgets.map((b: ExpenseBudget) => b.id === id ? { ...b, ...updates, updatedAt: now() } : b)
       })),
-      removeExpenseBudget: (id: string) => set((state) => ({
+      removeExpenseBudget: (id: string) => set((state: FinanceState) => ({
         expenseBudgets: state.expenseBudgets.filter((b: ExpenseBudget) => b.id !== id)
       })),
 
       // Expense Actuals
-      addExpenseActual: (actual: Partial<ExpenseActual>) => set((state) => ({
+      addExpenseActual: (actual: Partial<ExpenseActual>) => set((state: FinanceState) => ({
         expenseActuals: [...state.expenseActuals, { ...actual, id: generateId(), createdAt: now(), updatedAt: now() } as ExpenseActual]
       })),
-      updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => set((state) => ({
+      updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => set((state: FinanceState) => ({
         expenseActuals: state.expenseActuals.map((a: ExpenseActual) => a.id === id ? { ...a, ...updates, updatedAt: now() } : a)
       })),
-      removeExpenseActual: (id: string) => set((state) => ({
+      removeExpenseActual: (id: string) => set((state: FinanceState) => ({
         expenseActuals: state.expenseActuals.filter((a: ExpenseActual) => a.id !== id)
       })),
-      bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => set((state) => {
+      bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => set((state: FinanceState) => {
         const updated = [...state.expenseActuals]
         for (const entry of entries) {
           if (entry.actualAmount === 0 && !entry.notes) {
@@ -278,10 +278,10 @@ export const useFinanceStore = create<FinanceState>()(
       }),
 
       // Projection Settings
-      updateProjectionSettings: (settings: Partial<ProjectionSettings>) => set((state) => ({
+      updateProjectionSettings: (settings: Partial<ProjectionSettings>) => set((state: FinanceState) => ({
         projectionSettings: { ...state.projectionSettings, ...settings }
       })),
-      setSurplusAllocations: (allocations: SurplusAllocation[]) => set((state) => ({
+      setSurplusAllocations: (allocations: SurplusAllocation[]) => set((state: FinanceState) => ({
         projectionSettings: { ...state.projectionSettings, surplusAllocations: allocations }
       })),
     }),

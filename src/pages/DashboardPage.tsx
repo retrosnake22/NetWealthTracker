@@ -380,8 +380,8 @@ export function DashboardPage() {
                     tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(value),
+                    formatter={(value, name) => [
+                      new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Number(value)),
                       name === 'living' ? 'Living Expenses' : 'Fixed Expenses',
                     ]}
                     contentStyle={{
