@@ -153,7 +153,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
         {open === 'cashflow' && (() => {
           const budgetMode = userProfile?.budgetMode ?? 'estimate'
           const isEstimate = budgetMode === 'estimate'
-          const expenseLabel = isEstimate ? 'Estimated expenses' : (metrics.usingActuals ? 'Expenses (actual + budget)' : 'Budget expenses')
+          const expenseLabel = isEstimate ? 'Living Expenses (estimate)' : (metrics.usingActuals ? 'Living Expenses (actuals)' : 'Living Expenses (budget)')
 
           // Break down loan repayments by type
           const mortgageRepayments = liabilities
@@ -361,7 +361,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
         {open === 'surplus' && (() => {
           const budgetMode2 = userProfile?.budgetMode ?? 'estimate'
           const isEstimate2 = budgetMode2 === 'estimate'
-          const expenseLabel2 = isEstimate2 ? 'Estimated expenses' : (metrics.usingActuals ? 'Expenses (actual + budget)' : 'Budget expenses')
+          const expenseLabel2 = isEstimate2 ? 'Living Expenses (estimate)' : (metrics.usingActuals ? 'Living Expenses (actuals)' : 'Living Expenses (budget)')
           return (
           <div className="space-y-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Income</p>
