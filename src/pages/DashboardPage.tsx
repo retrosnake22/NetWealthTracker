@@ -201,6 +201,14 @@ export function DashboardPage() {
   const { monthlyIncome, monthlyExpenses, monthlyCashflow, savingsRate, usingActuals } = metrics
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
+  // Dynamic label for Living Expenses based on budget mode and calc source
+  const isEstimateMode = (userProfile?.budgetMode ?? 'estimate') === 'estimate'
+  const livingExpenseLabel = isEstimateMode
+    ? 'Living Expenses (estimate)'
+    : usingActuals
+      ? 'Living Expenses (actuals)'
+      : 'Living Expenses (budget)'
+
   const projectionData = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
     projectionSettings.surplusAllocations,
@@ -313,7 +321,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <CashflowBar label="Income" amount={monthlyIncome} max={cashflowMax} color="bg-blue-500" icon={ArrowUpRight} />
-            <CashflowBar label="Living Expenses" amount={metrics.baseExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
+            <CashflowBar label={livingExpenseLabel} amount={metrics.baseExpenses} max={cashflowMax} color="bg-red-400" icon={ArrowDownRight} />
               {metrics.mortgageExpenses > 0 && (
                 <CashflowBar label="Loan Repayments" amount={metrics.mortgageExpenses} max={cashflowMax} color="bg-red-300" icon={ArrowDownRight} />
               )}

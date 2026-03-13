@@ -50,7 +50,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   const netWealthExclSuper = netWealth - superAssets
 
   // Use shared metrics so figures always match the dashboard
-  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses)
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource)
   const {
     rentalIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
