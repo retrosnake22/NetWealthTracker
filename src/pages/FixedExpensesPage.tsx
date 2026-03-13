@@ -1,8 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, ExternalLink, Car, CreditCard } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Building2, ExternalLink, Car, CreditCard, Landmark } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import type { ExpenseCategory, Property } from '@/types/models'
@@ -33,12 +31,10 @@ export function FixedExpensesPage() {
     const liabilityNames = new Set(state.liabilities.map(l => l.name))
 
     for (const b of state.expenseBudgets) {
-      // Remove if linked asset no longer exists
       if (b.linkedAssetId && !assetIds.has(b.linkedAssetId)) {
         state.removeExpenseBudget(b.id)
         continue
       }
-      // Remove vehicle loan/lease expenses whose liability no longer exists
       if (b.label.endsWith('Car Loan Repayment')) {
         const loanName = b.label.replace(' Repayment', '')
         if (!liabilityNames.has(loanName)) {
@@ -100,7 +96,7 @@ export function FixedExpensesPage() {
     [autoVehicleExpenses]
   )
 
-  // Auto-generated loan & debt repayments (personal loans, credit cards, HECS, other)
+  // Auto-generated loan & debt repayments
   const autoLoanExpenses = useMemo(() => {
     const propertyMortgageIds = new Set(properties.map(p => p.mortgageId).filter(Boolean))
     return liabilities
@@ -141,103 +137,110 @@ export function FixedExpensesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Fixed Monthly</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight text-red-400">{formatCurrency(totalMonthly)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(totalMonthly * 12)}/year</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Properties</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{autoByProperty.length}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{autoPropertyExpenses.length} expense line{autoPropertyExpenses.length !== 1 ? 's' : ''}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Vehicles</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{autoVehicleExpenses.length}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(vehicleExpenseTotal)}/mo</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Loans & Debts</p>
-            <p className="text-2xl font-extrabold tabular-nums tracking-tight">{autoLoanExpenses.length}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(loanExpenseTotal)}/mo</p>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Total Fixed Monthly */}
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br from-red-800 to-rose-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10">
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-xs font-medium opacity-80 dark:text-slate-400">Total Fixed Monthly</p>
+          <p className="text-2xl font-extrabold mt-1 tabular-nums dark:text-rose-400">{formatCurrency(totalMonthly)}</p>
+          <p className="text-xs opacity-70 mt-0.5 dark:text-slate-500">{formatCurrency(totalMonthly * 12)}/year</p>
+        </div>
+        {/* Property Costs */}
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br from-blue-800 to-blue-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10">
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-xs font-medium opacity-80 dark:text-slate-400">Property Costs</p>
+          <p className="text-2xl font-extrabold mt-1 tabular-nums dark:text-white">{formatCurrency(propertyTotal)}</p>
+          <p className="text-xs opacity-70 mt-0.5 dark:text-slate-500">{autoByProperty.length} propert{autoByProperty.length !== 1 ? 'ies' : 'y'}</p>
+        </div>
+        {/* Vehicle Costs */}
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br from-orange-700 to-amber-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10">
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-xs font-medium opacity-80 dark:text-slate-400">Vehicle Costs</p>
+          <p className="text-2xl font-extrabold mt-1 tabular-nums dark:text-white">{formatCurrency(vehicleExpenseTotal)}</p>
+          <p className="text-xs opacity-70 mt-0.5 dark:text-slate-500">{autoVehicleExpenses.length} item{autoVehicleExpenses.length !== 1 ? 's' : ''}</p>
+        </div>
+        {/* Loans & Debts */}
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white bg-gradient-to-br from-violet-800 to-purple-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10">
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 dark:bg-white/5" />
+          <p className="text-xs font-medium opacity-80 dark:text-slate-400">Loans & Debts</p>
+          <p className="text-2xl font-extrabold mt-1 tabular-nums dark:text-white">{formatCurrency(loanExpenseTotal)}</p>
+          <p className="text-xs opacity-70 mt-0.5 dark:text-slate-500">{autoLoanExpenses.length} item{autoLoanExpenses.length !== 1 ? 's' : ''}</p>
+        </div>
       </div>
 
       {!hasAnyExpenses ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No fixed expenses yet</h3>
-          <p className="text-muted-foreground mb-4">
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 p-10 text-center">
+          <Building2 className="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 dark:text-white">No fixed expenses yet</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
             Fixed expenses are automatically generated from your property, vehicle, and loan data.
           </p>
           <Link
             to="/assets?category=property"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go to Properties <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Property Expenses */}
           {autoPropertyExpenses.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold">Property Expenses</h2>
-                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                  🔗 Auto-generated
-                </Badge>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                  <h2 className="text-base font-bold dark:text-white">Property Expenses</h2>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
+                    {autoByProperty.length}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                </div>
+                <span className="text-base font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  {formatCurrency(propertyTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground -mt-1">
-                These expenses flow automatically from your property and liability data. To edit them, update the source property.
-              </p>
 
               {autoByProperty.map(({ name, items, total: propTotal }) => (
-                <Card key={name} className="bg-muted/30 border-dashed">
-                  <CardContent className="p-0">
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-semibold">{name}</p>
-                          <p className="text-xs text-muted-foreground">{items.length} expense{items.length !== 1 ? 's' : ''}</p>
-                        </div>
+                <div
+                  key={name}
+                  className="rounded-xl border-l-4 border-l-blue-500 bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border border-slate-100 dark:border-white/10 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums">{formatCurrency(propTotal)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(propTotal * 12)}/yr</p>
+                      <div>
+                        <p className="font-semibold dark:text-white">{name}</p>
+                        <p className="text-xs text-slate-400">{items.length} expense{items.length !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
-                    <div className="border-t border-border/50">
-                      {items.map((item, idx) => (
-                        <div
-                          key={item.key}
-                          className={`flex items-center gap-4 px-5 py-3 pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
-                        >
-                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/20">
-                              {item.label}
-                            </Badge>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-medium tabular-nums">{formatCurrency(item.monthlyAmount)}</span>
-                            <span className="text-xs text-muted-foreground ml-1">/mo</span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="text-right">
+                      <p className="text-lg font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(propTotal)}<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                      <p className="text-xs text-slate-400 tabular-nums">{formatCurrency(propTotal * 12)}/yr</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="border-t border-slate-100 dark:border-white/5">
+                    {items.map((item, idx) => (
+                      <div
+                        key={item.key}
+                        className={`flex items-center justify-between px-5 py-3 pl-16 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
+                          idx !== items.length - 1 ? 'border-b border-slate-50 dark:border-white/5' : ''
+                        }`}
+                      >
+                        <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                          {item.label}
+                        </span>
+                        <div className="text-right">
+                          <span className="text-sm font-semibold tabular-nums dark:text-white">{formatCurrency(item.monthlyAmount)}</span>
+                          <span className="text-xs text-slate-400 ml-1">/mo</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -245,100 +248,110 @@ export function FixedExpensesPage() {
           {/* Vehicle Expenses */}
           {autoVehicleExpenses.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold">Vehicle Expenses</h2>
-                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                  🔗 Auto-generated
-                </Badge>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Car className="h-5 w-5 text-orange-500 dark:text-orange-400" />
+                  <h2 className="text-base font-bold dark:text-white">Vehicle Expenses</h2>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                    {autoVehicleExpenses.length}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                </div>
+                <span className="text-base font-bold tabular-nums text-orange-600 dark:text-orange-400">
+                  {formatCurrency(vehicleExpenseTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground -mt-1">
-                These expenses are auto-generated from your vehicle financing setup. Edit them in Assets → Vehicles.
-              </p>
-              <Card className="bg-muted/30 border-dashed">
-                <CardContent className="p-0">
-                  {autoVehicleExpenses.map((expense, idx) => (
-                    <div
-                      key={expense.id}
-                      className={`flex items-center justify-between px-5 py-3.5 ${
-                        idx !== autoVehicleExpenses.length - 1 ? 'border-b border-border/30' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">{expense.label}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {expense.label.includes('Lease') ? 'Lease' : 'Car Loan'} · Transport
-                          </p>
-                        </div>
+
+              <div className="rounded-xl border-l-4 border-l-orange-500 bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border border-slate-100 dark:border-white/10 overflow-hidden">
+                {autoVehicleExpenses.map((expense, idx) => (
+                  <div
+                    key={expense.id}
+                    className={`flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
+                      idx !== autoVehicleExpenses.length - 1 ? 'border-b border-slate-100 dark:border-white/5' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center">
+                        <Car className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(expense.monthlyBudget)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
-                      </div>
-                    </div>
-                  ))}
-                  {autoVehicleExpenses.length > 1 && (
-                    <div className="flex items-center justify-between px-5 py-3 border-t border-border/50 bg-muted/20">
-                      <span className="text-sm font-medium text-muted-foreground">Total Vehicle Expenses</span>
                       <div>
-                        <span className="text-sm font-bold tabular-nums">{formatCurrency(vehicleExpenseTotal)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                        <p className="font-medium text-sm dark:text-white">{expense.label}</p>
+                        <p className="text-xs text-slate-400">
+                          {expense.label.includes('Lease') ? 'Lease' : 'Car Loan'} · Transport
+                        </p>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold tabular-nums dark:text-white">{formatCurrency(expense.monthlyBudget)}</span>
+                      <span className="text-xs text-slate-400 ml-1">/mo</span>
+                    </div>
+                  </div>
+                ))}
+                {autoVehicleExpenses.length > 1 && (
+                  <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Vehicle Expenses</span>
+                    <div>
+                      <span className="text-sm font-bold tabular-nums text-orange-600 dark:text-orange-400">{formatCurrency(vehicleExpenseTotal)}</span>
+                      <span className="text-xs text-slate-400 ml-1">/mo</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Loan & Debt Repayments */}
           {autoLoanExpenses.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold">Loan & Debt Repayments</h2>
-                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-muted-foreground/30">
-                  🔗 Auto-generated
-                </Badge>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Landmark className="h-5 w-5 text-violet-500 dark:text-violet-400" />
+                  <h2 className="text-base font-bold dark:text-white">Loan & Debt Repayments</h2>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+                    {autoLoanExpenses.length}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">🔗 Auto-generated</span>
+                </div>
+                <span className="text-base font-bold tabular-nums text-violet-600 dark:text-violet-400">
+                  {formatCurrency(loanExpenseTotal)}<span className="text-xs font-normal text-slate-400">/mo</span>
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground -mt-1">
-                These repayments are auto-generated from your liabilities. Edit them in the Liabilities section.
-              </p>
-              <Card className="bg-muted/30 border-dashed">
-                <CardContent className="p-0">
-                  {autoLoanExpenses.map((expense, idx) => (
-                    <div
-                      key={expense.id}
-                      className={`flex items-center justify-between px-5 py-3.5 ${
-                        idx !== autoLoanExpenses.length - 1 ? 'border-b border-border/30' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">{expense.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {LIABILITY_LABELS[expense.category] ?? expense.category} · {formatPercent(expense.interestRate)} p.a.
-                          </p>
-                        </div>
+
+              <div className="rounded-xl border-l-4 border-l-violet-500 bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border border-slate-100 dark:border-white/10 overflow-hidden">
+                {autoLoanExpenses.map((expense, idx) => (
+                  <div
+                    key={expense.id}
+                    className={`flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
+                      idx !== autoLoanExpenses.length - 1 ? 'border-b border-slate-100 dark:border-white/5' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                        <CreditCard className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(expense.monthlyAmount)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
-                      </div>
-                    </div>
-                  ))}
-                  {autoLoanExpenses.length > 1 && (
-                    <div className="flex items-center justify-between px-5 py-3 border-t border-border/50 bg-muted/20">
-                      <span className="text-sm font-medium text-muted-foreground">Total Loan Repayments</span>
                       <div>
-                        <span className="text-sm font-bold tabular-nums">{formatCurrency(loanExpenseTotal)}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/mo</span>
+                        <p className="font-medium text-sm dark:text-white">{expense.name}</p>
+                        <p className="text-xs text-slate-400">
+                          {LIABILITY_LABELS[expense.category] ?? expense.category} · {formatPercent(expense.interestRate)} p.a.
+                        </p>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold tabular-nums dark:text-white">{formatCurrency(expense.monthlyAmount)}</span>
+                      <span className="text-xs text-slate-400 ml-1">/mo</span>
+                    </div>
+                  </div>
+                ))}
+                {autoLoanExpenses.length > 1 && (
+                  <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Loan Repayments</span>
+                    <div>
+                      <span className="text-sm font-bold tabular-nums text-violet-600 dark:text-violet-400">{formatCurrency(loanExpenseTotal)}</span>
+                      <span className="text-xs text-slate-400 ml-1">/mo</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
