@@ -606,7 +606,7 @@ export default function AssetsPage() {
 					</Button>
 				)}
 				{showProperties && (
-					<Button onClick={openAddProperty} size="sm" size="sm">
+					<Button onClick={openAddProperty} size="sm">
 						<Home className="h-4 w-4 mr-1" /> Add Property
 					</Button>
 				)}
