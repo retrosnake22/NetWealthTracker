@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { NavLink, Outlet, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { syncController } from '@/lib/syncEngine'
@@ -27,6 +27,8 @@ import {
   GraduationCap,
   Landmark,
   HandCoins,
+  TrendingDown,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -42,12 +44,14 @@ import { NotificationBell } from '@/components/NotificationBell'
 const navSections = [
   {
     label: 'Overview',
+    color: 'bg-blue-500',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
     ],
   },
   {
     label: 'Balance Sheet',
+    color: 'bg-emerald-500',
     items: [
       {
         to: '/assets',
@@ -80,6 +84,7 @@ const navSections = [
   },
   {
     label: 'Income Statement',
+    color: 'bg-purple-500',
     items: [
       { to: '/income', icon: TrendingUp, label: 'Income' },
       {
@@ -95,6 +100,7 @@ const navSections = [
   },
   {
     label: 'Planning',
+    color: 'bg-amber-500',
     items: [
       { to: '/projections', icon: LineChart, label: 'Projections' },
     ],
@@ -176,12 +182,15 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-5 overflow-y-auto min-h-0">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-4 overflow-y-auto min-h-0">
       {navSections.map((section) => (
         <div key={section.label}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 mb-1.5">
-            {section.label}
-          </p>
+          <div className="flex items-center gap-2 px-3 mb-2">
+            <span className={`h-1.5 w-1.5 rounded-full ${section.color}`} />
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              {section.label}
+            </p>
+          </div>
           <div className="space-y-0.5">
             {section.items.map((item) => {
               const subItems = 'subItems' in item ? (item as any).subItems : undefined
@@ -197,17 +206,20 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     to={item.to}
                     end={'end' in item ? (item as any).end : undefined}
                     onClick={onNavigate}
-                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       parentActive
-                        ? 'bg-sapphire-subtle text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-sapphire-subtle text-primary shadow-sm shadow-primary/5'
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5'
                     }`}
                   >
                     {parentActive && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
                     )}
-                    <item.icon className={`h-4 w-4 shrink-0 ${parentActive ? 'text-primary' : ''}`} />
-                    <span className="truncate">{item.label}</span>
+                    <item.icon className={`h-4 w-4 shrink-0 transition-colors ${parentActive ? 'text-primary' : 'group-hover:text-foreground'}`} />
+                    <span className="truncate flex-1">{item.label}</span>
+                    {hasSubItems && (
+                      <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 text-primary/50' : 'text-muted-foreground/30'}`} />
+                    )}
                   </NavLink>
 
                   {/* Always-visible subcategories */}
@@ -220,10 +232,10 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                             key={sub.to}
                             to={sub.to}
                             onClick={onNavigate}
-                            className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+                            className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                               subActive
                                 ? 'bg-sapphire-subtle text-primary'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5'
                             }`}
                           >
                             <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'text-primary' : ''}`} />
@@ -250,34 +262,77 @@ function NetWealthMini() {
   const totalLiabilities = calculateTotalLiabilities(liabilities)
   const monthlySurplus = calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(expenseBudgets)
 
+  // Calculate asset/liability ratio for the mini bar
+  const total = totalAssets + totalLiabilities
+  const assetPercent = total > 0 ? (totalAssets / total) * 100 : 50
+
   return (
-    <div className="mx-3 mb-2 p-3 rounded-lg border border-primary/20 bg-sapphire-subtle relative overflow-hidden">
-      <div className="absolute left-0 top-0 bottom-0 w-[3px] gradient-sapphire" />
-      <div className="pl-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Net Wealth</p>
-        <p className={`text-lg font-bold tabular-nums ${netWealth >= 0 ? 'text-primary' : 'text-red-500'}`}>
+    <div className="mx-3 mb-3 rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-4 pt-3.5 pb-1">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Net Wealth</p>
+          {monthlySurplus !== 0 && (
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+              monthlySurplus > 0 
+                ? 'bg-emerald-500/10 text-emerald-400' 
+                : 'bg-red-500/10 text-red-400'
+            }`}>
+              {monthlySurplus > 0 ? '+' : ''}{formatCurrency(monthlySurplus)}/mo
+            </span>
+          )}
+        </div>
+        <p className={`text-xl font-bold tabular-nums tracking-tight ${netWealth >= 0 ? 'text-foreground' : 'text-red-500'}`}>
           {formatCurrency(netWealth)}
         </p>
       </div>
-      <div className="flex items-center gap-3 pl-2 mt-1.5">
-        <span className="text-[10px] text-muted-foreground tabular-nums">
-          <span className="text-blue-400">▲</span> {formatCurrency(totalAssets)}
-        </span>
-        <span className="text-[10px] text-muted-foreground tabular-nums">
-          <span className="text-red-400">▼</span> {formatCurrency(totalLiabilities)}
-        </span>
+
+      {/* Asset/Liability mini bar */}
+      <div className="px-4 py-2.5">
+        <div className="flex h-1.5 rounded-full overflow-hidden bg-muted/50">
+          <div 
+            className="bg-blue-500 rounded-l-full transition-all duration-500"
+            style={{ width: `${assetPercent}%` }}
+          />
+          <div 
+            className="bg-red-400 rounded-r-full transition-all duration-500"
+            style={{ width: `${100 - assetPercent}%` }}
+          />
+        </div>
       </div>
-      {monthlySurplus !== 0 && (
-        <p className={`text-[10px] pl-2 mt-1 font-medium tabular-nums ${monthlySurplus > 0 ? 'text-blue-400' : 'text-red-400'}`}>
-          {monthlySurplus > 0 ? '+' : ''}{formatCurrency(monthlySurplus)}/mo
-        </p>
-      )}
+
+      {/* Stats row */}
+      <div className="flex items-center border-t border-border/30">
+        <div className="flex-1 px-4 py-2.5 flex items-center gap-1.5">
+          <TrendingUp className="h-3 w-3 text-blue-400" />
+          <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(totalAssets)}</span>
+        </div>
+        <div className="w-px h-6 bg-border/30" />
+        <div className="flex-1 px-4 py-2.5 flex items-center gap-1.5 justify-end">
+          <TrendingDown className="h-3 w-3 text-red-400" />
+          <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(totalLiabilities)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UserAvatar({ name }: { name: string }) {
+  const initials = useMemo(() => {
+    if (!name) return '?'
+    return name.charAt(0).toUpperCase()
+  }, [name])
+
+  return (
+    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+      <span className="text-xs font-bold text-primary">{initials}</span>
     </div>
   )
 }
 
 function SidebarFooter() {
   const [email, setEmail] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string>('')
   const [themeMode, setThemeMode] = useThemeMode()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const resetStore = useFinanceStore((s) => s.resetStore)
@@ -285,6 +340,12 @@ function SidebarFooter() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setEmail(user?.email ?? null)
+      const name =
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        user?.email?.split('@')[0] ||
+        ''
+      setDisplayName(name)
     })
   }, [])
 
@@ -342,10 +403,22 @@ function SidebarFooter() {
 
   return (
     <div className="px-3 pb-4 space-y-1">
-      <div className="h-px bg-border mb-3" />
+      {/* User profile card */}
+      {email && (
+        <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-lg bg-muted/30">
+          <UserAvatar name={displayName} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground/60 truncate">{email}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="h-px bg-border/30 mb-2" />
+
       <NavLink
         to="/setup"
-        className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+        className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-lg transition-all duration-200"
       >
         <Sparkles className="h-4 w-4" />
         Setup Wizard
@@ -391,9 +464,6 @@ function SidebarFooter() {
         <LogOut className="h-4 w-4" />
         Sign Out
       </Button>
-      {email && (
-        <p className="text-[11px] text-muted-foreground/60 truncate px-3 pt-1" title={email}>{email}</p>
-      )}
     </div>
   )
 }
@@ -401,13 +471,18 @@ function SidebarFooter() {
 function DesktopSidebar() {
   return (
     <aside className="hidden md:flex w-60 flex-col border-r border-border/50 bg-sidebar h-screen sticky top-0">
-      <div className="p-5 pb-4 shrink-0">
-        <BrandLogo />
-      </div>
-      <SidebarNav />
-      <div className="shrink-0">
-        <NetWealthMini />
-        <SidebarFooter />
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] via-transparent to-primary/[0.01] pointer-events-none" />
+      
+      <div className="relative flex flex-col h-full">
+        <div className="p-5 pb-4 shrink-0">
+          <BrandLogo />
+        </div>
+        <SidebarNav />
+        <div className="shrink-0">
+          <NetWealthMini />
+          <SidebarFooter />
+        </div>
       </div>
     </aside>
   )
@@ -494,13 +569,16 @@ function MobileHeader() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-60 p-0 bg-sidebar">
-            <div className="flex flex-col h-full">
-              <div className="p-5 pb-4">
-                <BrandLogo />
+            <div className="flex flex-col h-full relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] via-transparent to-primary/[0.01] pointer-events-none" />
+              <div className="relative flex flex-col h-full">
+                <div className="p-5 pb-4">
+                  <BrandLogo />
+                </div>
+                <SidebarNav onNavigate={() => setOpen(false)} />
+                <NetWealthMini />
+                <SidebarFooter />
               </div>
-              <SidebarNav onNavigate={() => setOpen(false)} />
-              <NetWealthMini />
-              <SidebarFooter />
             </div>
           </SheetContent>
         </Sheet>
