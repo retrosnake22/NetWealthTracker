@@ -115,6 +115,11 @@ export default function AssetsPage() {
 
 	const totalAssets = assets.reduce((s, a) => s + a.currentValue, 0)
 	const totalProperties = properties.reduce((s, p) => s + p.currentValue, 0)
+	const totalPropertyDebt = properties.reduce((s, p) => {
+		const mortgage = liabilities.find(l => l.id === p.mortgageId)
+		return s + (mortgage?.currentBalance ?? 0)
+	}, 0)
+	const totalEquity = totalProperties - totalPropertyDebt
 
 	// Get mortgage-type liabilities for linking
 	const mortgageLiabilities = useMemo(() =>
@@ -608,7 +613,7 @@ export default function AssetsPage() {
 			</div>
 
 			{/* Summary Strip */}
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+			<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
 				<Card>
 					<CardContent className='p-4'>
 						<p className='text-sm text-muted-foreground'>Total Assets</p>
@@ -627,6 +632,12 @@ export default function AssetsPage() {
 					<CardContent className='p-4'>
 						<p className='text-sm text-muted-foreground'>Properties</p>
 						<p className='text-2xl font-extrabold tabular-nums tracking-tight'>{formatCurrency(totalProperties)}</p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardContent className='p-4'>
+						<p className='text-sm text-muted-foreground'>Total Equity</p>
+						<p className='text-2xl font-extrabold tabular-nums tracking-tight text-emerald-400'>{formatCurrency(totalEquity)}</p>
 					</CardContent>
 				</Card>
 			</div>
