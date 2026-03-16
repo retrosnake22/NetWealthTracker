@@ -95,6 +95,21 @@ export function ExpenseActualsView() {
     )
   }, [livingBudgets])
 
+  // Group custom budgets by their parent super-category
+  const customBySuperCategory = useMemo(() => {
+    const map: Record<string, typeof customBudgets> = {}
+    const catToSuper: Record<string, string> = {}
+    for (const g of SUPER_CATEGORIES) {
+      for (const c of g.categories) catToSuper[c] = g.label
+    }
+    for (const b of customBudgets) {
+      const superCat = catToSuper[b.category] || 'Financial'
+      if (!map[superCat]) map[superCat] = []
+      map[superCat].push(b)
+    }
+    return map
+  }, [customBudgets])
+
   // Get actuals for selected month
   const monthActuals = useMemo(() => {
     const map = new Map<string, { actualAmount: number; notes?: string; id: string }>()
@@ -374,6 +389,15 @@ export function ExpenseActualsView() {
             if (editValues[cat] && editValues[cat] !== '') groupFilledCount++
           }
 
+          // Include custom items in this group
+          const groupCustoms = customBySuperCategory[group.label] || []
+          for (const b of groupCustoms) {
+            groupBudgetTotal += b.monthlyBudget
+            const val = parseFloat(editValues[`custom_${b.id}`] || '0') || 0
+            groupActualTotal += val
+            if (editValues[`custom_${b.id}`] && editValues[`custom_${b.id}`] !== '') groupFilledCount++
+          }
+
           const groupDiff = groupActualTotal - groupBudgetTotal
 
           // Compute which categories are visible when hideEmpty is on
@@ -385,8 +409,14 @@ export function ExpenseActualsView() {
             return budgetAmt > 0 || actualStr !== ''
           })
 
+          const visibleCustoms = groupCustoms.filter(b => {
+            if (!hideEmpty) return true
+            const actualStr = editValues[`custom_${b.id}`] || ''
+            return b.monthlyBudget > 0 || actualStr !== ''
+          })
+
           // Hide the entire group card if no categories are visible
-          if (hideEmpty && visibleCategories.length === 0) return null
+          if (hideEmpty && visibleCategories.length === 0 && visibleCustoms.length === 0) return null
 
           return (
             <Card key={group.label}>
@@ -397,7 +427,7 @@ export function ExpenseActualsView() {
                     <span>{group.icon}</span>
                     <span className="font-bold text-sm">{group.label}</span>
                     <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                      {groupFilledCount}/{group.categories.length}
+                      {groupFilledCount}/{group.categories.length + groupCustoms.length}
                     </span>
                   </div>
                   <span className="text-sm font-bold tabular-nums text-right">
@@ -474,58 +504,9 @@ export function ExpenseActualsView() {
                     </div>
                   )
                 })}
-              </CardContent>
-            </Card>
-          )
-        })}
 
-        {/* Custom Expenses */}
-        {customBudgets.length > 0 && !(hideEmpty && customBudgets.every(b => {
-          const actualStr = editValues[`custom_${b.id}`] || ''
-          return b.monthlyBudget === 0 && actualStr === ''
-        })) && (() => {
-          const customBudgetTotal = customBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
-          let customActualTotal = 0
-          for (const b of customBudgets) {
-            customActualTotal += parseFloat(editValues[`custom_${b.id}`] || '0') || 0
-          }
-          const customDiff = customActualTotal - customBudgetTotal
-          return (
-            <Card>
-              <CardContent className="p-0">
-                {/* Custom group header with totals */}
-                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b border-border/50 bg-muted/30">
-                  <div className="flex items-center gap-2">
-                    <span>📌</span>
-                    <span className="font-bold text-sm">Custom Expenses</span>
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                      {customBudgets.length}
-                    </span>
-                  </div>
-                  <span className="text-sm font-bold tabular-nums text-right">
-                    {formatCurrency(customBudgetTotal)}
-                  </span>
-                  <span className={`text-sm font-bold tabular-nums text-right ${customActualTotal > 0 ? 'text-foreground' : 'text-muted-foreground/40'}`}>
-                    {customActualTotal > 0 ? formatCurrency(customActualTotal) : '—'}
-                  </span>
-                  <span className={`text-sm font-bold tabular-nums text-right ${
-                    customActualTotal === 0 ? 'text-muted-foreground/40' :
-                    customDiff > 0 ? 'text-red-400' :
-                    customDiff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
-                  }`}>
-                    {customActualTotal === 0 ? '—' : `${customDiff > 0 ? '+' : ''}${formatCurrency(customDiff)}`}
-                  </span>
-                </div>
-
-                {/* Column headers */}
-                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/20">
-                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
-                </div>
-
-                {customBudgets.filter(b => {
+                {/* Custom items in this group */}
+                {(customBySuperCategory[group.label] || []).filter(b => {
                   if (!hideEmpty) return true
                   const actualStr = editValues[`custom_${b.id}`] || ''
                   return b.monthlyBudget > 0 || actualStr !== ''
@@ -544,11 +525,10 @@ export function ExpenseActualsView() {
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
+                        <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
                         <span className="text-sm font-semibold truncate">{b.label}</span>
                         {hasSavedActual && (
-                          <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">
-                            ✓
-                          </Badge>
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">✓</Badge>
                         )}
                       </div>
                       <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}</span>
@@ -576,7 +556,7 @@ export function ExpenseActualsView() {
               </CardContent>
             </Card>
           )
-        })()}
+        })}
       </div>
 
       {/* Floating auto-save status indicator */}

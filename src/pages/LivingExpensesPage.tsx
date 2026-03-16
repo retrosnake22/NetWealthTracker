@@ -79,7 +79,7 @@ export function LivingExpensesPage() {
   // Custom expense dialog state
   const [showCustomExpense, setShowCustomExpense] = useState(false)
   const [customName, setCustomName] = useState('')
-  const [customCategory, setCustomCategory] = useState<string>('other')
+  const [customCategory, setCustomCategory] = useState<string>('Financial')
   const [customAmount, setCustomAmount] = useState('')
 
   // Build a map from category → existing budget entry (excluding auto-generated vehicle expenses)
@@ -107,6 +107,9 @@ export function LivingExpensesPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const editValuesRef = useRef(editValues)
   editValuesRef.current = editValues
+
+  // Track custom expense edit values
+  const [customEditValues, setCustomEditValues] = useState<Record<string, string>>({})
 
   // Initialize edit values from existing budgets — only on first load or after save/reset
   useEffect(() => {
@@ -176,6 +179,16 @@ export function LivingExpensesPage() {
     }
   }, [persistToStore])
 
+  // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
+  const customBudgets = useMemo(() => {
+    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
+    return expenseBudgets.filter(b =>
+      !b.linkedPropertyId && !b.linkedAssetId &&
+      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
+      !standardLabels.has(b.label)
+    )
+  }, [expenseBudgets])
+
   const handleReset = useCallback(() => {
     // Cancel any pending auto-save
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -187,19 +200,31 @@ export function LivingExpensesPage() {
       }
     }
     setEditValues(values)
+    // Also reset custom edit values from store
+    const customVals: Record<string, string> = {}
+    for (const b of customBudgets) {
+      customVals[b.id] = b.monthlyBudget > 0 ? String(b.monthlyBudget) : ''
+    }
+    setCustomEditValues(customVals)
     setHasChanges(false)
     setSaveStatus('idle')
-  }, [budgetByCategory])
+  }, [budgetByCategory, customBudgets])
 
-  // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
-  const customBudgets = useMemo(() => {
-    const standardLabels = new Set(Object.values(CATEGORY_LABELS))
-    return expenseBudgets.filter(b =>
-      !b.linkedPropertyId && !b.linkedAssetId &&
-      !b.label.endsWith('Car Loan Repayment') && !b.label.endsWith('Lease Payment') &&
-      !standardLabels.has(b.label)
-    )
-  }, [expenseBudgets])
+  // Group custom budgets by their parent super-category
+  const customBySuperCategory = useMemo(() => {
+    const map: Record<string, typeof customBudgets> = {}
+    // Build reverse lookup: subcategory -> super-category label
+    const catToSuper: Record<string, string> = {}
+    for (const g of LIVING_SUPER_CATEGORIES) {
+      for (const c of g.categories) catToSuper[c] = g.label
+    }
+    for (const b of customBudgets) {
+      const superCat = catToSuper[b.category] || 'Financial'
+      if (!map[superCat]) map[superCat] = []
+      map[superCat].push(b)
+    }
+    return map
+  }, [customBudgets])
 
   // Summary
   const summary = useMemo(() => {
@@ -216,38 +241,17 @@ export function LivingExpensesPage() {
       }
     }
 
-    // Include custom budgets in totals
-    const customTotal = customBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+    // Include custom budgets in totals (use live edit values where available)
+    const customTotal = customBudgets.reduce((s, b) => {
+      const editVal = customEditValues[b.id]
+      return s + (editVal !== undefined ? (parseFloat(editVal) || 0) : b.monthlyBudget)
+    }, 0)
     total += customTotal
     filledCount += customBudgets.length
     totalCategories += customBudgets.length
 
     return { total, filledCount, totalCategories }
-  }, [editValues, customBudgets])
-
-  // Group custom budgets by their category for inline display
-  const customByCategory = useMemo(() => {
-    const map: Record<string, typeof customBudgets> = {}
-    for (const b of customBudgets) {
-      if (!map[b.category]) map[b.category] = []
-      map[b.category].push(b)
-    }
-    return map
-  }, [customBudgets])
-
-  // Collect all categories that have custom items (to find which group they fall into)
-  const allGroupCategories = useMemo(() => {
-    const set = new Set<string>()
-    for (const g of LIVING_SUPER_CATEGORIES) {
-      for (const c of g.categories) set.add(c)
-    }
-    return set
-  }, [])
-
-  // Custom items that don't belong to any group (orphans) - show at end of Financial
-  const orphanCustoms = useMemo(() => {
-    return customBudgets.filter(b => !allGroupCategories.has(b.category))
-  }, [customBudgets, allGroupCategories])
+  }, [editValues, customBudgets, customEditValues])
 
   // Group-level totals (including custom items in each group)
   const groupSummaries = useMemo(() => {
@@ -259,37 +263,56 @@ export function LivingExpensesPage() {
         const val = parseFloat(editValues[cat] || '0') || 0
         groupTotal += val
         if (val > 0) filledCount++
-        // Add custom items that belong to this category
-        const customs = customByCategory[cat] || []
-        for (const c of customs) {
-          groupTotal += c.monthlyBudget
-          customCount++
-        }
       }
-      // Add orphan customs to Financial group
-      if (group.label === 'Financial') {
-        for (const c of orphanCustoms) {
-          groupTotal += c.monthlyBudget
-          customCount++
-        }
+      // Add custom items that belong to this super-category
+      const customs = customBySuperCategory[group.label] || []
+      for (const c of customs) {
+        const editVal = customEditValues[c.id]
+        groupTotal += editVal !== undefined ? (parseFloat(editVal) || 0) : c.monthlyBudget
+        customCount++
       }
       return { ...group, groupTotal, filledCount, customCount }
     })
-  }, [editValues, customByCategory, orphanCustoms])
+  }, [editValues, customBySuperCategory, customEditValues])
 
   const handleAddCustomExpense = useCallback(() => {
     if (!customName || !customAmount) return
+    // Resolve super-category label to a representative subcategory
+    const group = LIVING_SUPER_CATEGORIES.find(g => g.label === customCategory)
+    const resolvedCategory = group ? group.categories[0] : 'other'
     addExpenseBudget({
-      category: customCategory as ExpenseCategory,
+      category: resolvedCategory as ExpenseCategory,
       label: customName,
       monthlyBudget: parseFloat(customAmount) || 0,
     })
     setCustomName('')
-    setCustomCategory('other')
+    setCustomCategory('Financial')
     setCustomAmount('')
     setShowCustomExpense(false)
     setHasChanges(true)
   }, [customName, customAmount, customCategory, addExpenseBudget])
+
+  // Initialize customEditValues whenever customBudgets changes
+  useEffect(() => {
+    const vals: Record<string, string> = {}
+    for (const b of customBudgets) {
+      vals[b.id] = b.monthlyBudget > 0 ? String(b.monthlyBudget) : ''
+    }
+    setCustomEditValues(vals)
+  }, [customBudgets])
+
+  const handleCustomValueChange = useCallback((budgetId: string, value: string) => {
+    setCustomEditValues(prev => ({ ...prev, [budgetId]: value }))
+    setHasChanges(true)
+    setSaveStatus('saving')
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      const numValue = parseFloat(value) || 0
+      updateExpenseBudget(budgetId, { monthlyBudget: numValue })
+      // Also persist other standard values
+      persistToStore()
+    }, 1500)
+  }, [updateExpenseBudget, persistToStore])
 
   const handleSetBudgetMode = useCallback((mode: 'estimate' | 'detailed') => {
     setBudgetMode(mode)
@@ -428,14 +451,9 @@ export function LivingExpensesPage() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {LIVING_SUPER_CATEGORIES.map(group => (
-                                <div key={group.label}>
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.icon} {group.label}</div>
-                                  {group.categories.map(cat => (
-                                    <SelectItem key={cat} value={cat}>
-                                      {CATEGORY_LABELS[cat]}
-                                    </SelectItem>
-                                  ))}
-                                </div>
+                                <SelectItem key={group.label} value={group.label}>
+                                  {group.icon} {group.label}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -506,18 +524,6 @@ export function LivingExpensesPage() {
               {/* Inline budget editor grouped by super-category */}
               <div className="space-y-3">
                 {groupSummaries.map(group => {
-                  // Collect all custom items for this group (by category + orphans for Financial)
-                  const groupCustomItems: { cat: string; items: typeof customBudgets }[] = []
-                  for (const cat of group.categories) {
-                    const items = customByCategory[cat]
-                    if (items && items.length > 0) {
-                      groupCustomItems.push({ cat, items })
-                    }
-                  }
-                  if (group.label === 'Financial' && orphanCustoms.length > 0) {
-                    groupCustomItems.push({ cat: '_orphan', items: orphanCustoms })
-                  }
-
                   return (
                     <div
                       key={group.label}
@@ -554,80 +560,65 @@ export function LivingExpensesPage() {
                         {group.categories.map((cat, idx) => {
                           const value = editValues[cat] || ''
                           const hasValue = parseFloat(value) > 0
-                          const catCustoms = customByCategory[cat] || []
                           const isLastCategory = idx === group.categories.length - 1
-                          const hasCustomsAfter = catCustoms.length > 0
-                          // Show bottom border unless this is the very last item (standard + customs)
-                          const showBorder = !isLastCategory || hasCustomsAfter || (group.label === 'Financial' && orphanCustoms.length > 0)
+                          const groupCustoms = customBySuperCategory[group.label] || []
+                          const showBorder = !isLastCategory || groupCustoms.length > 0
 
                           return (
-                            <div key={cat}>
-                              {/* Standard category row */}
-                              <div
-                                className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                                  showBorder ? 'border-b border-border/20' : ''
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                    {CATEGORY_LABELS[cat]}
-                                  </span>
-                                </div>
-                                <div className="flex justify-end">
-                                  <div className="w-[140px] sm:w-[160px]">
-                                    <CurrencyInput
-                                      value={value}
-                                      onChange={(v) => handleValueChange(cat, v)}
-                                      placeholder="—"
-                                    />
-                                  </div>
+                            <div
+                              key={cat}
+                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                                showBorder ? 'border-b border-border/20' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                  {CATEGORY_LABELS[cat]}
+                                </span>
+                              </div>
+                              <div className="flex justify-end">
+                                <div className="w-[140px] sm:w-[160px]">
+                                  <CurrencyInput
+                                    value={value}
+                                    onChange={(v) => handleValueChange(cat, v)}
+                                    placeholder="—"
+                                  />
                                 </div>
                               </div>
-
-                              {/* Custom items inline under this category */}
-                              {catCustoms.map((b, cIdx) => {
-                                const isLastCustom = cIdx === catCustoms.length - 1
-                                const isVeryLast = isLastCategory && isLastCustom && !(group.label === 'Financial' && orphanCustoms.length > 0)
-                                return (
-                                  <div
-                                    key={b.id}
-                                    className={`grid grid-cols-[1fr_120px_36px] sm:grid-cols-[1fr_140px_36px] items-center px-5 py-2 gap-2 pl-16 hover:bg-muted/30 transition-colors bg-muted/10 ${
-                                      !isVeryLast ? 'border-b border-border/20' : ''
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
-                                      <span className="text-sm font-semibold truncate">{b.label}</span>
-                                    </div>
-                                    <span className="text-sm tabular-nums text-right font-medium">{formatCurrency(b.monthlyBudget)}/mo</span>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeExpenseBudget(b.id)}>
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                )
-                              })}
                             </div>
                           )
                         })}
 
-                        {/* Orphan custom items (category not in any group) — show in Financial */}
-                        {group.label === 'Financial' && orphanCustoms.map((b, idx) => (
-                          <div
-                            key={b.id}
-                            className={`grid grid-cols-[1fr_120px_36px] sm:grid-cols-[1fr_140px_36px] items-center px-5 py-2 gap-2 pl-16 hover:bg-muted/30 transition-colors bg-muted/10 ${
-                              idx !== orphanCustoms.length - 1 ? 'border-b border-border/20' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
-                              <span className="text-sm font-semibold truncate">{b.label}</span>
+                        {/* Custom items for this super-category — editable, at group level */}
+                        {(customBySuperCategory[group.label] || []).map((b, cIdx, arr) => {
+                          const customVal = customEditValues[b.id] || ''
+                          const isLast = cIdx === arr.length - 1
+                          return (
+                            <div
+                              key={b.id}
+                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                                !isLast ? 'border-b border-border/20' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
+                                <span className="text-sm font-semibold truncate">{b.label}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-destructive hover:text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="flex justify-end">
+                                <div className="w-[140px] sm:w-[160px]">
+                                  <CurrencyInput
+                                    value={customVal}
+                                    onChange={(v) => handleCustomValueChange(b.id, v)}
+                                    placeholder="—"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                            <span className="text-sm tabular-nums text-right font-medium">{formatCurrency(b.monthlyBudget)}/mo</span>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeExpenseBudget(b.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )
