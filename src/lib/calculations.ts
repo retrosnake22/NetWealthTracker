@@ -320,8 +320,11 @@ export function calculateDashboardMetrics(
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
   // Interest income from cash/savings accounts
 	const interestIncome = assets
-		.filter(a => a.category === 'cash' && a.growthRatePA > 0)
-		.reduce((sum, a) => sum + (a.currentValue * a.growthRatePA) / 12, 0)
+		.filter(a => a.category === 'cash' && !(a as CashAsset).isOffset && (a.growthRatePA > 0 || ((a as CashAsset).interestRatePA ?? 0) > 0))
+		.reduce((sum, a) => {
+			const rate = (a as CashAsset).interestRatePA ?? a.growthRatePA
+			return sum + (a.currentValue * rate) / 12
+		}, 0)
 
 	// Dividend income from stocks (only where user opted in)
 	const dividendIncome = assets

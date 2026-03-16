@@ -101,11 +101,12 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   }
   if (interestIncome > 0) {
     assets
-      .filter(a => a.category === 'cash' && a.growthRatePA > 0)
+      .filter(a => a.category === 'cash' && !(a as CashAsset).isOffset && (a.growthRatePA > 0 || ((a as CashAsset).interestRatePA ?? 0) > 0))
       .forEach(a => {
+        const rate = (a as CashAsset).interestRatePA ?? a.growthRatePA
         incomeBySource.push({
           label: `${a.name} (interest)`,
-          amount: (a.currentValue * a.growthRatePA) / 12,
+          amount: (a.currentValue * rate) / 12,
         })
       })
   }
@@ -308,11 +309,12 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
           }
           if (yearlyInterestIncome > 0) {
             assets
-              .filter(a => a.category === 'cash' && a.growthRatePA > 0)
+              .filter(a => a.category === 'cash' && !(a as CashAsset).isOffset && (a.growthRatePA > 0 || ((a as CashAsset).interestRatePA ?? 0) > 0))
               .forEach(a => {
+                const rate = (a as CashAsset).interestRatePA ?? a.growthRatePA
                 yearlyIncomeBySource.push({
                   label: `${a.name} (interest)`,
-                  amount: a.currentValue * a.growthRatePA,
+                  amount: a.currentValue * rate,
                 })
               })
           }
