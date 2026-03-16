@@ -15,7 +15,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   repairs_maintenance: 'Repairs & Maintenance', gardening: 'Gardening', home_insurance: 'Home Insurance',
   property_management: 'Property Management', land_tax: 'Land Tax',
   maintenance: 'Maintenance', building_insurance: 'Building / Landlord Insurance',
-  insurance_health: 'Health Insurance',
+  insurance_pet: 'Pet Insurance', insurance_health: 'Health Insurance',
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   insurance_other: 'Other Insurance',
   electricity: 'Electricity', water: 'Water', rates: 'Rates',
