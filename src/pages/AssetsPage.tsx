@@ -828,59 +828,59 @@ export default function AssetsPage() {
 						</div>
 
 						{/* Cash Type Section — only for cash assets */}
-					{assetForm.category === 'cash' && (
-						<div className="space-y-3">
-							<div>
-								<Label className="text-sm font-medium">Account Type</Label>
-								<div className="flex gap-2 mt-1.5">
-									{(['cash', 'bank'] as const).map(t => (
-										<button
-											key={t}
-											type="button"
-											onClick={() => setAssetForm(f => ({ ...f, cashType: t, interestRate: t === 'bank' ? '3.0' : '0' }))}
-											className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
-												assetForm.cashType === t
-													? 'border-primary bg-primary/10 text-primary'
-													: 'border-input hover:border-primary/30 text-muted-foreground'
-											}`}
-										>
-											{t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
-										</button>
-									))}
+						{assetForm.category === 'cash' && (
+							<div className="space-y-3">
+								<div>
+									<Label className="text-sm font-medium">Account Type</Label>
+									<div className="flex gap-2 mt-1.5">
+										{(['cash', 'bank'] as const).map(t => (
+											<button
+												key={t}
+												type="button"
+												onClick={() => setAssetForm(f => ({ ...f, cashType: t, interestRate: t === 'bank' ? '3.0' : '0' }))}
+												className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
+													assetForm.cashType === t
+														? 'border-primary bg-primary/10 text-primary'
+														: 'border-input hover:border-primary/30 text-muted-foreground'
+												}`}
+											>
+												{t === 'cash' ? '💵 Cash' : '🏦 Bank Account'}
+											</button>
+										))}
+									</div>
 								</div>
+								{assetForm.cashType === 'bank' && (
+									<>
+										<div>
+											<Label>Bank Name</Label>
+											<Input
+												value={assetForm.bankName}
+												onChange={e => setAssetForm(f => ({ ...f, bankName: e.target.value }))}
+												placeholder="e.g. Commonwealth Bank"
+											/>
+										</div>
+										<div>
+											<Label>Interest Rate (% p.a.)</Label>
+											<Input
+												type="number" step="0.1" min="0" max="20"
+												value={assetForm.interestRate}
+												onChange={e => setAssetForm(f => ({ ...f, interestRate: e.target.value }))}
+											/>
+											<p className="text-xs text-muted-foreground mt-1">
+												Interest will be included in your income calculations
+											</p>
+										</div>
+									</>
+								)}
+								{assetForm.cashType === 'cash' && (
+									<p className="text-xs text-muted-foreground">
+										No interest is calculated for physical cash holdings.
+									</p>
+								)}
 							</div>
-							{assetForm.cashType === 'bank' && (
-								<>
-									<div>
-										<Label>Bank Name</Label>
-										<Input
-											value={assetForm.bankName}
-											onChange={e => setAssetForm(f => ({ ...f, bankName: e.target.value }))}
-											placeholder="e.g. Commonwealth Bank"
-										/>
-									</div>
-									<div>
-										<Label>Interest Rate (% p.a.)</Label>
-										<Input
-											type="number" step="0.1" min="0" max="20"
-											value={assetForm.interestRate}
-											onChange={e => setAssetForm(f => ({ ...f, interestRate: e.target.value }))}
-										/>
-										<p className="text-xs text-muted-foreground mt-1">
-											Interest will be included in your income calculations
-										</p>
-									</div>
-								</>
-							)}
-							{assetForm.cashType === 'cash' && (
-								<p className="text-xs text-muted-foreground">
-									No interest is calculated for physical cash holdings.
-								</p>
-							)}
-						</div>
-					)}
+						)}
 
-					{/* Offset Account Section — only for cash assets */}
+						{/* Offset Account Section — only for cash assets */}
 						{assetForm.category === 'cash' && (
 							<div className="border-t pt-4">
 								<div className="flex items-center justify-between mb-3">
@@ -1059,135 +1059,136 @@ export default function AssetsPage() {
 							</div>
 						)}
 
-						<div className="flex gap-2 justify-end">
-							{/* Stocks Dividends Section — only for stock assets */}
-				{assetForm.category === 'stocks' && (
-					<div className="border-t pt-4">
-						<div className="flex items-center justify-between mb-3">
-							<div>
-								<h4 className="font-semibold text-sm">Dividends</h4>
-								<p className="text-xs text-muted-foreground">Does this investment pay dividends?</p>
-							</div>
-							<button
-								type="button"
-								role="switch"
-								aria-checked={assetForm.paysDividends}
-								onClick={() => setAssetForm(f => ({ ...f, paysDividends: !f.paysDividends }))}
-								className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.paysDividends ? 'bg-blue-500' : 'bg-muted'}`}
-							>
-								<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.paysDividends ? 'translate-x-5' : 'translate-x-0'}`} />
-							</button>
-						</div>
-						{assetForm.paysDividends && (
-							<div className="space-y-3">
-								<div>
-									<Label>Estimated Dividend Yield (% p.a.)</Label>
-									<Input
-										type="number"
-										step="0.1"
-										min="0"
-										max="100"
-										value={assetForm.dividendYield}
-										onChange={e => setAssetForm(f => ({ ...f, dividendYield: e.target.value }))}
-										placeholder="e.g. 4.0"
-									/>
+						{/* Stocks Dividends Section — only for stock assets */}
+						{assetForm.category === 'stocks' && (
+							<div className="border-t pt-4">
+								<div className="flex items-center justify-between mb-3">
+									<div>
+										<h4 className="font-semibold text-sm">Dividends</h4>
+										<p className="text-xs text-muted-foreground">Does this investment pay dividends?</p>
+									</div>
+									<button
+										type="button"
+										role="switch"
+										aria-checked={assetForm.paysDividends}
+										onClick={() => setAssetForm(f => ({ ...f, paysDividends: !f.paysDividends }))}
+										className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.paysDividends ? 'bg-blue-500' : 'bg-muted'}`}
+									>
+										<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.paysDividends ? 'translate-x-5' : 'translate-x-0'}`} />
+									</button>
 								</div>
-								{parseFloat(assetForm.dividendYield) > 0 && parseFloat(assetForm.value) > 0 && (
-									<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-										<div className="flex justify-between">
-											<span className="text-muted-foreground">Estimated Annual Dividends</span>
-											<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100)}</span>
+								{assetForm.paysDividends && (
+									<div className="space-y-3">
+										<div>
+											<Label>Estimated Dividend Yield (% p.a.)</Label>
+											<Input
+												type="number"
+												step="0.1"
+												min="0"
+												max="100"
+												value={assetForm.dividendYield}
+												onChange={e => setAssetForm(f => ({ ...f, dividendYield: e.target.value }))}
+												placeholder="e.g. 4.0"
+											/>
 										</div>
-										<div className="flex justify-between">
-											<span className="text-muted-foreground">Monthly Income</span>
-											<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100 / 12)}</span>
-										</div>
-										<p className="text-xs text-muted-foreground mt-1">
-											This will appear as dividend income on your Income page
-										</p>
+										{parseFloat(assetForm.dividendYield) > 0 && parseFloat(assetForm.value) > 0 && (
+											<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+												<div className="flex justify-between">
+													<span className="text-muted-foreground">Estimated Annual Dividends</span>
+													<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100)}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-muted-foreground">Monthly Income</span>
+													<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100 / 12)}</span>
+												</div>
+												<p className="text-xs text-muted-foreground mt-1">
+													This will appear as dividend income on your Income page
+												</p>
+											</div>
+										)}
 									</div>
 								)}
 							</div>
 						)}
-					</div>
-				)}
-				{/* Stocks Loan Section — only for stock assets */}
-				{assetForm.category === 'stocks' && (
-					<div className="border-t pt-4">
-						<div className="flex items-center justify-between mb-3">
-							<div>
-								<h4 className="font-semibold text-sm">Loan</h4>
-								<p className="text-xs text-muted-foreground">Add a loan against this stock investment</p>
-							</div>
-							<button
-								type="button"
-								role="switch"
-								aria-checked={assetForm.hasMarginLoan}
-								onClick={() => setAssetForm(f => ({ ...f, hasMarginLoan: !f.hasMarginLoan }))}
-								className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.hasMarginLoan ? 'bg-blue-500' : 'bg-muted'}`}
-							>
-								<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.hasMarginLoan ? 'translate-x-5' : 'translate-x-0'}`} />
-							</button>
-						</div>
-						{assetForm.hasMarginLoan && (() => {
-							const bal = parseFloat(assetForm.marginLoanBalance) || 0
-							const rate = (parseFloat(assetForm.marginLoanRate) || 0) / 100
-							const term = parseFloat(assetForm.marginLoanTerm) || 5
-							const autoRepayment = calcMonthlyRepayment(bal, rate, term)
-							return (
-								<div className="space-y-3">
-									<p className="text-xs text-muted-foreground">
-										A loan liability will be created automatically
-									</p>
-									<div>
-										<Label>Loan Balance ($)</Label>
-										<Input
-											type="number"
-											value={assetForm.marginLoanBalance}
-											onChange={e => setAssetForm(f => ({ ...f, marginLoanBalance: e.target.value }))}
-											placeholder="e.g. 50000"
-										/>
-									</div>
-									<div>
-										<Label>Interest Rate (% p.a.)</Label>
-										<Input
-											type="number"
-											step="0.01"
-											value={assetForm.marginLoanRate}
-											onChange={e => setAssetForm(f => ({ ...f, marginLoanRate: e.target.value }))}
-											placeholder="e.g. 7.5"
-										/>
-									</div>
-									<div>
-										<Label>Loan Term (years)</Label>
-										<Input
-											type="number"
-											step="1"
-											min="1"
-											max="30"
-											value={assetForm.marginLoanTerm}
-											onChange={e => setAssetForm(f => ({ ...f, marginLoanTerm: e.target.value }))}
-											placeholder="e.g. 5"
-										/>
-									</div>
-									{autoRepayment > 0 && (
-										<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-											<div className="flex justify-between">
-												<span className="text-muted-foreground">Calculated Monthly Repayment</span>
-												<span className="font-semibold text-blue-400">{formatCurrency(autoRepayment)}</span>
-											</div>
-											<p className="text-xs text-muted-foreground">
-												Based on {formatCurrency(bal)} over {term} years at {(rate * 100).toFixed(1)}% p.a.
-											</p>
-										</div>
-									)}
-								</div>
-							)
-						})()}
-					</div>
-				)}
 
-				<Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
+						{/* Stocks Loan Section — only for stock assets */}
+						{assetForm.category === 'stocks' && (
+							<div className="border-t pt-4">
+								<div className="flex items-center justify-between mb-3">
+									<div>
+										<h4 className="font-semibold text-sm">Loan</h4>
+										<p className="text-xs text-muted-foreground">Add a loan against this stock investment</p>
+									</div>
+									<button
+										type="button"
+										role="switch"
+										aria-checked={assetForm.hasMarginLoan}
+										onClick={() => setAssetForm(f => ({ ...f, hasMarginLoan: !f.hasMarginLoan }))}
+										className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.hasMarginLoan ? 'bg-blue-500' : 'bg-muted'}`}
+									>
+										<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.hasMarginLoan ? 'translate-x-5' : 'translate-x-0'}`} />
+									</button>
+								</div>
+								{assetForm.hasMarginLoan && (() => {
+									const bal = parseFloat(assetForm.marginLoanBalance) || 0
+									const rate = (parseFloat(assetForm.marginLoanRate) || 0) / 100
+									const term = parseFloat(assetForm.marginLoanTerm) || 5
+									const autoRepayment = calcMonthlyRepayment(bal, rate, term)
+									return (
+										<div className="space-y-3">
+											<p className="text-xs text-muted-foreground">
+												A loan liability will be created automatically
+											</p>
+											<div>
+												<Label>Loan Balance ($)</Label>
+												<Input
+													type="number"
+													value={assetForm.marginLoanBalance}
+													onChange={e => setAssetForm(f => ({ ...f, marginLoanBalance: e.target.value }))}
+													placeholder="e.g. 50000"
+												/>
+											</div>
+											<div>
+												<Label>Interest Rate (% p.a.)</Label>
+												<Input
+													type="number"
+													step="0.01"
+													value={assetForm.marginLoanRate}
+													onChange={e => setAssetForm(f => ({ ...f, marginLoanRate: e.target.value }))}
+													placeholder="e.g. 7.5"
+												/>
+											</div>
+											<div>
+												<Label>Loan Term (years)</Label>
+												<Input
+													type="number"
+													step="1"
+													min="1"
+													max="30"
+													value={assetForm.marginLoanTerm}
+													onChange={e => setAssetForm(f => ({ ...f, marginLoanTerm: e.target.value }))}
+													placeholder="e.g. 5"
+												/>
+											</div>
+											{autoRepayment > 0 && (
+												<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+													<div className="flex justify-between">
+														<span className="text-muted-foreground">Calculated Monthly Repayment</span>
+														<span className="font-semibold text-blue-400">{formatCurrency(autoRepayment)}</span>
+													</div>
+													<p className="text-xs text-muted-foreground">
+														Based on {formatCurrency(bal)} over {term} years at {(rate * 100).toFixed(1)}% p.a.
+													</p>
+												</div>
+											)}
+										</div>
+									)
+								})()}
+							</div>
+						)}
+
+						<div className="flex gap-2 justify-end">
+							<Button variant="outline" onClick={() => setShowAddAsset(false)}>Cancel</Button>
 							<Button onClick={saveAsset} disabled={!assetForm.name || !assetForm.value}>
 								{editingAsset ? 'Save Changes' : 'Add Asset'}
 							</Button>
