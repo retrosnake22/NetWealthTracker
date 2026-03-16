@@ -114,7 +114,7 @@ export default function AssetsPage() {
 		leasePayment: '',
 		cashType: 'bank' as 'cash' | 'bank',
 		bankName: '',
-		interestRate: '3.00',
+		interestRate: '',
 		hasMarginLoan: false,
 		marginLoanBalance: '',
 		marginLoanRate: '',
@@ -210,7 +210,7 @@ export default function AssetsPage() {
 			leasePayment: '',
 			cashType: 'bank' as 'cash' | 'bank',
 			bankName: '',
-			interestRate: '3.00',
+			interestRate: '',
 			hasMarginLoan: false,
 			marginLoanBalance: '',
 			marginLoanRate: '',
@@ -273,7 +273,7 @@ export default function AssetsPage() {
 		if (assetForm.category === 'cash') {
 			data.cashType = assetForm.cashType
 			data.bankName = assetForm.cashType === 'bank' ? assetForm.bankName : undefined
-			data.growthRatePA = assetForm.cashType === 'cash' ? 0 : (parseFloat(assetForm.interestRate) || 3) / 100
+			data.growthRatePA = assetForm.cashType === 'cash' ? 0 : (parseFloat(assetForm.interestRate) || 0) / 100
 			data.isOffset = assetForm.isOffset
 			data.linkedMortgageId = assetForm.isOffset ? (assetForm.linkedMortgageId || undefined) : undefined
 		} else {
@@ -927,7 +927,7 @@ export default function AssetsPage() {
 											<button
 												key={t}
 												type="button"
-												onClick={() => setAssetForm(f => ({ ...f, cashType: t, interestRate: t === 'bank' ? '3.0' : '0' }))}
+												onClick={() => setAssetForm(f => ({ ...f, cashType: t, interestRate: t === 'bank' ? '' : '0' }))}
 												className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
 													assetForm.cashType === t
 														? 'border-primary bg-primary/10 text-primary'
@@ -955,6 +955,7 @@ export default function AssetsPage() {
 												type="number" step="0.01" min="0" max="20"
 												value={assetForm.interestRate}
 												onChange={e => setAssetForm(f => ({ ...f, interestRate: e.target.value }))}
+										placeholder="e.g. 5.0"
 											/>
 											<p className="text-xs text-muted-foreground mt-1">
 												Interest will be included in your income calculations
