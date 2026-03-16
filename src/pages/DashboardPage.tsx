@@ -495,11 +495,11 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Expenses</span>
-                    <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(monthlyExpenses)}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">/mo</span></span>
+                    <span className="text-xs font-medium text-blue-500 dark:text-blue-400">Total Expenses</span>
+                    <span className="text-sm font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(monthlyExpenses)}<span className="text-xs font-normal text-slate-400 dark:text-slate-500">/mo</span></span>
                   </div>
-                  <div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                    <div className="h-full rounded-full bg-slate-300 dark:bg-white/20 w-full" />
+                  <div className="h-2.5 rounded-full bg-blue-100 dark:bg-blue-950/50 overflow-hidden">
+                    <div className="h-full rounded-full bg-blue-400 dark:bg-blue-500 w-full" />
                   </div>
                 </div>
               </div>
