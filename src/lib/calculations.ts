@@ -537,7 +537,14 @@ export function projectNetWealth(
 
     for (const [id, balance] of liabilityValues) {
       const annualRate = interestRates.get(id) ?? 0
-      const monthlyInterest = balance * (annualRate / 12)
+      // For mortgages with offset accounts, interest is only charged on
+      // (balance - offset), so more of the repayment goes to principal.
+      const offsetIds = cashAssets
+        .filter(a => a.isOffset && a.linkedMortgageId === id)
+        .map(a => a.id)
+      const totalOffset = offsetIds.reduce((sum, oid) => sum + (assetValues.get(oid) ?? 0), 0)
+      const effectiveBalance = Math.max(0, balance - totalOffset)
+      const monthlyInterest = effectiveBalance * (annualRate / 12)
       const liability = liabilities.find(l => l.id === id)
       let monthlyRepayment = 0
       if (liability) {
