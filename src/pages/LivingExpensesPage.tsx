@@ -200,19 +200,57 @@ export function LivingExpensesPage() {
     return { total, filledCount, totalCategories }
   }, [editValues, customBudgets])
 
-  // Group-level totals
+  // Group custom budgets by their category for inline display
+  const customByCategory = useMemo(() => {
+    const map: Record<string, typeof customBudgets> = {}
+    for (const b of customBudgets) {
+      if (!map[b.category]) map[b.category] = []
+      map[b.category].push(b)
+    }
+    return map
+  }, [customBudgets])
+
+  // Collect all categories that have custom items (to find which group they fall into)
+  const allGroupCategories = useMemo(() => {
+    const set = new Set<string>()
+    for (const g of LIVING_SUPER_CATEGORIES) {
+      for (const c of g.categories) set.add(c)
+    }
+    return set
+  }, [])
+
+  // Custom items that don't belong to any group (orphans) - show at end of Financial
+  const orphanCustoms = useMemo(() => {
+    return customBudgets.filter(b => !allGroupCategories.has(b.category))
+  }, [customBudgets, allGroupCategories])
+
+  // Group-level totals (including custom items in each group)
   const groupSummaries = useMemo(() => {
     return LIVING_SUPER_CATEGORIES.map(group => {
       let groupTotal = 0
       let filledCount = 0
+      let customCount = 0
       for (const cat of group.categories) {
         const val = parseFloat(editValues[cat] || '0') || 0
         groupTotal += val
         if (val > 0) filledCount++
+        // Add custom items that belong to this category
+        const customs = customByCategory[cat] || []
+        for (const c of customs) {
+          groupTotal += c.monthlyBudget
+          customCount++
+        }
       }
-      return { ...group, groupTotal, filledCount }
+      // Add orphan customs to Financial group
+      if (group.label === 'Financial') {
+        for (const c of orphanCustoms) {
+          groupTotal += c.monthlyBudget
+          customCount++
+        }
+      }
+      return { ...group, groupTotal, filledCount, customCount }
     })
-  }, [editValues])
+  }, [editValues, customByCategory, orphanCustoms])
 
   const handleAddCustomExpense = useCallback(() => {
     if (!customName || !customAmount) return
@@ -365,9 +403,14 @@ export function LivingExpensesPage() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {LIVING_SUPER_CATEGORIES.map(group => (
-                                <SelectItem key={group.label} value={group.categories[0]}>
-                                  {group.icon} {group.label}
-                                </SelectItem>
+                                <div key={group.label}>
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.icon} {group.label}</div>
+                                  {group.categories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>
+                                      {CATEGORY_LABELS[cat]}
+                                    </SelectItem>
+                                  ))}
+                                </div>
                               ))}
                             </SelectContent>
                           </Select>
@@ -430,118 +473,134 @@ export function LivingExpensesPage() {
 
               {/* Inline budget editor grouped by super-category */}
               <div className="space-y-3">
-                {groupSummaries.map(group => (
-                  <div
-                    key={group.label}
-                    className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${SECTION_BORDER_COLORS[group.label]} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}
-                  >
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{group.icon}</span>
-                            <span className="font-semibold">{group.label}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${SECTION_BADGE_COLORS[group.label]}`}>
-                              {group.filledCount}/{group.categories.length}
-                            </span>
+                {groupSummaries.map(group => {
+                  // Collect all custom items for this group (by category + orphans for Financial)
+                  const groupCustomItems: { cat: string; items: typeof customBudgets }[] = []
+                  for (const cat of group.categories) {
+                    const items = customByCategory[cat]
+                    if (items && items.length > 0) {
+                      groupCustomItems.push({ cat, items })
+                    }
+                  }
+                  if (group.label === 'Financial' && orphanCustoms.length > 0) {
+                    groupCustomItems.push({ cat: '_orphan', items: orphanCustoms })
+                  }
+
+                  return (
+                    <div
+                      key={group.label}
+                      className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${SECTION_BORDER_COLORS[group.label]} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}
+                    >
+                      <div className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{group.icon}</span>
+                              <span className="font-semibold">{group.label}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${SECTION_BADGE_COLORS[group.label]}`}>
+                                {group.filledCount + group.customCount}/{group.categories.length + group.customCount}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-extrabold tabular-nums ${SECTION_TOTAL_COLORS[group.label]}`}>
-                          {formatCurrency(group.groupTotal)}
-                          <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-border/50">
-                      {/* Column headers — bold and prominent */}
-                      <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
-                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
-                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
+                        <div className="text-right">
+                          <p className={`text-lg font-extrabold tabular-nums ${SECTION_TOTAL_COLORS[group.label]}`}>
+                            {formatCurrency(group.groupTotal)}
+                            <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(group.groupTotal * 12)}/yr</p>
+                        </div>
                       </div>
 
-                      {group.categories.map((cat, idx) => {
-                        const value = editValues[cat] || ''
-                        const hasValue = parseFloat(value) > 0
+                      <div className="border-t border-border/50">
+                        {/* Column headers — bold and prominent */}
+                        <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                          <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
+                        </div>
 
-                        return (
+                        {group.categories.map((cat, idx) => {
+                          const value = editValues[cat] || ''
+                          const hasValue = parseFloat(value) > 0
+                          const catCustoms = customByCategory[cat] || []
+                          const isLastCategory = idx === group.categories.length - 1
+                          const hasCustomsAfter = catCustoms.length > 0
+                          // Show bottom border unless this is the very last item (standard + customs)
+                          const showBorder = !isLastCategory || hasCustomsAfter || (group.label === 'Financial' && orphanCustoms.length > 0)
+
+                          return (
+                            <div key={cat}>
+                              {/* Standard category row */}
+                              <div
+                                className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
+                                  showBorder ? 'border-b border-border/20' : ''
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                    {CATEGORY_LABELS[cat]}
+                                  </span>
+                                </div>
+                                <div className="flex justify-end">
+                                  <div className="w-[140px] sm:w-[160px]">
+                                    <CurrencyInput
+                                      value={value}
+                                      onChange={(v) => handleValueChange(cat, v)}
+                                      placeholder="—"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Custom items inline under this category */}
+                              {catCustoms.map((b, cIdx) => {
+                                const isLastCustom = cIdx === catCustoms.length - 1
+                                const isVeryLast = isLastCategory && isLastCustom && !(group.label === 'Financial' && orphanCustoms.length > 0)
+                                return (
+                                  <div
+                                    key={b.id}
+                                    className={`grid grid-cols-[1fr_120px_36px] sm:grid-cols-[1fr_140px_36px] items-center px-5 py-2 gap-2 pl-16 hover:bg-muted/30 transition-colors bg-muted/10 ${
+                                      !isVeryLast ? 'border-b border-border/20' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
+                                      <span className="text-sm font-semibold truncate">{b.label}</span>
+                                    </div>
+                                    <span className="text-sm tabular-nums text-right font-medium">{formatCurrency(b.monthlyBudget)}/mo</span>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )
+                        })}
+
+                        {/* Orphan custom items (category not in any group) — show in Financial */}
+                        {group.label === 'Financial' && orphanCustoms.map((b, idx) => (
                           <div
-                            key={cat}
-                            className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                              idx !== group.categories.length - 1 ? 'border-b border-border/20' : ''
+                            key={b.id}
+                            className={`grid grid-cols-[1fr_120px_36px] sm:grid-cols-[1fr_140px_36px] items-center px-5 py-2 gap-2 pl-16 hover:bg-muted/30 transition-colors bg-muted/10 ${
+                              idx !== orphanCustoms.length - 1 ? 'border-b border-border/20' : ''
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                {CATEGORY_LABELS[cat]}
-                              </span>
+                              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
+                              <span className="text-sm font-semibold truncate">{b.label}</span>
                             </div>
-                            <div className="flex justify-end">
-                              <div className="w-[140px] sm:w-[160px]">
-                                <CurrencyInput
-                                  value={value}
-                                  onChange={(v) => handleValueChange(cat, v)}
-                                  placeholder="—"
-                                />
-                              </div>
-                            </div>
+                            <span className="text-sm tabular-nums text-right font-medium">{formatCurrency(b.monthlyBudget)}/mo</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeExpenseBudget(b.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
-                        )
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-
-              {/* Custom Expenses */}
-              {customBudgets.length > 0 && (
-                <div className="rounded-xl border border-border/60 dark:border-white/10 border-l-4 border-l-slate-400 bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">📌</span>
-                          <span className="font-semibold">Custom Expenses</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-800 dark:bg-slate-500/20 dark:text-slate-400">
-                            {customBudgets.length}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-extrabold tabular-nums text-slate-600 dark:text-slate-400">
-                        {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
-                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="border-t border-border/50">
-                    {/* Column headers for custom */}
-                    <div className="grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
-                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
-                      <span />
-                    </div>
-                    {customBudgets.map((b, idx) => (
-                      <div
-                        key={b.id}
-                        className={`grid grid-cols-[1fr_160px_40px] sm:grid-cols-[1fr_180px_40px] items-center px-5 py-2.5 gap-2 pl-12 hover:bg-muted/30 transition-colors ${
-                          idx !== customBudgets.length - 1 ? 'border-b border-border/20' : ''
-                        }`}
-                      >
-                        <span className="text-sm font-semibold truncate">{b.label}</span>
-                        <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}/mo</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExpenseBudget(b.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Sticky save bar */}
               {hasChanges && (
