@@ -253,11 +253,8 @@ export function DashboardPage() {
   const debtRatio = calculateDebtToAssetRatio(assets, properties, liabilities)
 
   // --- Financial Independence Tracker ---
-  // Passive income = rental + dividends + interest (income that doesn't require active work)
-  const passiveFromIncomes = incomes
-    .filter(i => i.isActive && ['dividends', 'interest'].includes(i.category))
-    .reduce((s, i) => s + i.monthlyAmount, 0)
-  const passiveIncome = passiveFromIncomes + metrics.rentalIncome
+  // Passive income = rental + dividends + interest (from asset calculations, not manual store items)
+  const passiveIncome = metrics.rentalIncome + metrics.interestIncome + metrics.dividendIncome
   const fiPercent = monthlyExpenses > 0 ? Math.min((passiveIncome / monthlyExpenses) * 100, 100) : 0
   const fiRemaining = Math.max(monthlyExpenses - passiveIncome, 0)
   const fiAchieved = passiveIncome >= monthlyExpenses && monthlyExpenses > 0
@@ -266,10 +263,8 @@ export function DashboardPage() {
   // Passive income breakdown for display
   const fiBreakdown: { label: string; amount: number; icon: React.ComponentType<{ className?: string }> }[] = []
   if (metrics.rentalIncome > 0) fiBreakdown.push({ label: 'Rental Income', amount: metrics.rentalIncome, icon: Home })
-  const dividendIncome = incomes.filter(i => i.isActive && i.category === 'dividends').reduce((s, i) => s + i.monthlyAmount, 0)
-  if (dividendIncome > 0) fiBreakdown.push({ label: 'Dividends', amount: dividendIncome, icon: BarChart3 })
-  const interestIncome = incomes.filter(i => i.isActive && i.category === 'interest').reduce((s, i) => s + i.monthlyAmount, 0)
-  if (interestIncome > 0) fiBreakdown.push({ label: 'Interest', amount: interestIncome, icon: Landmark })
+  if (metrics.dividendIncome > 0) fiBreakdown.push({ label: 'Dividends', amount: metrics.dividendIncome, icon: BarChart3 })
+  if (metrics.interestIncome > 0) fiBreakdown.push({ label: 'Interest', amount: metrics.interestIncome, icon: Landmark })
 
   // Dynamic label for Living Expenses based on budget mode and calc source
   const isEstimateMode = (userProfile?.budgetMode ?? 'estimate') === 'estimate'

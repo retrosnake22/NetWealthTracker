@@ -52,7 +52,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
   // Use shared metrics so figures always match the dashboard
   const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource)
   const {
-    rentalIncome, monthlyIncome,
+    rentalIncome, interestIncome, dividendIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
     negGearingBenefitPA: negGearingPA, offsetInterestSavedMonthly, monthlyCashflow, savingsRate,
   } = metrics
@@ -84,19 +84,38 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
     liabByCategory.set(label, (liabByCategory.get(label) ?? 0) + l.currentBalance)
   })
 
-  // Income breakdown (include rental income from investment properties)
+  // Income breakdown (include rental, interest, dividends)
   const incomeBySource: { label: string; amount: number }[] = incomes.filter(i => i.isActive).map(i => ({
     label: i.name,
     amount: i.monthlyAmount,
   }))
   if (rentalIncome > 0) {
-    // Add individual property rental lines
     properties
       .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
       .forEach(p => {
         incomeBySource.push({
           label: `${p.name} (rent)`,
           amount: ((p.weeklyRent ?? 0) * 52) / 12,
+        })
+      })
+  }
+  if (interestIncome > 0) {
+    assets
+      .filter(a => a.category === 'cash' && a.growthRatePA > 0)
+      .forEach(a => {
+        incomeBySource.push({
+          label: `${a.name} (interest)`,
+          amount: (a.currentValue * a.growthRatePA) / 12,
+        })
+      })
+  }
+  if (dividendIncome > 0) {
+    assets
+      .filter(a => a.category === 'stocks' && (a as any).paysDividends && ((a as any).dividendYieldPA ?? 0) > 0)
+      .forEach(a => {
+        incomeBySource.push({
+          label: `${a.name} (dividends)`,
+          amount: (a.currentValue * ((a as any).dividendYieldPA ?? 0)) / 12,
         })
       })
   }
@@ -270,7 +289,9 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
               return sum + r * 12
             }, 0)
 
-          // Yearly income breakdown
+          // Yearly income breakdown (includes interest + dividends)
+          const yearlyInterestIncome = interestIncome * 12
+          const yearlyDividendIncome = dividendIncome * 12
           const yearlyIncomeBySource = incomes.filter(i => i.isActive).map(i => ({
             label: i.name,
             amount: i.monthlyAmount * 12,
@@ -282,6 +303,26 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
                 yearlyIncomeBySource.push({
                   label: `${p.name} (rent)`,
                   amount: (p.weeklyRent ?? 0) * 52,
+                })
+              })
+          }
+          if (yearlyInterestIncome > 0) {
+            assets
+              .filter(a => a.category === 'cash' && a.growthRatePA > 0)
+              .forEach(a => {
+                yearlyIncomeBySource.push({
+                  label: `${a.name} (interest)`,
+                  amount: a.currentValue * a.growthRatePA,
+                })
+              })
+          }
+          if (yearlyDividendIncome > 0) {
+            assets
+              .filter(a => a.category === 'stocks' && (a as any).paysDividends && ((a as any).dividendYieldPA ?? 0) > 0)
+              .forEach(a => {
+                yearlyIncomeBySource.push({
+                  label: `${a.name} (dividends)`,
+                  amount: a.currentValue * ((a as any).dividendYieldPA ?? 0),
                 })
               })
           }
@@ -358,9 +399,9 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
             <div className="h-3" />
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs text-muted-foreground">
-                {savingsRate >= 20 ? '🟢 Excellent — you\'re saving over 20% of income.'
-                  : savingsRate >= 10 ? '🟡 Good — aim for 20%+ for faster wealth growth.'
-                  : savingsRate >= 0 ? '🟠 Low — look for ways to reduce expenses or increase income.'
+                {savingsRate >= 50 ? '🟢 Excellent — you\'re saving over 50% of income.'
+                  : savingsRate >= 30 ? '🟡 Moderate — aim for 50%+ for faster financial independence.'
+                  : savingsRate >= 0 ? '🔴 Low — look for ways to reduce expenses or increase income.'
                   : '🔴 Negative — you\'re spending more than you earn.'}
               </p>
             </div>

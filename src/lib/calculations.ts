@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource } from '@/types/models'
+import type { Asset, CashAsset, StockAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -197,7 +197,11 @@ export interface DashboardMetrics {
   baseIncome: number
   /** Rental income from investment properties */
   rentalIncome: number
-  /** baseIncome + rentalIncome */
+  /** Interest income from cash/savings accounts */
+  interestIncome: number
+  /** Dividend income from stocks */
+  dividendIncome: number
+  /** baseIncome + rentalIncome + interestIncome + dividendIncome */
   monthlyIncome: number
   /** Living expenses only (from budget, estimate, or actuals) */
   baseExpenses: number
@@ -309,12 +313,22 @@ export function calculateDashboardMetrics(
   estimatedMonthlyExpenses?: number,
   expenseCalcSource?: ExpenseCalcSource,
 ): DashboardMetrics {
-  // Income: base + rental
+  // Income: base + rental + interest + dividends
   const baseIncome = calculateMonthlyIncome(incomes)
   const rentalIncome = properties
     .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
-  const monthlyIncome = baseIncome + rentalIncome
+  // Interest income from cash/savings accounts
+	const interestIncome = assets
+		.filter(a => a.category === 'cash' && a.growthRatePA > 0)
+		.reduce((sum, a) => sum + (a.currentValue * a.growthRatePA) / 12, 0)
+
+	// Dividend income from stocks (only where user opted in)
+	const dividendIncome = assets
+		.filter(a => a.category === 'stocks' && (a as StockAsset).paysDividends && ((a as StockAsset).dividendYieldPA ?? 0) > 0)
+		.reduce((sum, a) => sum + (a.currentValue * ((a as StockAsset).dividendYieldPA ?? 0)) / 12, 0)
+
+	const monthlyIncome = baseIncome + rentalIncome + interestIncome + dividendIncome
 
   // Living Expenses: use estimate, budget, or actuals depending on user settings
   // getEffectiveMonthlyExpenses already filters to living-only budgets internally
@@ -372,7 +386,7 @@ export function calculateDashboardMetrics(
   const savingsRate = monthlyIncome > 0 ? (monthlyCashflow / monthlyIncome) * 100 : 0
 
   return {
-    baseIncome, rentalIncome, monthlyIncome,
+    baseIncome, rentalIncome, interestIncome, dividendIncome, monthlyIncome,
     baseExpenses, mortgageExpenses, propertyRunningCosts, monthlyExpenses,
     negGearingBenefitPA, negGearingDeductiblePA, offsetInterestSavedMonthly,
     monthlyCashflow, savingsRate, usingActuals,
