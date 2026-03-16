@@ -180,6 +180,8 @@ export default function AssetsPage() {
 			marginLoanBalance: '',
 			marginLoanRate: '',
 			marginLoanTerm: '5',
+			paysDividends: false,
+			dividendYield: '4.0',
 		})
 		setEditingAsset(null)
 		setShowAddAsset(true)
