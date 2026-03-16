@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Check, RotateCcw, Plus, X, Trash2, Calculator, ClipboardList } from 'lucide-react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { Check, RotateCcw, Plus, X, Trash2, Calculator, ClipboardList, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -103,6 +103,10 @@ export function LivingExpensesPage() {
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [hasChanges, setHasChanges] = useState(false)
   const [initialized, setInitialized] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const editValuesRef = useRef(editValues)
+  editValuesRef.current = editValues
 
   // Initialize edit values from existing budgets — only on first load or after save/reset
   useEffect(() => {
@@ -119,30 +123,24 @@ export function LivingExpensesPage() {
     setInitialized(true)
   }, [budgetByCategory])
 
-  const handleValueChange = useCallback((category: string, value: string) => {
-    setEditValues(prev => ({ ...prev, [category]: value }))
-    setHasChanges(true)
-  }, [])
-
-  const handleSave = useCallback(() => {
+  // Persist current edit values to the store
+  const persistToStore = useCallback(() => {
+    const currentValues = editValuesRef.current
     for (const group of LIVING_SUPER_CATEGORIES) {
       for (const cat of group.categories) {
-        const rawValue = editValues[cat] || ''
+        const rawValue = currentValues[cat] || ''
         const numValue = parseFloat(rawValue) || 0
         const existing = budgetByCategory.get(cat)
 
         if (existing) {
           if (numValue > 0) {
-            // Update existing
             if (existing.monthlyBudget !== numValue) {
               updateExpenseBudget(existing.id, { monthlyBudget: numValue })
             }
           } else {
-            // Remove if zeroed out
             removeExpenseBudget(existing.id)
           }
         } else if (numValue > 0) {
-          // Create new budget entry
           addExpenseBudget({
             category: cat,
             label: CATEGORY_LABELS[cat],
@@ -152,9 +150,37 @@ export function LivingExpensesPage() {
       }
     }
     setHasChanges(false)
-  }, [editValues, budgetByCategory, addExpenseBudget, updateExpenseBudget, removeExpenseBudget])
+    setSaveStatus('saved')
+    // Clear "saved" indicator after 2 seconds
+    setTimeout(() => setSaveStatus('idle'), 2000)
+  }, [budgetByCategory, addExpenseBudget, updateExpenseBudget, removeExpenseBudget])
+
+  const handleValueChange = useCallback((category: string, value: string) => {
+    setEditValues(prev => ({ ...prev, [category]: value }))
+    setHasChanges(true)
+    setSaveStatus('saving')
+
+    // Debounce: auto-save 1.5s after last keystroke
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      persistToStore()
+    }, 1500)
+  }, [persistToStore])
+
+  // Save immediately on unmount if there are pending changes
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+        // Persist any unsaved changes before leaving
+        persistToStore()
+      }
+    }
+  }, [persistToStore])
 
   const handleReset = useCallback(() => {
+    // Cancel any pending auto-save
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     const values: Record<string, string> = {}
     for (const group of LIVING_SUPER_CATEGORIES) {
       for (const cat of group.categories) {
@@ -164,6 +190,7 @@ export function LivingExpensesPage() {
     }
     setEditValues(values)
     setHasChanges(false)
+    setSaveStatus('idle')
   }, [budgetByCategory])
 
   // Custom budgets: items whose label doesn't match any standard CATEGORY_LABELS value
@@ -459,17 +486,24 @@ export function LivingExpensesPage() {
                 </div>
               </div>
 
-              {/* Save/Reset actions */}
-              {hasChanges && (
-                <div className="flex items-center gap-3 justify-end">
+              {/* Auto-save status & undo */}
+              <div className="flex items-center gap-3 justify-end min-h-[32px]">
+                {hasChanges && (
                   <Button variant="ghost" size="sm" onClick={handleReset}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Undo Changes
                   </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    <Check className="h-3.5 w-3.5 mr-1.5" /> Save Budget
-                  </Button>
-                </div>
-              )}
+                )}
+                {saveStatus === 'saving' && (
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-pulse">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Auto-saving…
+                  </span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-3 w-3" /> Saved
+                  </span>
+                )}
+              </div>
 
               {/* Inline budget editor grouped by super-category */}
               <div className="space-y-3">
@@ -602,14 +636,12 @@ export function LivingExpensesPage() {
                 })}
               </div>
 
-              {/* Sticky save bar */}
-              {hasChanges && (
-                <div className="sticky bottom-4 flex justify-center">
-                  <div className="bg-card dark:bg-slate-800 border border-border dark:border-white/10 shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">Unsaved changes</span>
-                    <Button size="sm" onClick={handleSave}>
-                      <Check className="h-4 w-4 mr-1" /> Save Budget
-                    </Button>
+              {/* Auto-save status indicator (sticky) */}
+              {saveStatus === 'saving' && (
+                <div className="sticky bottom-4 flex justify-center pointer-events-none">
+                  <div className="bg-card dark:bg-slate-800 border border-border dark:border-white/10 shadow-lg rounded-full px-5 py-2.5 flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Auto-saving…</span>
                   </div>
                 </div>
               )}
