@@ -7,7 +7,7 @@ export type ExpenseCategory =
   | 'mortgage_repayment' | 'rent' | 'council_rates' | 'water_rates' | 'strata'
   | 'security' | 'home_improvements' | 'repairs_maintenance' | 'gardening' | 'home_insurance'
   | 'insurance_health' | 'insurance_car' | 'insurance_life' | 'insurance_other'
-  | 'electricity' | 'water' | 'rates' | 'groceries' | 'transport' | 'fuel'
+  | 'electricity' | 'water' | 'rates' | 'groceries' | 'household_goods' | 'transport' | 'fuel'
   | 'medical' | 'pharmacy' | 'pet_expenses' | 'school_costs'
   | 'subscriptions' | 'entertainment' | 'dining_out'
   | 'clothing' | 'health_fitness' | 'education'

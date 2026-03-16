@@ -25,7 +25,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   insurance_other: 'Other Insurance',
   electricity: 'Electricity', water: 'Water', rates: 'Rates',
-  groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
+  groceries: 'Groceries', household_goods: 'Household Goods', transport: 'Transport', fuel: 'Fuel',
   medical: 'Medical', pharmacy: 'Pharmacy', pet_expenses: 'Pet Costs', school_costs: 'School Costs',
   subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
   clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
@@ -39,7 +39,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 const LIVING_SUPER_CATEGORIES: { label: string; icon: string; color: string; categories: ExpenseCategory[] }[] = [
   { label: 'Housing', icon: '🏡', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', categories: ['rent', 'electricity', 'water', 'rates', 'security', 'home_improvements', 'repairs_maintenance', 'gardening'] },
   { label: 'Insurance', icon: '🛡️', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20', categories: ['insurance_health', 'insurance_car', 'insurance_life', 'home_insurance', 'insurance_other'] },
-  { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
+  { label: 'Living', icon: '🛒', color: 'bg-teal-500/10 text-teal-400 border-teal-500/20', categories: ['groceries', 'household_goods', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs'] },
   { label: 'Lifestyle', icon: '✨', color: 'bg-pink-500/10 text-pink-400 border-pink-500/20', categories: ['subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations'] },
   { label: 'Financial', icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', categories: ['hecs_repayment', 'tax', 'accounting_fees', 'other'] },
 ]

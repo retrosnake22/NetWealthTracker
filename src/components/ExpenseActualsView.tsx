@@ -19,7 +19,7 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   insurance_car: 'Car Insurance', insurance_life: 'Life Insurance',
   insurance_other: 'Other Insurance',
   electricity: 'Electricity', water: 'Water', rates: 'Rates',
-  groceries: 'Groceries', transport: 'Transport', fuel: 'Fuel',
+  groceries: 'Groceries', household_goods: 'Household Goods', transport: 'Transport', fuel: 'Fuel',
   medical: 'Medical', pharmacy: 'Pharmacy', pet_expenses: 'Pet Costs', school_costs: 'School Costs',
   subscriptions: 'Subscriptions', entertainment: 'Entertainment', dining_out: 'Dining Out',
   clothing: 'Clothing', health_fitness: 'Health & Fitness', education: 'Education',
