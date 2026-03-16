@@ -89,10 +89,10 @@ export function ProjectionsPage() {
                   <Label>Property Growth (% p.a.)</Label>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min={0}
                     max={30}
-                    value={(propertyGrowth * 100).toFixed(1)}
+                    value={(propertyGrowth * 100).toFixed(2)}
                     onChange={e => {
                       updateProjectionSettings({ propertyGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
                     }}
@@ -102,10 +102,10 @@ export function ProjectionsPage() {
                   <Label>Stock / Super Growth (% p.a.)</Label>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min={0}
                     max={30}
-                    value={(stockGrowth * 100).toFixed(1)}
+                    value={(stockGrowth * 100).toFixed(2)}
                     onChange={e => {
                       updateProjectionSettings({ stockGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
                     }}

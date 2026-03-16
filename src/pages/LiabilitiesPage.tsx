@@ -195,7 +195,7 @@ export function LiabilitiesPage() {
       name: item.name,
       category: item.category,
       currentBalance: String(item.currentBalance),
-      interestRatePA: String(item.interestRatePA * 100),
+      interestRatePA: (item.interestRatePA * 100).toFixed(2),
       minimumRepayment: String(item.minimumRepayment),
       repaymentFrequency: item.repaymentFrequency,
       mortgageType: (item as any).mortgageType ?? 'principal_and_interest',

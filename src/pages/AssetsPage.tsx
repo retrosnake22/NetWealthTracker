@@ -114,13 +114,13 @@ export default function AssetsPage() {
 		leasePayment: '',
 		cashType: 'bank' as 'cash' | 'bank',
 		bankName: '',
-		interestRate: '3.0',
+		interestRate: '3.00',
 		hasMarginLoan: false,
 		marginLoanBalance: '',
 		marginLoanRate: '',
 		marginLoanTerm: '5',
 		paysDividends: false,
-		dividendYield: '4.0',
+		dividendYield: '4.00',
 	})
 
 	// Property editing
@@ -210,13 +210,13 @@ export default function AssetsPage() {
 			leasePayment: '',
 			cashType: 'bank' as 'cash' | 'bank',
 			bankName: '',
-			interestRate: '3.0',
+			interestRate: '3.00',
 			hasMarginLoan: false,
 			marginLoanBalance: '',
 			marginLoanRate: '',
 			marginLoanTerm: '5',
 			paysDividends: false,
-			dividendYield: '4.0',
+			dividendYield: '4.00',
 		})
 		setEditingAsset(null)
 		setShowAddAsset(true)
@@ -245,19 +245,19 @@ export default function AssetsPage() {
 			linkedMortgageId: (a as any).linkedMortgageId ?? '',
 			vehicleFinancing: (a as any).financingType ?? (linkedLiability ? 'car_loan' : 'owned'),
 			loanBalance: linkedLiability ? String(linkedLiability.currentBalance) : '',
-			loanRate: linkedLiability ? String(linkedLiability.interestRatePA * 100) : '',
+			loanRate: linkedLiability ? (linkedLiability.interestRatePA * 100).toFixed(2) : '',
 			loanRepayment: linkedLiability ? String(linkedLiability.minimumRepayment) : '',
 			loanTerm: linkedLiability?.loanTermYears ? String(linkedLiability.loanTermYears) : '5',
 			leasePayment: String((a as any).leaseMonthlyPayment ?? ''),
 			cashType: (a as any).cashType || 'bank',
 			bankName: (a as any).bankName || '',
-			interestRate: (a as any).cashType === 'cash' ? '0' : (a.growthRatePA * 100).toFixed(1),
+			interestRate: (a as any).cashType === 'cash' ? '0' : (a.growthRatePA * 100).toFixed(2),
 			hasMarginLoan: !!marginLoanLiability,
 			marginLoanBalance: marginLoanLiability ? String(marginLoanLiability.currentBalance) : '',
-			marginLoanRate: marginLoanLiability ? String(marginLoanLiability.interestRatePA * 100) : '',
+			marginLoanRate: marginLoanLiability ? (marginLoanLiability.interestRatePA * 100).toFixed(2) : '',
 			marginLoanTerm: marginLoanLiability?.loanTermYears ? String(marginLoanLiability.loanTermYears) : '5',
 			paysDividends: (a as any).paysDividends ?? false,
-			dividendYield: (a as any).dividendYieldPA ? ((a as any).dividendYieldPA * 100).toFixed(1) : '4.0',
+			dividendYield: (a as any).dividendYieldPA ? ((a as any).dividendYieldPA * 100).toFixed(2) : '4.00',
 		})
 		setEditingAsset(a)
 		setShowAddAsset(true)
@@ -952,7 +952,7 @@ export default function AssetsPage() {
 										<div>
 											<Label>Interest Rate (% p.a.)</Label>
 											<Input
-												type="number" step="0.1" min="0" max="20"
+												type="number" step="0.01" min="0" max="20"
 												value={assetForm.interestRate}
 												onChange={e => setAssetForm(f => ({ ...f, interestRate: e.target.value }))}
 											/>

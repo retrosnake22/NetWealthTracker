@@ -899,7 +899,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
       loanBalance: '', loanRate: '', loanRepayment: '', leasePayment: '',
       cashType: va.cashType || 'bank',
       bankName: va.bankName || '',
-      interestRate: va.cashType === 'cash' ? '0' : (asset.growthRatePA * 100).toFixed(1),
+      interestRate: va.cashType === 'cash' ? '0' : (asset.growthRatePA * 100).toFixed(2),
     })
     setEditingId(asset.id)
     setShowForm(true)
@@ -910,7 +910,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
     const cashFields = activeTab === 'cash' ? {
       cashType: assetForm.cashType || 'bank',
       bankName: assetForm.cashType === 'bank' ? assetForm.bankName : undefined,
-      growthRatePA: assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 1),
+      growthRatePA: assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 2),
     } : {}
     if (editingId) {
       updateAsset(editingId, {
@@ -918,7 +918,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: activeTab === 'cash'
-          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 1))
+          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 2))
           : pctToFraction(assetForm.growthRatePA, 1),
         ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
         ...cashFields,
@@ -929,7 +929,7 @@ function AssetsStep({ store }: { store: FinanceState }) {
         category: activeTab as AssetCategory,
         currentValue: parseFloat(assetForm.currentValue) || 0,
         growthRatePA: activeTab === 'cash'
-          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 1))
+          ? (assetForm.cashType === 'cash' ? 0 : pctToFraction(assetForm.interestRate || '0', 2))
           : pctToFraction(assetForm.growthRatePA, 1),
         ...(activeTab === 'vehicles' ? { financingType: assetForm.vehicleFinancing } : {}),
         ...cashFields,
@@ -1048,10 +1048,10 @@ function AssetsStep({ store }: { store: FinanceState }) {
                   <div className="space-y-1.5">
                     <Label className="text-xs">Interest Rate (% p.a.)</Label>
                     <Input
-                      type="number" step="0.1" min="0" max="20"
+                      type="number" step="0.01" min="0" max="20"
                       value={assetForm.interestRate}
                       onChange={e => setAssetForm({ ...assetForm, interestRate: e.target.value })}
-                      placeholder="e.g. 3.0"
+                      placeholder="e.g. 5.49"
                     />
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Info className="w-3 h-3" />
