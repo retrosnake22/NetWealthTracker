@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { NavLink, Outlet, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { syncController } from '@/lib/syncEngine'
+import { syncController, onSyncStatus } from '@/lib/syncEngine'
 import {
   LayoutDashboard,
   Wallet,
@@ -29,6 +29,9 @@ import {
   HandCoins,
   TrendingDown,
   ChevronRight,
+  Cloud,
+  CloudOff,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -336,6 +339,15 @@ function SidebarFooter() {
   const [themeMode, setThemeMode] = useThemeMode()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const resetStore = useFinanceStore((s) => s.resetStore)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+
+  useEffect(() => {
+    return onSyncStatus((status, saved) => {
+      setSyncStatus(status)
+      setLastSaved(saved)
+    })
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -403,7 +415,23 @@ function SidebarFooter() {
 
   return (
     <div className="px-3 pb-4 space-y-1">
-      {/* User profile card */}
+      {/* Cloud sync status */}
+				<div className="flex items-center gap-2 px-3 py-1.5 mb-1">
+					{syncStatus === 'saving' ? (
+						<Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+					) : syncStatus === 'saved' ? (
+						<Cloud className="h-3.5 w-3.5 text-emerald-400" />
+					) : syncStatus === 'error' ? (
+						<CloudOff className="h-3.5 w-3.5 text-red-400" />
+					) : (
+						<Cloud className="h-3.5 w-3.5 text-muted-foreground/50" />
+					)}
+					<span className={`text-[10px] font-medium ${syncStatus === 'saving' ? 'text-blue-400' : syncStatus === 'saved' ? 'text-emerald-400' : syncStatus === 'error' ? 'text-red-400' : 'text-muted-foreground/50'}`}>
+						{syncStatus === 'saving' ? 'Syncing...' : syncStatus === 'saved' ? `Saved ${lastSaved ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : syncStatus === 'error' ? 'Sync failed' : 'Connected'}
+					</span>
+				</div>
+
+				{/* User profile card */}
       {email && (
         <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-lg bg-muted/30">
           <UserAvatar name={displayName} />

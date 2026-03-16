@@ -15,11 +15,12 @@ import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerStoreUnsubscribe, setSyncPaused } from '@/lib/syncEngine'
+import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerDebouncedFlush, registerStoreUnsubscribe, setSyncPaused, syncController } from '@/lib/syncEngine'
 
 const debouncedSave = createDebouncedSave(2000)
-// Register the cancel fn so the sync controller can cancel pending saves
+// Register the cancel + flush fns so the sync controller can manage pending saves
 registerDebouncedCancel(debouncedSave.cancel)
+registerDebouncedFlush(debouncedSave.flush)
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -65,6 +66,29 @@ function App() {
       registerStoreUnsubscribe(null)
     }
   }, [session?.user?.id])
+
+  // Flush pending saves when user leaves the page or switches tabs
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Flush any pending debounced save immediately
+      syncController.flushPendingSave()
+    }
+
+    const handleVisibilityChange = () => {
+      // When tab becomes hidden (user switched tabs/minimised), flush immediately
+      if (document.visibilityState === 'hidden') {
+        syncController.flushPendingSave()
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
