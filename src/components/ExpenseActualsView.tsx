@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Check, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { ChevronLeft, ChevronRight, Check, RotateCcw, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -60,6 +60,10 @@ export function ExpenseActualsView() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth)
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [hasChanges, setHasChanges] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'pending' | 'saved'>('idle')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const editValuesRef = useRef(editValues)
+  editValuesRef.current = editValues
   const hideEmpty = userProfile?.hideEmptyActuals ?? false
 
   // Only show manual living expenses (not property-linked auto expenses)
@@ -126,52 +130,73 @@ export function ExpenseActualsView() {
     setHasChanges(false)
   }, [budgetByCategory, customBudgets, monthActuals, selectedMonth])
 
-  const handleValueChange = useCallback((key: string, value: string) => {
-    setEditValues(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
-  }, [])
-
-  const handleSave = useCallback(() => {
+  // Perform the actual save using the latest editValues ref
+  const doSave = useCallback(() => {
+    const currentValues = editValuesRef.current
     const entries: { budgetId: string; category?: string; actualAmount: number }[] = []
     const store = useFinanceStore.getState()
-    // Standard categories — auto-create $0 budget if actual entered but no budget exists
     for (const group of SUPER_CATEGORIES) {
       for (const cat of group.categories) {
         let budget = budgetByCategory.get(cat)
-        const actualVal = parseFloat(editValues[cat] || '0') || 0
+        const actualVal = parseFloat(currentValues[cat] || '0') || 0
         if (!budget && actualVal > 0) {
-          // Auto-create a $0 budget so we have a budgetId to link the actual to
           const label = CATEGORY_LABELS[cat] || cat
           store.addExpenseBudget({ category: cat, label, monthlyBudget: 0 })
-          // Get the newly created budget
           const newBudgets = useFinanceStore.getState().expenseBudgets
           const newBudget = newBudgets.find(b => b.category === cat && !b.linkedPropertyId && !b.linkedAssetId)
-          if (newBudget) {
-            budget = { id: newBudget.id, monthlyBudget: 0, label }
-          }
+          if (newBudget) budget = { id: newBudget.id, monthlyBudget: 0, label }
         }
         if (budget) {
-          entries.push({
-            budgetId: budget.id,
-            category: cat,
-            actualAmount: actualVal,
-          })
+          entries.push({ budgetId: budget.id, category: cat, actualAmount: actualVal })
         }
       }
     }
-    // Custom budgets
     for (const b of customBudgets) {
       entries.push({
         budgetId: b.id,
         category: b.category,
-        actualAmount: parseFloat(editValues[`custom_${b.id}`] || '0') || 0,
+        actualAmount: parseFloat(currentValues[`custom_${b.id}`] || '0') || 0,
       })
     }
     bulkUpsertExpenseActuals(selectedMonth, entries)
     setHasChanges(false)
-  }, [budgetByCategory, customBudgets, editValues, selectedMonth, bulkUpsertExpenseActuals])
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus(s => s === 'saved' ? 'idle' : s), 2000)
+  }, [budgetByCategory, customBudgets, selectedMonth, bulkUpsertExpenseActuals])
+
+  const handleValueChange = useCallback((key: string, value: string) => {
+    setEditValues(prev => ({ ...prev, [key]: value }))
+    setHasChanges(true)
+    setSaveStatus('pending')
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => doSave(), 1500)
+  }, [doSave])
+
+  // Save on unmount to prevent data loss
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+        debounceRef.current = null
+      }
+    }
+  }, [])
+
+  // Flush pending save when month changes
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+      doSave()
+    }
+  }, [selectedMonth])
 
   const handleReset = useCallback(() => {
+    // Cancel any pending auto-save
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
     const values: Record<string, string> = {}
     for (const group of SUPER_CATEGORIES) {
       for (const cat of group.categories) {
@@ -190,6 +215,7 @@ export function ExpenseActualsView() {
     }
     setEditValues(values)
     setHasChanges(false)
+    setSaveStatus('idle')
   }, [budgetByCategory, customBudgets, monthActuals])
 
   // Copy budget values to actuals (quick-fill)
@@ -206,7 +232,10 @@ export function ExpenseActualsView() {
     }
     setEditValues(values)
     setHasChanges(true)
-  }, [budgetByCategory, customBudgets])
+    setSaveStatus('pending')
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => doSave(), 1500)
+  }, [budgetByCategory, customBudgets, doSave])
 
   // Summary calculations
   const summary = useMemo(() => {
@@ -272,14 +301,19 @@ export function ExpenseActualsView() {
             {hideEmpty ? 'Show All' : 'Hide Empty'}
           </Button>
           {hasChanges && (
-            <>
-              <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs">
-                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Undo
-              </Button>
-              <Button size="sm" onClick={handleSave} className="text-xs">
-                <Check className="h-3.5 w-3.5 mr-1" /> Save
-              </Button>
-            </>
+            <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs">
+              <RotateCcw className="h-3.5 w-3.5 mr-1" /> Undo
+            </Button>
+          )}
+          {saveStatus === 'pending' && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Auto-saving…
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <Check className="h-3.5 w-3.5" /> Saved
+            </span>
           )}
         </div>
       </div>
@@ -545,14 +579,12 @@ export function ExpenseActualsView() {
         })()}
       </div>
 
-      {/* Sticky save bar when changes exist */}
-      {hasChanges && (
-        <div className="sticky bottom-4 flex justify-center">
-          <div className="bg-card border border-border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Unsaved changes</span>
-            <Button size="sm" onClick={handleSave}>
-              <Check className="h-4 w-4 mr-1" /> Save Actuals
-            </Button>
+      {/* Floating auto-save status indicator */}
+      {saveStatus === 'pending' && (
+        <div className="sticky bottom-4 flex justify-center pointer-events-none">
+          <div className="bg-card/90 backdrop-blur border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Auto-saving…</span>
           </div>
         </div>
       )}
