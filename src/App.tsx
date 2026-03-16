@@ -130,7 +130,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/setup" element={wizardComplete ? <Navigate to="/" replace /> : <SetupWizardPage />} />
+        <Route path="/setup" element={<SetupWizardPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
