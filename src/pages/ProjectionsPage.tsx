@@ -1,4 +1,5 @@
-import { LineChart, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { LineChart, TrendingUp, Building2, ChevronDown } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +13,8 @@ export function ProjectionsPage() {
     assets, properties, liabilities, incomes, expenseBudgets,
     projectionSettings, updateProjectionSettings, userProfile,
   } = useFinanceStore()
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
 
   const allocations = projectionSettings.surplusAllocations
 
@@ -29,9 +32,22 @@ export function ProjectionsPage() {
     userProfile?.estimatedMonthlyExpenses
   )
 
-  const finalPoint = data[data.length - 1]
-  const startPoint = data[0]
-  const growth = (finalPoint?.netWealth ?? 0) - (startPoint?.netWealth ?? 0)
+  // Compute summary cards based on selection
+  const isPropertyView = !!selectedPropertyId
+  let startValue = 0
+  let endValue = 0
+
+  if (isPropertyView && data.length > 0) {
+    const startDetail = data[0].propertyDetails?.find(d => d.propertyId === selectedPropertyId)
+    const endDetail = data[data.length - 1].propertyDetails?.find(d => d.propertyId === selectedPropertyId)
+    startValue = startDetail?.equity ?? 0
+    endValue = endDetail?.equity ?? 0
+  } else if (data.length > 0) {
+    startValue = data[0].netWealth
+    endValue = data[data.length - 1].netWealth
+  }
+
+  const growth = endValue - startValue
 
   return (
     <div className="space-y-6">
@@ -44,19 +60,45 @@ export function ProjectionsPage() {
         </div>
       ) : (
         <>
+          {/* Property selector dropdown */}
+          {properties.length > 0 && (
+            <div className="flex items-center gap-3">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <div className="relative">
+                <select
+                  value={selectedPropertyId ?? '__all__'}
+                  onChange={e => setSelectedPropertyId(e.target.value === '__all__' ? null : e.target.value)}
+                  className="appearance-none bg-card border border-border rounded-lg px-4 py-2 pr-9 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                >
+                  <option value="__all__">All Assets</option>
+                  {properties.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+          )}
+
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Current Net Wealth</p>
-                <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(startPoint?.netWealth ?? 0)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {isPropertyView ? 'Current Equity' : 'Current Net Wealth'}
+                </p>
+                <p className="text-2xl font-extrabold tabular-nums tracking-tight">{formatCurrency(startValue)}</p>
                 <p className='text-xs text-muted-foreground mt-0.5'>Today</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Projected ({projectionSettings.projectionYears}yr)</p>
-                <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(finalPoint?.netWealth ?? 0)}</p>
+                <p className="text-sm text-muted-foreground">
+                  Projected ({projectionSettings.projectionYears}yr)
+                </p>
+                <p className="text-2xl font-extrabold tabular-nums tracking-tight text-blue-400">{formatCurrency(endValue)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -70,7 +112,7 @@ export function ProjectionsPage() {
           </div>
 
           {/* Chart */}
-          <WealthChart data={data} />
+          <WealthChart data={data} selectedPropertyId={selectedPropertyId} />
 
           {/* Growth Assumptions */}
           <Card>

@@ -378,19 +378,19 @@ export function calculateDashboardMetrics(
     .filter(p => p.type === 'investment' && (p.weeklyRent ?? 0) > 0)
     .reduce((sum, p) => sum + ((p.weeklyRent ?? 0) * 52) / 12, 0)
   // Interest income from cash/savings accounts
-	const interestIncome = assets
-		.filter(a => a.category === 'cash' && !(a as CashAsset).isOffset && (a.growthRatePA > 0 || ((a as CashAsset).interestRatePA ?? 0) > 0))
-		.reduce((sum, a) => {
-			const rate = (a as CashAsset).interestRatePA ?? a.growthRatePA
-			return sum + (a.currentValue * rate) / 12
-		}, 0)
+  const interestIncome = assets
+    .filter(a => a.category === 'cash' && !(a as CashAsset).isOffset && (a.growthRatePA > 0 || ((a as CashAsset).interestRatePA ?? 0) > 0))
+    .reduce((sum, a) => {
+      const rate = (a as CashAsset).interestRatePA ?? a.growthRatePA
+      return sum + (a.currentValue * rate) / 12
+    }, 0)
 
-	// Dividend income from stocks (only where user opted in)
-	const dividendIncome = assets
-		.filter(a => a.category === 'stocks' && (a as StockAsset).paysDividends && ((a as StockAsset).dividendYieldPA ?? 0) > 0)
-		.reduce((sum, a) => sum + (a.currentValue * ((a as StockAsset).dividendYieldPA ?? 0)) / 12, 0)
+  // Dividend income from stocks (only where user opted in)
+  const dividendIncome = assets
+    .filter(a => a.category === 'stocks' && (a as StockAsset).paysDividends && ((a as StockAsset).dividendYieldPA ?? 0) > 0)
+    .reduce((sum, a) => sum + (a.currentValue * ((a as StockAsset).dividendYieldPA ?? 0)) / 12, 0)
 
-	const monthlyIncome = baseIncome + rentalIncome + interestIncome + dividendIncome
+  const monthlyIncome = baseIncome + rentalIncome + interestIncome + dividendIncome
 
   // Living Expenses: use estimate, budget, or actuals depending on user settings
   // getEffectiveMonthlyExpenses already filters to living-only budgets internally
@@ -456,12 +456,21 @@ export function calculateDashboardMetrics(
 }
 
 // --- Projection Engine ---
+export interface PropertyProjectionDetail {
+  propertyId: string
+  propertyName: string
+  assetValue: number
+  liabilityBalance: number
+  equity: number
+}
+
 export interface ProjectionPoint {
   month: number
   label: string
   netWealth: number
   totalAssets: number
   totalLiabilities: number
+  propertyDetails?: PropertyProjectionDetail[]
 }
 
 export function projectNetWealth(
@@ -480,11 +489,11 @@ export function projectNetWealth(
   const points: ProjectionPoint[] = []
   const months = years * 12
 
-  let assetValues = new Map<string, number>()
+  const assetValues = new Map<string, number>()
   assets.forEach(a => assetValues.set(a.id, a.currentValue))
   properties.forEach(p => assetValues.set(p.id, p.currentValue))
 
-  let liabilityValues = new Map<string, number>()
+  const liabilityValues = new Map<string, number>()
   liabilities.forEach(l => liabilityValues.set(l.id, l.currentBalance))
 
   const growthRates = new Map<string, number>()
@@ -518,12 +527,27 @@ export function projectNetWealth(
     if (m % 12 === 0) {
       const totalA = Array.from(assetValues.values()).reduce((s, v) => s + v, 0)
       const totalL = Array.from(liabilityValues.values()).reduce((s, v) => s + v, 0)
+
+      // Track per-property details at each yearly snapshot
+      const propertyDetails: PropertyProjectionDetail[] = properties.map(p => {
+        const assetValue = assetValues.get(p.id) ?? 0
+        const liabilityBalance = p.mortgageId ? (liabilityValues.get(p.mortgageId) ?? 0) : 0
+        return {
+          propertyId: p.id,
+          propertyName: p.name,
+          assetValue,
+          liabilityBalance,
+          equity: assetValue - liabilityBalance,
+        }
+      })
+
       points.push({
         month: m,
         label: m === 0 ? 'Now' : `${new Date().getFullYear() + m / 12}`,
         netWealth: totalA - totalL,
         totalAssets: totalA,
         totalLiabilities: totalL,
+        propertyDetails,
       })
     }
 

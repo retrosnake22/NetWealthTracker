@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LabelList } from 'recharts'
 import { formatCompact, formatCurrency } from '@/lib/format'
+import type { ProjectionPoint } from '@/lib/calculations'
 
 interface WealthChartProps {
-  data: Array<{ label: string; netWealth: number; totalAssets: number; totalLiabilities: number }>
+  data: ProjectionPoint[]
+  selectedPropertyId?: string | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,6 +15,16 @@ const tooltipFormatter = (value: any, name: any) => {
     totalAssets: 'Assets',
     totalLiabilities: 'Liabilities',
     netWealth: 'Net Wealth',
+  }
+  return [formatCurrency(Number(value)), labels[String(name)] || String(name)]
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const propertyTooltipFormatter = (value: any, name: any) => {
+  const labels: Record<string, string> = {
+    totalAssets: 'Property Value',
+    totalLiabilities: 'Mortgage',
+    netWealth: 'Equity',
   }
   return [formatCurrency(Number(value)), labels[String(name)] || String(name)]
 }
@@ -32,9 +44,30 @@ function useIsDesktop(breakpoint = 768) {
   return isDesktop
 }
 
-export function WealthChart({ data }: WealthChartProps) {
-  const empty = data.length === 0
+export function WealthChart({ data, selectedPropertyId }: WealthChartProps) {
   const isDesktop = useIsDesktop()
+
+  // Transform data for per-property view
+  const chartData = selectedPropertyId
+    ? data.map(point => {
+        const detail = point.propertyDetails?.find(d => d.propertyId === selectedPropertyId)
+        return {
+          label: point.label,
+          netWealth: detail?.equity ?? 0,
+          totalAssets: detail?.assetValue ?? 0,
+          totalLiabilities: detail?.liabilityBalance ?? 0,
+        }
+      })
+    : data.map(point => ({
+        label: point.label,
+        netWealth: point.netWealth,
+        totalAssets: point.totalAssets,
+        totalLiabilities: point.totalLiabilities,
+      }))
+
+  const empty = chartData.length === 0
+
+  const isPropertyView = !!selectedPropertyId
 
   // Custom label renderer — shows at every point on desktop, every 5 years on mobile
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +77,7 @@ export function WealthChart({ data }: WealthChartProps) {
 
     // On mobile, only show every 5th year (index 0, 5, 10, ...) and the last point
     if (!isDesktop) {
-      const isLastPoint = index === data.length - 1
+      const isLastPoint = index === chartData.length - 1
       if (index % 5 !== 0 && !isLastPoint) return null
     }
 
@@ -60,25 +93,29 @@ export function WealthChart({ data }: WealthChartProps) {
         {formatCompact(value)}
       </text>
     )
-  }, [isDesktop, data.length])
+  }, [isDesktop, chartData.length])
 
   return (
     <Card className="rounded-xl bg-card overflow-hidden h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <CardTitle className="text-lg font-semibold">Wealth Projection</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            {isPropertyView ? 'Property Projection' : 'Wealth Projection'}
+          </CardTitle>
           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-1 rounded bg-blue-400 inline-block" />
-              <span className="font-medium text-foreground">Net Wealth</span>
+              <span className="font-medium text-foreground">
+                {isPropertyView ? 'Equity' : 'Net Wealth'}
+              </span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-0.5 rounded bg-blue-800/60 inline-block" />
-              Assets
+              {isPropertyView ? 'Value' : 'Assets'}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-0.5 rounded bg-red-400/60 inline-block border border-dashed border-red-400/40" />
-              Liabilities
+              {isPropertyView ? 'Mortgage' : 'Liabilities'}
             </span>
           </div>
         </div>
@@ -92,7 +129,7 @@ export function WealthChart({ data }: WealthChartProps) {
         ) : (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 24, right: 10, left: 10, bottom: 5 }}>
+              <ComposedChart data={chartData} margin={{ top: 24, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="netWealthGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3} />
@@ -118,7 +155,7 @@ export function WealthChart({ data }: WealthChartProps) {
                 />
 
                 <Tooltip
-                  formatter={tooltipFormatter}
+                  formatter={isPropertyView ? propertyTooltipFormatter : tooltipFormatter}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',
                     border: '1px solid var(--border)',
@@ -131,7 +168,7 @@ export function WealthChart({ data }: WealthChartProps) {
                   cursor={{ stroke: '#60A5FA', strokeWidth: 1, strokeDasharray: '4 2' }}
                 />
 
-                {/* Net Wealth — primary, filled area */}
+                {/* Net Wealth / Equity — primary, filled area */}
                 <Area
                   type="monotone"
                   dataKey="netWealth"
@@ -147,7 +184,7 @@ export function WealthChart({ data }: WealthChartProps) {
                   />
                 </Area>
 
-                {/* Assets — subtle secondary line */}
+                {/* Assets / Property Value — subtle secondary line */}
                 <Line
                   type="monotone"
                   dataKey="totalAssets"
@@ -158,7 +195,7 @@ export function WealthChart({ data }: WealthChartProps) {
                   activeDot={{ r: 3, fill: '#1e40af', strokeWidth: 0 }}
                 />
 
-                {/* Liabilities — subtle dashed secondary line */}
+                {/* Liabilities / Mortgage — subtle dashed secondary line */}
                 <Line
                   type="monotone"
                   dataKey="totalLiabilities"
