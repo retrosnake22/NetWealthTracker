@@ -102,6 +102,8 @@ export default function AssetsPage() {
 		marginLoanBalance: '',
 		marginLoanRate: '',
 		marginLoanTerm: '5',
+		paysDividends: false,
+		dividendYield: '4.0',
 	})
 
 	// Property editing
@@ -217,6 +219,8 @@ export default function AssetsPage() {
 			marginLoanBalance: marginLoanLiability ? String(marginLoanLiability.currentBalance) : '',
 			marginLoanRate: marginLoanLiability ? String(marginLoanLiability.interestRatePA * 100) : '',
 			marginLoanTerm: marginLoanLiability?.loanTermYears ? String(marginLoanLiability.loanTermYears) : '5',
+			paysDividends: (a as any).paysDividends ?? false,
+			dividendYield: (a as any).dividendYieldPA ? ((a as any).dividendYieldPA * 100).toFixed(1) : '4.0',
 		})
 		setEditingAsset(a)
 		setShowAddAsset(true)
@@ -238,6 +242,12 @@ export default function AssetsPage() {
 		} else {
 			data.isOffset = false
 			data.linkedMortgageId = undefined
+		}
+
+		// Add dividend fields for stock assets
+		if (assetForm.category === 'stocks') {
+			data.paysDividends = assetForm.paysDividends
+			data.dividendYieldPA = assetForm.paysDividends ? (parseFloat(assetForm.dividendYield) || 0) / 100 : 0
 		}
 
 		// Save the asset first
@@ -1050,7 +1060,58 @@ export default function AssetsPage() {
 						)}
 
 						<div className="flex gap-2 justify-end">
-							{/* Stocks Loan Section — only for stock assets */}
+							{/* Stocks Dividends Section — only for stock assets */}
+				{assetForm.category === 'stocks' && (
+					<div className="border-t pt-4">
+						<div className="flex items-center justify-between mb-3">
+							<div>
+								<h4 className="font-semibold text-sm">Dividends</h4>
+								<p className="text-xs text-muted-foreground">Does this investment pay dividends?</p>
+							</div>
+							<button
+								type="button"
+								role="switch"
+								aria-checked={assetForm.paysDividends}
+								onClick={() => setAssetForm(f => ({ ...f, paysDividends: !f.paysDividends }))}
+								className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${assetForm.paysDividends ? 'bg-blue-500' : 'bg-muted'}`}
+							>
+								<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${assetForm.paysDividends ? 'translate-x-5' : 'translate-x-0'}`} />
+							</button>
+						</div>
+						{assetForm.paysDividends && (
+							<div className="space-y-3">
+								<div>
+									<Label>Estimated Dividend Yield (% p.a.)</Label>
+									<Input
+										type="number"
+										step="0.1"
+										min="0"
+										max="100"
+										value={assetForm.dividendYield}
+										onChange={e => setAssetForm(f => ({ ...f, dividendYield: e.target.value }))}
+										placeholder="e.g. 4.0"
+									/>
+								</div>
+								{parseFloat(assetForm.dividendYield) > 0 && parseFloat(assetForm.value) > 0 && (
+									<div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+										<div className="flex justify-between">
+											<span className="text-muted-foreground">Estimated Annual Dividends</span>
+											<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100)}</span>
+										</div>
+										<div className="flex justify-between">
+											<span className="text-muted-foreground">Monthly Income</span>
+											<span className="font-semibold text-violet-400">{formatCurrency((parseFloat(assetForm.value) || 0) * (parseFloat(assetForm.dividendYield) || 0) / 100 / 12)}</span>
+										</div>
+										<p className="text-xs text-muted-foreground mt-1">
+											This will appear as dividend income on your Income page
+										</p>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
+				)}
+				{/* Stocks Loan Section — only for stock assets */}
 				{assetForm.category === 'stocks' && (
 					<div className="border-t pt-4">
 						<div className="flex items-center justify-between mb-3">

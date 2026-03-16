@@ -46,6 +46,8 @@ export interface StockAsset extends Asset {
   avgBuyPrice?: number
   hasMarginLoan?: boolean
   linkedLiabilityId?: string
+  paysDividends?: boolean
+  dividendYieldPA?: number   // annual %, e.g. 0.04 = 4%
 }
 
 export interface SuperAsset extends Asset {

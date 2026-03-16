@@ -92,15 +92,16 @@ function buildAutoItems(properties: Property[], assets: Asset[]): AutoIncomeItem
     }
   }
 
-  // 3. Dividend income from stock assets
+  // 3. Dividend income from stock assets (only if user opted in)
   for (const a of assets) {
-    if (a.category === 'stocks' && a.growthRatePA > 0) {
+    const stock = a as any
+    if (a.category === 'stocks' && stock.paysDividends && (stock.dividendYieldPA ?? 0) > 0) {
       items.push({
         key: `dividends-${a.id}`,
         name: `${a.name} — Dividends`,
         category: 'dividends',
-        monthlyAmount: (a.currentValue * a.growthRatePA) / 12,
-        note: `Based on ${formatPercent(a.growthRatePA)} p.a.`,
+        monthlyAmount: (a.currentValue * stock.dividendYieldPA) / 12,
+        note: `Based on ${formatPercent(stock.dividendYieldPA)} p.a. yield`,
       })
     }
   }
