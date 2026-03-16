@@ -338,6 +338,8 @@ export function ExpenseActualsView() {
             if (editValues[cat] && editValues[cat] !== '') groupFilledCount++
           }
 
+          const groupDiff = groupActualTotal - groupBudgetTotal
+
           // Compute which categories are visible when hideEmpty is on
           const visibleCategories = group.categories.filter(cat => {
             if (!hideEmpty) return true
@@ -353,22 +355,32 @@ export function ExpenseActualsView() {
           return (
             <Card key={group.label}>
               <CardContent className="p-0">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                {/* Group header with totals aligned to columns */}
+                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b border-border/50 bg-muted/30">
                   <div className="flex items-center gap-2">
                     <span>{group.icon}</span>
-                    <span className="font-semibold text-sm">{group.label}</span>
+                    <span className="font-bold text-sm">{group.label}</span>
                     <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
                       {groupFilledCount}/{group.categories.length}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-semibold tabular-nums">{formatCurrency(groupBudgetTotal)}</span>
-                    <span className="text-xs text-muted-foreground ml-1">budget</span>
-                  </div>
+                  <span className="text-sm font-bold tabular-nums text-right">
+                    {formatCurrency(groupBudgetTotal)}
+                  </span>
+                  <span className={`text-sm font-bold tabular-nums text-right ${groupActualTotal > 0 ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                    {groupActualTotal > 0 ? formatCurrency(groupActualTotal) : '—'}
+                  </span>
+                  <span className={`text-sm font-bold tabular-nums text-right ${
+                    groupActualTotal === 0 ? 'text-muted-foreground/40' :
+                    groupDiff > 0 ? 'text-red-400' :
+                    groupDiff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
+                  }`}>
+                    {groupActualTotal === 0 ? '—' : `${groupDiff > 0 ? '+' : ''}${formatCurrency(groupDiff)}`}
+                  </span>
                 </div>
 
                 {/* Column headers */}
-                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/40">
+                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/20">
                   <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
@@ -435,84 +447,100 @@ export function ExpenseActualsView() {
         {customBudgets.length > 0 && !(hideEmpty && customBudgets.every(b => {
           const actualStr = editValues[`custom_${b.id}`] || ''
           return b.monthlyBudget === 0 && actualStr === ''
-        })) && (
-          <Card>
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <span>📌</span>
-                  <span className="font-semibold text-sm">Custom Expenses</span>
-                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                    {customBudgets.length}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-semibold tabular-nums">
-                    {formatCurrency(customBudgets.reduce((s, b) => s + b.monthlyBudget, 0))}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1">budget</span>
-                </div>
-              </div>
-
-              {/* Column headers */}
-              <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/40">
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
-              </div>
-
-              {customBudgets.filter(b => {
-                if (!hideEmpty) return true
-                const actualStr = editValues[`custom_${b.id}`] || ''
-                return b.monthlyBudget > 0 || actualStr !== ''
-              }).map((b, idx, arr) => {
-                const key = `custom_${b.id}`
-                const actualStr = editValues[key] || ''
-                const actualNum = parseFloat(actualStr) || 0
-                const diff = actualStr !== '' ? actualNum - b.monthlyBudget : null
-                const hasSavedActual = monthActuals.has(b.id)
-
-                return (
-                  <div
-                    key={b.id}
-                    className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                      idx !== arr.length - 1 ? 'border-b border-border/20' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm font-semibold truncate">{b.label}</span>
-                      {hasSavedActual && (
-                        <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">
-                          ✓
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}</span>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={actualStr}
-                        onChange={(e) => handleValueChange(key, e.target.value)}
-                        placeholder="—"
-                        className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
-                    <span className={`text-sm tabular-nums text-right ${
-                      diff === null ? 'text-muted-foreground/40' :
-                      diff > 0 ? 'text-red-400' :
-                      diff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
-                    }`}>
-                      {diff === null ? '—' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
+        })) && (() => {
+          const customBudgetTotal = customBudgets.reduce((s, b) => s + b.monthlyBudget, 0)
+          let customActualTotal = 0
+          for (const b of customBudgets) {
+            customActualTotal += parseFloat(editValues[`custom_${b.id}`] || '0') || 0
+          }
+          const customDiff = customActualTotal - customBudgetTotal
+          return (
+            <Card>
+              <CardContent className="p-0">
+                {/* Custom group header with totals */}
+                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b border-border/50 bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <span>📌</span>
+                    <span className="font-bold text-sm">Custom Expenses</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                      {customBudgets.length}
                     </span>
                   </div>
-                )
-              })}
-            </CardContent>
-          </Card>
-        )}
+                  <span className="text-sm font-bold tabular-nums text-right">
+                    {formatCurrency(customBudgetTotal)}
+                  </span>
+                  <span className={`text-sm font-bold tabular-nums text-right ${customActualTotal > 0 ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                    {customActualTotal > 0 ? formatCurrency(customActualTotal) : '—'}
+                  </span>
+                  <span className={`text-sm font-bold tabular-nums text-right ${
+                    customActualTotal === 0 ? 'text-muted-foreground/40' :
+                    customDiff > 0 ? 'text-red-400' :
+                    customDiff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
+                  }`}>
+                    {customActualTotal === 0 ? '—' : `${customDiff > 0 ? '+' : ''}${formatCurrency(customDiff)}`}
+                  </span>
+                </div>
+
+                {/* Column headers */}
+                <div className="grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] px-4 py-2.5 border-b border-border/40 gap-2 bg-muted/20">
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Budget</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Actual</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Diff</span>
+                </div>
+
+                {customBudgets.filter(b => {
+                  if (!hideEmpty) return true
+                  const actualStr = editValues[`custom_${b.id}`] || ''
+                  return b.monthlyBudget > 0 || actualStr !== ''
+                }).map((b, idx, arr) => {
+                  const key = `custom_${b.id}`
+                  const actualStr = editValues[key] || ''
+                  const actualNum = parseFloat(actualStr) || 0
+                  const diff = actualStr !== '' ? actualNum - b.monthlyBudget : null
+                  const hasSavedActual = monthActuals.has(b.id)
+
+                  return (
+                    <div
+                      key={b.id}
+                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
+                        idx !== arr.length - 1 ? 'border-b border-border/20' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-semibold truncate">{b.label}</span>
+                        {hasSavedActual && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 text-emerald-400 border-emerald-400/30 shrink-0">
+                            ✓
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-sm tabular-nums text-right">{formatCurrency(b.monthlyBudget)}</span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={actualStr}
+                          onChange={(e) => handleValueChange(key, e.target.value)}
+                          placeholder="—"
+                          className="w-full bg-muted/50 border border-border/50 rounded-md px-2 py-1.5 pl-5 text-sm text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <span className={`text-sm tabular-nums text-right ${
+                        diff === null ? 'text-muted-foreground/40' :
+                        diff > 0 ? 'text-red-400' :
+                        diff < 0 ? 'text-emerald-400' : 'text-muted-foreground'
+                      }`}>
+                        {diff === null ? '—' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* Sticky save bar when changes exist */}
