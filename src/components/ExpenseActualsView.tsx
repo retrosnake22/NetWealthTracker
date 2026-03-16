@@ -132,7 +132,7 @@ export function ExpenseActualsView() {
   }, [])
 
   const handleSave = useCallback(() => {
-    const entries: { budgetId: string; actualAmount: number }[] = []
+    const entries: { budgetId: string; category?: string; actualAmount: number }[] = []
     const store = useFinanceStore.getState()
     // Standard categories — auto-create $0 budget if actual entered but no budget exists
     for (const group of SUPER_CATEGORIES) {
@@ -153,6 +153,7 @@ export function ExpenseActualsView() {
         if (budget) {
           entries.push({
             budgetId: budget.id,
+            category: cat,
             actualAmount: actualVal,
           })
         }
@@ -162,6 +163,7 @@ export function ExpenseActualsView() {
     for (const b of customBudgets) {
       entries.push({
         budgetId: b.id,
+        category: b.category,
         actualAmount: parseFloat(editValues[`custom_${b.id}`] || '0') || 0,
       })
     }

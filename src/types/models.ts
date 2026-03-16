@@ -126,6 +126,8 @@ export interface ExpenseActual extends BaseEntity {
   month: string
   actualAmount: number
   notes?: string
+  /** Stored redundantly so actuals survive budget deletion/recreation */
+  category?: string
 }
 
 export interface SurplusAllocation {

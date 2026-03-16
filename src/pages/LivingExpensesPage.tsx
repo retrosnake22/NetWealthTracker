@@ -124,6 +124,8 @@ export function LivingExpensesPage() {
   }, [budgetByCategory])
 
   // Persist current edit values to the store
+  // IMPORTANT: We never delete budget entries — we set them to $0 instead.
+  // Actuals are linked via budgetId, so deleting a budget would orphan its actuals.
   const persistToStore = useCallback(() => {
     const currentValues = editValuesRef.current
     for (const group of LIVING_SUPER_CATEGORIES) {
@@ -133,12 +135,8 @@ export function LivingExpensesPage() {
         const existing = budgetByCategory.get(cat)
 
         if (existing) {
-          if (numValue > 0) {
-            if (existing.monthlyBudget !== numValue) {
-              updateExpenseBudget(existing.id, { monthlyBudget: numValue })
-            }
-          } else {
-            removeExpenseBudget(existing.id)
+          if (existing.monthlyBudget !== numValue) {
+            updateExpenseBudget(existing.id, { monthlyBudget: numValue })
           }
         } else if (numValue > 0) {
           addExpenseBudget({

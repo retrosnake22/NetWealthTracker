@@ -66,7 +66,7 @@ export interface FinanceState {
   updateExpenseActual: (id: string, updates: Partial<ExpenseActual>) => void
   removeExpenseActual: (id: string) => void
   /** Upsert actuals for a given month — updates existing by budgetId+month, creates new ones */
-  bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => void
+  bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; category?: string; actualAmount: number; notes?: string }[]) => void
 
   // Projection Settings
   updateProjectionSettings: (settings: Partial<ProjectionSettings>) => void
@@ -269,7 +269,7 @@ export const useFinanceStore = create<FinanceState>()(
       removeExpenseActual: (id: string) => set((state: FinanceState) => ({
         expenseActuals: state.expenseActuals.filter((a: ExpenseActual) => a.id !== id)
       })),
-      bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; actualAmount: number; notes?: string }[]) => set((state: FinanceState) => {
+      bulkUpsertExpenseActuals: (month: string, entries: { budgetId: string; category?: string; actualAmount: number; notes?: string }[]) => set((state: FinanceState) => {
         const updated = [...state.expenseActuals]
         for (const entry of entries) {
           if (entry.actualAmount === 0 && !entry.notes) {
@@ -280,11 +280,12 @@ export const useFinanceStore = create<FinanceState>()(
           }
           const existing = updated.findIndex((a: ExpenseActual) => a.budgetId === entry.budgetId && a.month === month)
           if (existing !== -1) {
-            updated[existing] = { ...updated[existing], actualAmount: entry.actualAmount, notes: entry.notes, updatedAt: now() }
+            updated[existing] = { ...updated[existing], actualAmount: entry.actualAmount, notes: entry.notes, category: entry.category, updatedAt: now() }
           } else {
             updated.push({
               id: generateId(), budgetId: entry.budgetId, month,
               actualAmount: entry.actualAmount, notes: entry.notes,
+              category: entry.category,
               createdAt: now(), updatedAt: now(),
             } as ExpenseActual)
           }
@@ -302,11 +303,58 @@ export const useFinanceStore = create<FinanceState>()(
     }),
     {
       name: 'nwt-finance-store',
-        merge: (persisted: any, current: any) => ({
+      merge: (persisted: any, current: any) => {
+        const merged = {
           ...current,
           ...persisted,
           userProfile: { ...DEFAULT_PROFILE, ...(persisted?.userProfile ?? {}) },
-        }),
+        }
+
+        // Migration: recover orphaned expense actuals whose budgetId no longer exists.
+        // This happens when a budget was deleted and re-created (new ID) while actuals
+        // still referenced the old ID. We re-link orphans using the category field
+        // (added to actuals for exactly this purpose).
+        if (merged.expenseActuals?.length > 0 && merged.expenseBudgets?.length > 0) {
+          const budgetIds = new Set(merged.expenseBudgets.map((b: any) => b.id))
+          // Build category → current budget id lookup
+          const budgetByCategory = new Map<string, string>()
+          for (const b of merged.expenseBudgets) {
+            if (!b.linkedPropertyId && !b.linkedAssetId && !budgetByCategory.has(b.category)) {
+              budgetByCategory.set(b.category, b.id)
+            }
+          }
+
+          let fixed = 0
+          let removed = 0
+          merged.expenseActuals = merged.expenseActuals.filter((a: any) => {
+            if (budgetIds.has(a.budgetId)) {
+              // Stamp category on existing linked actuals that don't have it yet
+              if (!a.category) {
+                const budget = merged.expenseBudgets.find((b: any) => b.id === a.budgetId)
+                if (budget) a.category = budget.category
+              }
+              return true
+            }
+            // Orphaned actual — try to re-link using stored category
+            if (a.category && budgetByCategory.has(a.category)) {
+              a.budgetId = budgetByCategory.get(a.category)
+              fixed++
+              return true
+            }
+            // Can't recover — remove to prevent invisible data accumulation
+            removed++
+            return false
+          })
+          if (fixed > 0) {
+            console.log(`[NWT] Recovered ${fixed} orphaned expense actuals during migration`)
+          }
+          if (removed > 0) {
+            console.log(`[NWT] Removed ${removed} unrecoverable orphaned expense actuals`)
+          }
+        }
+
+        return merged
+      },
     }
   )
 )
