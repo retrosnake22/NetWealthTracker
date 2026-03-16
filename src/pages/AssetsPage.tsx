@@ -842,7 +842,19 @@ export default function AssetsPage() {
 												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
 													<Pencil className="h-3.5 w-3.5" />
 												</Button>
-												<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeProperty(p.id)}>
+												<Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => {
+																if (p.mortgageId) {
+																	// Remove linked offset accounts' mortgage reference
+																	assets.forEach(a => {
+																		if ((a as any).linkedMortgageId === p.mortgageId) {
+																			updateAsset(a.id, { linkedMortgageId: '' } as any)
+																		}
+																	})
+																	// Remove the linked mortgage
+																	removeLiability(p.mortgageId)
+																}
+																removeProperty(p.id)
+															}}>
 													<Trash2 className="h-3.5 w-3.5" />
 												</Button>
 											</div>
