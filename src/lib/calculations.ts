@@ -236,9 +236,9 @@ export const LIVING_EXPENSE_CATEGORIES = new Set([
   // Housing
   'rent', 'electricity', 'water', 'rates', 'security', 'home_improvements', 'repairs_maintenance', 'gardening',
   // Insurance
-  'insurance_health', 'insurance_car', 'insurance_life', 'home_insurance', 'insurance_other',
+  'insurance_health', 'insurance_car', 'insurance_life', 'home_insurance', 'insurance_pet', 'insurance_other',
   // Living
-  'groceries', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs',
+  'groceries', 'household_goods', 'transport', 'fuel', 'phone_internet', 'personal_care', 'clothing', 'medical', 'pharmacy', 'pet_expenses', 'school_costs',
   // Lifestyle
   'subscriptions', 'entertainment', 'dining_out', 'health_fitness', 'education', 'childcare', 'gifts_donations',
   // Financial
