@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liabilities Page Mockups</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
+
+  /* Toggle bar */
+  .toggle-bar { position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; gap: 12px; padding: 16px; background: white; border-bottom: 1px solid #e2e8f0; }
+  .toggle-btn { padding: 10px 28px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .toggle-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
+  .toggle-btn:hover:not(.active) { border-color: #94a3b8; }
+
+  .mockup { display: none; padding: 32px; min-height: 100vh; }
+  .mockup.visible { display: block; }
+
+  /* ========== OPTION A — LIGHT ========== */
+  .light { background: #f8fafc; }
+  .light .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .light .page-header h1 { font-size: 26px; font-weight: 800; color: #0f172a; }
+  .light .page-header .subtitle { font-size: 14px; color: #64748b; margin-left: 12px; }
+  .light .add-btn { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+
+  /* KPI Cards */
+  .light .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+  .light .kpi-card { border-radius: 14px; padding: 18px 22px; color: white; position: relative; overflow: hidden; }
+  .light .kpi-card::after { content: ''; position: absolute; top: -30%; right: -15%; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+  .light .kpi-card::before { content: ''; position: absolute; bottom: -40%; right: 10%; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+  .light .kpi-label { font-size: 12px; font-weight: 500; opacity: 0.85; letter-spacing: 0.5px; }
+  .light .kpi-value { font-size: 28px; font-weight: 800; margin-top: 4px; }
+  .light .kpi-1 { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); }
+  .light .kpi-2 { background: linear-gradient(135deg, #9a3412 0%, #f97316 100%); }
+  .light .kpi-3 { background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%); }
+
+  /* Section Groups */
+  .light .section-group { margin-bottom: 24px; }
+  .light .section-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; margin-bottom: 12px; }
+  .light .section-left { display: flex; align-items: center; gap: 10px; }
+  .light .section-left .emoji { font-size: 20px; }
+  .light .section-left .title { font-weight: 700; font-size: 16px; color: #0f172a; }
+  .light .section-left .count { font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+  .light .section-right { text-align: right; }
+  .light .section-total { font-weight: 800; font-size: 17px; }
+  .light .section-repay { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  /* Mortgage color scheme */
+  .light .mortgage-group .count { background: #fee2e2; color: #991b1b; }
+  .light .mortgage-group .section-total { color: #dc2626; }
+  /* Personal loan color scheme */
+  .light .personal-group .count { background: #ffedd5; color: #9a3412; }
+  .light .personal-group .section-total { color: #ea580c; }
+  /* Credit card color scheme */
+  .light .credit-group .count { background: #fef3c7; color: #92400e; }
+  .light .credit-group .section-total { color: #d97706; }
+  /* HECS color scheme */
+  .light .hecs-group .count { background: #e0e7ff; color: #3730a3; }
+  .light .hecs-group .section-total { color: #4f46e5; }
+
+  /* Liability Cards */
+  .light .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .light .liability-card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); position: relative; overflow: hidden; transition: box-shadow 0.2s; }
+  .light .liability-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .light .liability-card.mortgage-card { border-left: 4px solid #ef4444; }
+  .light .liability-card.personal-card { border-left: 4px solid #f97316; }
+  .light .liability-card.credit-card-card { border-left: 4px solid #eab308; }
+  .light .liability-card.hecs-card { border-left: 4px solid #6366f1; }
+
+  .light .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .light .card-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .light .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+  .light .badge-mortgage { background: #fee2e2; color: #dc2626; }
+  .light .badge-personal { background: #ffedd5; color: #ea580c; }
+  .light .badge-credit { background: #fef3c7; color: #d97706; }
+  .light .badge-hecs { background: #e0e7ff; color: #4f46e5; }
+  .light .badge-rate { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; }
+  .light .badge-property { background: #f0fdf4; color: #166534; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
+
+  .light .card-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+  .light .liability-card:hover .card-actions { opacity: 1; }
+  .light .card-action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.15s; }
+  .light .card-action-btn:hover { background: #f1f5f9; }
+  .light .card-action-btn.delete:hover { background: #fef2f2; border-color: #fecaca; }
+
+  .light .card-name { font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px; }
+  .light .card-amount { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+  .light .card-repay { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+  .light .card-repay strong { color: #0f172a; font-weight: 600; }
+
+  /* Progress bar */
+  .light .progress-container { margin-top: 12px; }
+  .light .progress-bar { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .light .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .light .mortgage-card .progress-fill { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .light .personal-card .progress-fill { background: linear-gradient(90deg, #f97316, #fb923c); }
+  .light .credit-card-card .progress-fill { background: linear-gradient(90deg, #eab308, #facc15); }
+  .light .hecs-card .progress-fill { background: linear-gradient(90deg, #6366f1, #818cf8); }
+  .light .progress-label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+  /* Card detail rows */
+  .light .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .light .detail-item { }
+  .light .detail-label { font-size: 11px; color: #94a3b8; }
+  .light .detail-value { font-size: 13px; font-weight: 600; color: #334155; }
+
+  /* ========== OPTION B — DARK ========== */
+  .dark { background: #0f172a; }
+  .dark .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .dark .page-header h1 { font-size: 26px; font-weight: 800; color: #f1f5f9; }
+  .dark .page-header .subtitle { font-size: 14px; color: #64748b; margin-left: 12px; }
+  .dark .add-btn { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+  /* KPI Cards */
+  .dark .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+  .dark .kpi-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 22px; }
+  .dark .kpi-label { font-size: 12px; font-weight: 500; color: #94a3b8; letter-spacing: 0.5px; }
+  .dark .kpi-value { font-size: 28px; font-weight: 800; margin-top: 4px; }
+  .dark .kpi-1 .kpi-value { color: #f87171; }
+  .dark .kpi-2 .kpi-value { color: #fb923c; }
+  .dark .kpi-3 .kpi-value { color: #60a5fa; }
+
+  /* Section Groups */
+  .dark .section-group { margin-bottom: 24px; }
+  .dark .section-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; margin-bottom: 12px; }
+  .dark .section-left { display: flex; align-items: center; gap: 10px; }
+  .dark .section-left .emoji { font-size: 20px; }
+  .dark .section-left .title { font-weight: 700; font-size: 16px; color: #e2e8f0; }
+  .dark .section-left .count { font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+  .dark .section-right { text-align: right; }
+  .dark .section-total { font-weight: 800; font-size: 17px; }
+  .dark .section-repay { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  .dark .mortgage-group .count { background: rgba(239,68,68,0.15); color: #f87171; }
+  .dark .mortgage-group .section-total { color: #f87171; }
+  .dark .personal-group .count { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .dark .personal-group .section-total { color: #fb923c; }
+  .dark .credit-group .count { background: rgba(234,179,8,0.15); color: #facc15; }
+  .dark .credit-group .section-total { color: #facc15; }
+  .dark .hecs-group .count { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .dark .hecs-group .section-total { color: #818cf8; }
+
+  /* Liability Cards */
+  .dark .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .dark .liability-card { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 20px; border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; transition: all 0.2s; }
+  .dark .liability-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+  .dark .liability-card.mortgage-card { border-left: 4px solid #ef4444; }
+  .dark .liability-card.personal-card { border-left: 4px solid #f97316; }
+  .dark .liability-card.credit-card-card { border-left: 4px solid #eab308; }
+  .dark .liability-card.hecs-card { border-left: 4px solid #6366f1; }
+
+  .dark .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .dark .card-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dark .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+  .dark .badge-mortgage { background: rgba(239,68,68,0.15); color: #f87171; }
+  .dark .badge-personal { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .dark .badge-credit { background: rgba(234,179,8,0.15); color: #facc15; }
+  .dark .badge-hecs { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .dark .badge-rate { background: rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; }
+  .dark .badge-property { background: rgba(34,197,94,0.1); color: #4ade80; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
+
+  .dark .card-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+  .dark .liability-card:hover .card-actions { opacity: 1; }
+  .dark .card-action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.06); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #94a3b8; transition: all 0.15s; }
+  .dark .card-action-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .dark .card-action-btn.delete:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+
+  .dark .card-name { font-weight: 700; font-size: 15px; color: #f1f5f9; margin-bottom: 4px; }
+  .dark .card-amount { font-size: 24px; font-weight: 800; color: #f1f5f9; margin-bottom: 6px; }
+  .dark .card-repay { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+  .dark .card-repay strong { color: #cbd5e1; font-weight: 600; }
+
+  .dark .progress-container { margin-top: 12px; }
+  .dark .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+  .dark .progress-fill { height: 100%; border-radius: 3px; }
+  .dark .mortgage-card .progress-fill { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .dark .personal-card .progress-fill { background: linear-gradient(90deg, #f97316, #fb923c); }
+  .dark .credit-card-card .progress-fill { background: linear-gradient(90deg, #eab308, #facc15); }
+  .dark .hecs-card .progress-fill { background: linear-gradient(90deg, #6366f1, #818cf8); }
+  .dark .progress-label { font-size: 11px; color: #475569; margin-top: 4px; }
+
+  .dark .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .dark .detail-label { font-size: 11px; color: #475569; }
+  .dark .detail-value { font-size: 13px; font-weight: 600; color: #94a3b8; }
+
+  /* Container */
+  .page-container { max-width: 1200px; margin: 0 auto; }
+
+  @media (max-width: 768px) {
+    .light .kpi-grid, .dark .kpi-grid { grid-template-columns: 1fr; }
+    .light .card-grid, .dark .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toggle-bar">
+  <button class="toggle-btn active" onclick="show('light')">☀️ Option A — Light</button>
+  <button class="toggle-btn" onclick="show('dark')">🌙 Option B — Dark</button>
+</div>
+
+<!-- ==================== OPTION A: LIGHT ==================== -->
+<div id="light" class="mockup light visible">
+<div class="page-container">
+
+  <div class="page-header">
+    <div style="display:flex;align-items:baseline;">
+      <h1>Liabilities</h1>
+      <span class="subtitle">— Mortgages, loans and debts</span>
+    </div>
+    <button class="add-btn">＋ Add Liability</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-1">
+      <div class="kpi-label">Total Liabilities</div>
+      <div class="kpi-value">$3,721,000</div>
+    </div>
+    <div class="kpi-card kpi-2">
+      <div class="kpi-label">Monthly Repayments</div>
+      <div class="kpi-value">$19,976</div>
+    </div>
+    <div class="kpi-card kpi-3">
+      <div class="kpi-label">Avg Interest Rate</div>
+      <div class="kpi-value">6.0%</div>
+    </div>
+  </div>
+
+  <!-- Mortgages -->
+  <div class="section-group mortgage-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">🏠</span>
+        <span class="title">Mortgages</span>
+        <span class="count">5</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$3,515,000</div>
+        <div class="section-repay">$19,143/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+            <span class="badge-property">🏡 Jacaranda</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Jacaranda Mortgage</div>
+        <div class="card-amount">$1,169,000</div>
+        <div class="card-repay">Repayment: <strong>$7,001/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">27 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 33%"></div></div>
+          <div class="progress-label">33% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+            <span class="badge-property">🏡 Forest Lake</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Forest Lake Mortgage</div>
+        <div class="card-amount">$512,000</div>
+        <div class="card-repay">Repayment: <strong>$2,987/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">28 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 15%"></div></div>
+          <div class="progress-label">15% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Eimeo Mortgage</div>
+        <div class="card-amount">$824,000</div>
+        <div class="card-repay">Repayment: <strong>$4,113/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">Interest Only</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">4 years IO</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 23%"></div></div>
+          <div class="progress-label">23% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Mount Sheridan Mortgage</div>
+        <div class="card-amount">$780,000</div>
+        <div class="card-repay">Repayment: <strong>$3,894/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">29 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 22%"></div></div>
+          <div class="progress-label">22% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Strathpine Mortgage</div>
+        <div class="card-amount">$230,000</div>
+        <div class="card-repay">Repayment: <strong>$1,148/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">25 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 7%"></div></div>
+          <div class="progress-label">7% of total mortgages</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Loans -->
+  <div class="section-group personal-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">📄</span>
+        <span class="title">Personal Loans</span>
+        <span class="count">1</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$200,000</div>
+        <div class="section-repay">$833/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card personal-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-personal">Personal Loan</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">LOC Loan</div>
+        <div class="card-amount">$200,000</div>
+        <div class="card-repay">Repayment: <strong>$833/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">Interest Only</div></div>
+          <div class="detail-item"><div class="detail-label">Term</div><div class="detail-value">Ongoing</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credit Cards -->
+  <div class="section-group credit-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">💳</span>
+        <span class="title">Credit Cards</span>
+        <span class="count">1</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$6,000</div>
+        <div class="section-repay">$0/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card credit-card-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-credit">Credit Card</span>
+            <span class="badge-rate">0.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Credit Card</div>
+        <div class="card-amount">$6,000</div>
+        <div class="card-repay">Repayment: <strong>$0/mo</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ==================== OPTION B: DARK ==================== -->
+<div id="dark" class="mockup dark">
+<div class="page-container">
+
+  <div class="page-header">
+    <div style="display:flex;align-items:baseline;">
+      <h1>Liabilities</h1>
+      <span class="subtitle">— Mortgages, loans and debts</span>
+    </div>
+    <button class="add-btn">＋ Add Liability</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-1">
+      <div class="kpi-label">Total Liabilities</div>
+      <div class="kpi-value">$3,721,000</div>
+    </div>
+    <div class="kpi-card kpi-2">
+      <div class="kpi-label">Monthly Repayments</div>
+      <div class="kpi-value">$19,976</div>
+    </div>
+    <div class="kpi-card kpi-3">
+      <div class="kpi-label">Avg Interest Rate</div>
+      <div class="kpi-value">6.0%</div>
+    </div>
+  </div>
+
+  <!-- Mortgages -->
+  <div class="section-group mortgage-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">🏠</span>
+        <span class="title">Mortgages</span>
+        <span class="count">5</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$3,515,000</div>
+        <div class="section-repay">$19,143/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+            <span class="badge-property">🏡 Jacaranda</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Jacaranda Mortgage</div>
+        <div class="card-amount">$1,169,000</div>
+        <div class="card-repay">Repayment: <strong>$7,001/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">27 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 33%"></div></div>
+          <div class="progress-label">33% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+            <span class="badge-property">🏡 Forest Lake</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Forest Lake Mortgage</div>
+        <div class="card-amount">$512,000</div>
+        <div class="card-repay">Repayment: <strong>$2,987/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">28 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 15%"></div></div>
+          <div class="progress-label">15% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Eimeo Mortgage</div>
+        <div class="card-amount">$824,000</div>
+        <div class="card-repay">Repayment: <strong>$4,113/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">Interest Only</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">4 years IO</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 23%"></div></div>
+          <div class="progress-label">23% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Mount Sheridan Mortgage</div>
+        <div class="card-amount">$780,000</div>
+        <div class="card-repay">Repayment: <strong>$3,894/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">29 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 22%"></div></div>
+          <div class="progress-label">22% of total mortgages</div>
+        </div>
+      </div>
+
+      <div class="liability-card mortgage-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-mortgage">Mortgage</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Strathpine Mortgage</div>
+        <div class="card-amount">$230,000</div>
+        <div class="card-repay">Repayment: <strong>$1,148/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">P&I</div></div>
+          <div class="detail-item"><div class="detail-label">Remaining</div><div class="detail-value">25 years</div></div>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" style="width: 7%"></div></div>
+          <div class="progress-label">7% of total mortgages</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Loans -->
+  <div class="section-group personal-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">📄</span>
+        <span class="title">Personal Loans</span>
+        <span class="count">1</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$200,000</div>
+        <div class="section-repay">$833/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card personal-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-personal">Personal Loan</span>
+            <span class="badge-rate">6.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">LOC Loan</div>
+        <div class="card-amount">$200,000</div>
+        <div class="card-repay">Repayment: <strong>$833/mo</strong></div>
+        <div class="card-details">
+          <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">Interest Only</div></div>
+          <div class="detail-item"><div class="detail-label">Term</div><div class="detail-value">Ongoing</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credit Cards -->
+  <div class="section-group credit-group">
+    <div class="section-header">
+      <div class="section-left">
+        <span class="emoji">💳</span>
+        <span class="title">Credit Cards</span>
+        <span class="count">1</span>
+      </div>
+      <div class="section-right">
+        <div class="section-total">$6,000</div>
+        <div class="section-repay">$0/mo repayments</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="liability-card credit-card-card">
+        <div class="card-top">
+          <div class="card-badges">
+            <span class="badge badge-credit">Credit Card</span>
+            <span class="badge-rate">0.0% p.a.</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-action-btn">✏️</button>
+            <button class="card-action-btn delete">🗑</button>
+          </div>
+        </div>
+        <div class="card-name">Credit Card</div>
+        <div class="card-amount">$6,000</div>
+        <div class="card-repay">Repayment: <strong>$0/mo</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.mockup').forEach(m => m.classList.remove('visible'));
+  document.getElementById(id).classList.add('visible');
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Pencil, Trash2, CreditCard, Home, GraduationCap, Wallet, CircleDot } from 'lucide-react'
+import { Plus, Pencil, Trash2, CreditCard, Home, GraduationCap, Wallet, CircleDot, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -129,6 +129,7 @@ export function LiabilitiesPage() {
     repaymentFrequency: 'monthly' as 'weekly' | 'fortnightly' | 'monthly',
     mortgageType: 'principal_and_interest' as 'interest_only' | 'principal_and_interest',
     loanTermYears: '',
+    isInvestmentPurpose: false,
   })
 
   // Filter liabilities based on URL category param
@@ -143,7 +144,7 @@ export function LiabilitiesPage() {
     setForm({
       name: '', category: (categoryFilter as LiabilityCategory) || 'personal_loan', currentBalance: '',
       interestRatePA: '', minimumRepayment: '', repaymentFrequency: 'monthly',
-      mortgageType: 'principal_and_interest', loanTermYears: '',
+      mortgageType: 'principal_and_interest', loanTermYears: '', isInvestmentPurpose: false,
     })
     setEditId(null)
   }
@@ -170,7 +171,7 @@ export function LiabilitiesPage() {
     const autoRepayment = isAutoCalcCategory
       ? calcMonthlyRepayment(balance, annualRate, termYears, form.mortgageType)
       : null
-    const data = {
+    const data: Partial<Liability> = {
       name: form.name,
       category: form.category,
       currentBalance: balance,
@@ -181,6 +182,7 @@ export function LiabilitiesPage() {
       repaymentFrequency: form.repaymentFrequency,
       mortgageType: form.mortgageType,
       loanTermYears: termYears || undefined,
+      isInvestmentPurpose: form.category === 'personal_loan' ? form.isInvestmentPurpose : undefined,
     }
     if (editId) updateLiability(editId, data)
     else addLiability(data)
@@ -200,6 +202,7 @@ export function LiabilitiesPage() {
       repaymentFrequency: item.repaymentFrequency,
       mortgageType: (item as any).mortgageType ?? 'principal_and_interest',
       loanTermYears: (item as any).loanTermYears ? String((item as any).loanTermYears) : '',
+      isInvestmentPurpose: item.isInvestmentPurpose ?? false,
     })
     setEditId(id)
     setOpen(true)
@@ -286,7 +289,7 @@ export function LiabilitiesPage() {
                 </div>
                 <div>
                   <Label>Category</Label>
-                  <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as LiabilityCategory})}>
+                  <Select value={form.category} onValueChange={(v) => setForm({...form, category: v as LiabilityCategory, isInvestmentPurpose: v !== 'personal_loan' ? false : form.isInvestmentPurpose})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -320,6 +323,46 @@ export function LiabilitiesPage() {
                     </Select>
                   </div>
                 </div>
+
+                {/* Investment Purpose toggle for personal loans */}
+                {form.category === 'personal_loan' && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-violet-500" />
+                          <Label className="text-sm font-medium">Investment Purpose</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Interest on this loan is tax-deductible for negative gearing
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={form.isInvestmentPurpose}
+                        onClick={() => setForm({...form, isInvestmentPurpose: !form.isInvestmentPurpose})}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          form.isInvestmentPurpose ? 'bg-violet-500' : 'bg-input'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+                            form.isInvestmentPurpose ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {form.isInvestmentPurpose && (
+                      <div className="mt-2 rounded-md bg-violet-500/10 border border-violet-500/20 px-3 py-2">
+                        <p className="text-[11px] text-violet-600 dark:text-violet-400">
+                          💡 The interest portion of this loan ({form.interestRatePA ? `${form.interestRatePA}% p.a.` : '—'}) will be included in your negative gearing calculations and reduce your taxable income.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {(['personal_loan', 'mortgage', 'home_loan'] as LiabilityCategory[]).includes(form.category) && (() => {
                   const previewBalance = parseFloat(form.currentBalance) || 0
                   const previewRate = (parseFloat(form.interestRatePA) || 0) / 100
@@ -468,6 +511,12 @@ export function LiabilitiesPage() {
                                 </span>
                                 {linkedProperty && (
                                   <Badge variant="outline" className="text-xs">🏠 {linkedProperty.name}</Badge>
+                                )}
+                                {item.isInvestmentPurpose && (
+                                  <Badge className="bg-violet-500/10 text-violet-500 border-violet-500/20 text-[10px]">
+                                    <TrendingUp className="h-3 w-3 mr-1" />
+                                    Investment
+                                  </Badge>
                                 )}
                               </div>
 

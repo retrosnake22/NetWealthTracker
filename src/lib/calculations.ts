@@ -137,17 +137,45 @@ export function calculateDebtToAssetRatio(
  * For each property with a loss (rent < expenses + interest), the loss reduces
  * taxable income at the investor's marginal rate.
  */
+export interface NegGearingPropertyDetail {
+  propertyId: string
+  propertyName: string
+  netRentPA: number
+  expensesPA: number
+  interestPA: number
+  netCashflow: number
+  benefit: number
+}
+
+export interface NegGearingLoanDetail {
+  loanId: string
+  loanName: string
+  interestPA: number
+  benefit: number
+}
+
+export interface NegGearingResult {
+  benefit: number
+  totalDeductible: number
+  propertyDetails: NegGearingPropertyDetail[]
+  investmentLoanDetails: NegGearingLoanDetail[]
+}
+
 export function calculateTotalNegativeGearingBenefit(
   properties: Property[],
   liabilities: Liability[],
   assets: CashAsset[],
   grossSalary: number
-): { benefit: number; totalDeductible: number } {
-  if (grossSalary <= 0) return { benefit: 0, totalDeductible: 0 }
+): NegGearingResult {
+  if (grossSalary <= 0) return { benefit: 0, totalDeductible: 0, propertyDetails: [], investmentLoanDetails: [] }
   const marginalRate = getMarginalTaxRate(grossSalary)
 
   let totalBenefit = 0
   let totalDeductible = 0
+  const propertyDetails: NegGearingPropertyDetail[] = []
+  const investmentLoanDetails: NegGearingLoanDetail[] = []
+
+  // --- Investment properties ---
   for (const prop of properties) {
     if (prop.type !== 'investment' || !prop.weeklyRent) continue
 
@@ -155,7 +183,7 @@ export function calculateTotalNegativeGearingBenefit(
     const vacancyLoss = grossRentPA * (prop.vacancyRatePA ?? 0) / 100
     const netRentPA = grossRentPA - vacancyLoss
     const managementFee = netRentPA * (prop.propertyManagementPct ?? 0) / 100
-    const expenses =
+    const expensesPA =
       managementFee +
       (prop.councilRatesPA ?? 0) +
       (prop.waterRatesPA ?? 0) +
@@ -177,15 +205,46 @@ export function calculateTotalNegativeGearingBenefit(
       interestPA = effectiveBalance * mortgage.interestRatePA
     }
 
-    const netCashflow = netRentPA - expenses - interestPA
+    const netCashflow = netRentPA - expensesPA - interestPA
+    let benefit = 0
     if (netCashflow < 0) {
       const loss = Math.abs(netCashflow)
       totalDeductible += loss
-      totalBenefit += loss * marginalRate
+      benefit = loss * marginalRate
+      totalBenefit += benefit
     }
+
+    propertyDetails.push({
+      propertyId: prop.id,
+      propertyName: prop.name,
+      netRentPA,
+      expensesPA,
+      interestPA,
+      netCashflow,
+      benefit,
+    })
   }
 
-  return { benefit: totalBenefit, totalDeductible }
+  // --- Investment-purpose personal loans ---
+  // Interest on personal loans used for investment purposes is fully tax-deductible
+  for (const loan of liabilities) {
+    if (loan.category !== 'personal_loan' || !loan.isInvestmentPurpose) continue
+    if (loan.currentBalance <= 0 || loan.interestRatePA <= 0) continue
+
+    const interestPA = loan.currentBalance * loan.interestRatePA
+    const benefit = interestPA * marginalRate
+    totalDeductible += interestPA
+    totalBenefit += benefit
+
+    investmentLoanDetails.push({
+      loanId: loan.id,
+      loanName: loan.name,
+      interestPA,
+      benefit,
+    })
+  }
+
+  return { benefit: totalBenefit, totalDeductible, propertyDetails, investmentLoanDetails }
 }
 
 // --- Shared Dashboard Metrics ---

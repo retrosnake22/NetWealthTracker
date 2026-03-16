@@ -449,64 +449,51 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
           const grossSalary = salaryIncome?.grossAnnualSalary ?? (salaryIncome ? salaryIncome.monthlyAmount * 12 : 0)
           const marginalRate = grossSalary > 0 ? getMarginalTaxRate(grossSalary) : 0
           const cashAssets = assets.filter(a => a.category === 'cash') as CashAsset[]
-          const investmentProperties = properties.filter(p => p.type === 'investment')
+          const negGearingDetail = calculateTotalNegativeGearingBenefit(properties, liabilities, cashAssets, grossSalary)
 
           return (
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">How It Works</p>
               <div className="bg-muted/50 rounded-lg p-3 text-center mb-3">
-                <p className="text-xs text-muted-foreground">When investment property expenses exceed rental income, the loss reduces your taxable income at your marginal tax rate.</p>
+                <p className="text-xs text-muted-foreground">When investment expenses exceed income, the loss reduces your taxable income at your marginal tax rate. This includes investment property losses and interest on investment-purpose personal loans.</p>
               </div>
 
               <Row label="Gross Salary" value={formatCurrency(grossSalary)} />
               <Row label="Marginal Tax Rate" value={formatPercent(marginalRate)} />
 
+              {/* Investment Properties */}
               <div className="h-3" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">By Property</p>
-              {investmentProperties.length === 0 ? (
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Investment Properties</p>
+              {negGearingDetail.propertyDetails.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No investment properties.</p>
               ) : (
-                investmentProperties.map(prop => {
-                  const grossRentPA = (prop.weeklyRent ?? 0) * 52
-                  const vacancyLoss = grossRentPA * (prop.vacancyRatePA ?? 0) / 100
-                  const netRentPA = grossRentPA - vacancyLoss
-                  const managementFee = netRentPA * (prop.propertyManagementPct ?? 0) / 100
-                  const expensesPA =
-                    managementFee +
-                    (prop.councilRatesPA ?? 0) +
-                    (prop.waterRatesPA ?? 0) +
-                    (prop.insurancePA ?? 0) +
-                    (prop.strataPA ?? 0) +
-                    (prop.landTaxPA ?? 0) +
-                    (prop.maintenanceBudgetPA ?? 0)
+                negGearingDetail.propertyDetails.map(detail => (
+                  <div key={detail.propertyId} className="space-y-1 mb-3">
+                    <p className="text-sm font-semibold">{detail.propertyName}</p>
+                    <Row label="Gross Rent" value={formatCurrency(detail.netRentPA)} indent />
+                    <Row label="Expenses" value={`(${formatCurrency(detail.expensesPA)})`} indent color="text-red-400" />
+                    <Row label="Interest" value={`(${formatCurrency(detail.interestPA)})`} indent color="text-red-400" />
+                    <Row label="Net Position" value={formatCurrency(detail.netCashflow)} indent color={detail.netCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+                    {detail.benefit > 0 && (
+                      <Row label="Tax Benefit" value={formatCurrency(detail.benefit)} indent color="text-green-400" />
+                    )}
+                  </div>
+                ))
+              )}
 
-                  const mortgage = liabilities.find(l =>
-                    l.linkedPropertyId === prop.id || l.id === prop.mortgageId
-                  )
-                  let interestPA = 0
-                  if (mortgage) {
-                    const offsetAccounts = cashAssets.filter(a => a.isOffset && a.linkedMortgageId === mortgage.id)
-                    const totalOffset = offsetAccounts.reduce((sum, a) => sum + a.currentValue, 0)
-                    const effectiveBalance = Math.max(0, mortgage.currentBalance - totalOffset)
-                    interestPA = effectiveBalance * mortgage.interestRatePA
-                  }
-
-                  const netCashflow = netRentPA - expensesPA - interestPA
-                  const benefit = netCashflow < 0 ? Math.abs(netCashflow) * marginalRate : 0
-
-                  return (
-                    <div key={prop.id} className="space-y-1 mb-3">
-                      <p className="text-sm font-semibold">{prop.name}</p>
-                      <Row label="Gross Rent" value={formatCurrency(netRentPA)} indent />
-                      <Row label="Expenses" value={`(${formatCurrency(expensesPA)})`} indent color="text-red-400" />
-                      <Row label="Interest" value={`(${formatCurrency(interestPA)})`} indent color="text-red-400" />
-                      <Row label="Net Position" value={formatCurrency(netCashflow)} indent color={netCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-                      {benefit > 0 && (
-                        <Row label="Tax Benefit" value={formatCurrency(benefit)} indent color="text-green-400" />
-                      )}
+              {/* Investment-purpose personal loans */}
+              {negGearingDetail.investmentLoanDetails.length > 0 && (
+                <>
+                  <div className="h-3" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Investment Personal Loans</p>
+                  {negGearingDetail.investmentLoanDetails.map(detail => (
+                    <div key={detail.loanId} className="space-y-1 mb-3">
+                      <p className="text-sm font-semibold">{detail.loanName}</p>
+                      <Row label="Interest (deductible)" value={`(${formatCurrency(detail.interestPA)})`} indent color="text-red-400" />
+                      <Row label="Tax Benefit" value={formatCurrency(detail.benefit)} indent color="text-green-400" />
                     </div>
-                  )
-                })
+                  ))}
+                </>
               )}
 
               <div className="h-3" />

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assets Page — Design Mockups</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: #e2e8f0; }
+  .picker { position: sticky; top: 0; z-index: 10; background: #0f172a; padding: 16px 32px; display: flex; gap: 12px; align-items: center; }
+  .picker span { color: #94a3b8; font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .picker button { padding: 8px 20px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: #cbd5e1; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .picker button.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+  .picker button:hover:not(.active) { background: #1e293b; }
+  .mockup { display: none; }
+  .mockup.active { display: block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ============================================ */
+  /* OPTION A — Gradient Headers + Color Accents  */
+  /* ============================================ */
+  .a-page { background: #f8fafc; min-height: 100vh; }
+  .a-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 24px; }
+  .a-top h1 { font-size: 26px; font-weight: 800; color: #0f172a; }
+  .a-top p { font-size: 14px; color: #64748b; }
+
+  .a-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .a-kpi { border-radius: 14px; padding: 20px; color: white; position: relative; overflow: hidden; }
+  .a-kpi::after { content: ''; position: absolute; top: -40%; right: -15%; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .a-kpi .label { font-size: 12px; font-weight: 500; opacity: 0.9; letter-spacing: 0.3px; text-transform: none; text-align: left; margin: 0; color: rgba(255,255,255,0.9); }
+  .a-kpi .value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+  .a-kpi-1 { background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%); }
+  .a-kpi-2 { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); }
+  .a-kpi-3 { background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); }
+  .a-kpi-4 { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
+
+  .a-section { background: white; border-radius: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+  .a-section-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; }
+  .a-section-left { display: flex; align-items: center; gap: 10px; }
+  .a-section-left .emoji { font-size: 22px; }
+  .a-section-left .name { font-weight: 700; font-size: 15px; color: #0f172a; }
+  .a-section-left .cnt { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .a-section-total { font-weight: 800; font-size: 18px; }
+
+  .a-section.cash { border-left: 4px solid #f59e0b; }
+  .a-section.cash .cnt { background: #fef3c7; color: #92400e; }
+  .a-section.cash .a-section-total { color: #d97706; }
+
+  .a-section.stocks { border-left: 4px solid #8b5cf6; }
+  .a-section.stocks .cnt { background: #ede9fe; color: #5b21b6; }
+  .a-section.stocks .a-section-total { color: #7c3aed; }
+
+  .a-section.super { border-left: 4px solid #ec4899; }
+  .a-section.super .cnt { background: #fce7f3; color: #9d174d; }
+  .a-section.super .a-section-total { color: #db2777; }
+
+  .a-section.vehicles { border-left: 4px solid #f97316; }
+  .a-section.vehicles .cnt { background: #ffedd5; color: #9a3412; }
+  .a-section.vehicles .a-section-total { color: #ea580c; }
+
+  .a-section.other { border-left: 4px solid #6366f1; }
+  .a-section.other .cnt { background: #e0e7ff; color: #3730a3; }
+  .a-section.other .a-section-total { color: #4f46e5; }
+
+  .a-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid #f1f5f9; }
+  .a-row .item-name { font-size: 14px; color: #334155; }
+  .a-row .item-sub { font-size: 11px; color: #3b82f6; margin-left: 6px; }
+  .a-row .item-right { display: flex; align-items: center; gap: 12px; }
+  .a-row .item-val { font-weight: 600; font-size: 14px; color: #0f172a; }
+  .a-row .item-actions { display: flex; gap: 6px; }
+  .a-row .item-actions button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 6px; color: #94a3b8; transition: all 0.15s; }
+  .a-row .item-actions button:hover { background: #f1f5f9; color: #475569; }
+  .a-row .item-actions .del:hover { background: #fef2f2; color: #ef4444; }
+
+  .a-add-btn { display: flex; align-items: center; gap: 6px; margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .a-add-btn:hover { background: #1d4ed8; }
+
+  /* ============================================ */
+  /* OPTION B — Dark Premium Glass               */
+  /* ============================================ */
+  .b-page { background: #0f172a; min-height: 100vh; }
+  .b-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 24px; }
+  .b-top h1 { font-size: 26px; font-weight: 800; color: #f1f5f9; }
+  .b-top p { font-size: 14px; color: #64748b; }
+
+  .b-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .b-kpi { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; position: relative; overflow: hidden; backdrop-filter: blur(8px); }
+  .b-kpi .label { font-size: 12px; color: #64748b; font-weight: 500; text-align: left; margin: 0; text-transform: none; }
+  .b-kpi .value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+  .b-kpi-1 .value { color: #60a5fa; }
+  .b-kpi-2 .value { color: #c4b5fd; }
+  .b-kpi-3 .value { color: #5eead4; }
+  .b-kpi-4 .value { color: #4ade80; }
+
+  .b-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+  .b-section-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; }
+  .b-section-left { display: flex; align-items: center; gap: 10px; }
+  .b-section-left .emoji { font-size: 22px; }
+  .b-section-left .name { font-weight: 700; font-size: 15px; color: #e2e8f0; }
+  .b-section-left .cnt { font-size: 11px; color: #475569; font-weight: 600; }
+  .b-section-total { font-weight: 800; font-size: 18px; }
+
+  .b-section.cash .b-section-total { color: #fbbf24; }
+  .b-section.stocks .b-section-total { color: #a78bfa; }
+  .b-section.super .b-section-total { color: #f472b6; }
+  .b-section.vehicles .b-section-total { color: #fb923c; }
+  .b-section.other .b-section-total { color: #818cf8; }
+
+  .b-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 20px; border-top: 1px solid rgba(255,255,255,0.04); }
+  .b-row .item-name { font-size: 14px; color: #94a3b8; }
+  .b-row .item-sub { font-size: 11px; color: #3b82f6; margin-left: 6px; }
+  .b-row .item-right { display: flex; align-items: center; gap: 12px; }
+  .b-row .item-val { font-weight: 600; font-size: 14px; color: #e2e8f0; }
+  .b-row .item-actions { display: flex; gap: 6px; }
+  .b-row .item-actions button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 6px; color: #475569; transition: all 0.15s; }
+  .b-row .item-actions button:hover { background: rgba(255,255,255,0.06); color: #94a3b8; }
+  .b-row .item-actions .del:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+  .b-add-btn { display: flex; align-items: center; gap: 6px; margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .b-add-btn:hover { background: #2563eb; }
+
+  /* SVG icons inline */
+  .icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="picker">
+  <span>Mockup:</span>
+  <button class="active" onclick="show('a')">A — Gradient + Accents</button>
+  <button onclick="show('b')">B — Dark Premium</button>
+</div>
+
+<!-- ==================== OPTION A ==================== -->
+<div id="mockup-a" class="mockup active">
+<div class="a-page">
+<div class="container">
+
+  <div class="a-top">
+    <h1>Assets</h1>
+    <p>— Manage your cash, shares, super, vehicles & property</p>
+  </div>
+
+  <div class="a-kpi-grid">
+    <div class="a-kpi a-kpi-1">
+      <div class="label">Total Assets</div>
+      <div class="value">$8,032,074</div>
+    </div>
+    <div class="a-kpi a-kpi-2">
+      <div class="label">Financial Assets</div>
+      <div class="value">$952,074</div>
+    </div>
+    <div class="a-kpi a-kpi-3">
+      <div class="label">Properties</div>
+      <div class="value">$7,080,000</div>
+    </div>
+    <div class="a-kpi a-kpi-4">
+      <div class="label">Total Equity</div>
+      <div class="value">$3,565,000</div>
+    </div>
+  </div>
+
+  <!-- Cash & Savings -->
+  <div class="a-section cash">
+    <div class="a-section-head">
+      <div class="a-section-left">
+        <span class="emoji">💰</span>
+        <span class="name">Cash & Savings</span>
+        <span class="cnt">5</span>
+      </div>
+      <span class="a-section-total">$59,300</span>
+    </div>
+    <div class="a-row"><span class="item-name">John Savings CBA</span><div class="item-right"><span class="item-val">$2,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">NAB <span class="item-sub">· Offset on Jacaranda Mortgage</span></span><div class="item-right"><span class="item-val">$25,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Commsec - holdings</span><div class="item-right"><span class="item-val">$11,800</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Superhero - holdings</span><div class="item-right"><span class="item-val">$20,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Cash</span><div class="item-right"><span class="item-val">$500</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Shares / Stocks -->
+  <div class="a-section stocks">
+    <div class="a-section-head">
+      <div class="a-section-left">
+        <span class="emoji">📈</span>
+        <span class="name">Shares / Stocks</span>
+        <span class="cnt">5</span>
+      </div>
+      <span class="a-section-total">$261,774</span>
+    </div>
+    <div class="a-row"><span class="item-name">Superhero - BITU</span><div class="item-right"><span class="item-val">$127,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Commsec - BITU</span><div class="item-right"><span class="item-val">$31,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Superhero - WDS</span><div class="item-right"><span class="item-val">$20,027</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Superhero - UCO</span><div class="item-right"><span class="item-val">$17,747</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Superhero - ETHT</span><div class="item-right"><span class="item-val">$66,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Superannuation -->
+  <div class="a-section super">
+    <div class="a-section-head">
+      <div class="a-section-left">
+        <span class="emoji">🏦</span>
+        <span class="name">Superannuation</span>
+        <span class="cnt">2</span>
+      </div>
+      <span class="a-section-total">$300,000</span>
+    </div>
+    <div class="a-row"><span class="item-name">SMSF</span><div class="item-right"><span class="item-val">$200,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="a-row"><span class="item-name">Super - Bovem</span><div class="item-right"><span class="item-val">$100,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Vehicles -->
+  <div class="a-section vehicles">
+    <div class="a-section-head">
+      <div class="a-section-left">
+        <span class="emoji">🚗</span>
+        <span class="name">Vehicles</span>
+        <span class="cnt">1</span>
+      </div>
+      <span class="a-section-total">$31,000</span>
+    </div>
+    <div class="a-row"><span class="item-name">Tesla 3</span><div class="item-right"><span class="item-val">$31,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Other -->
+  <div class="a-section other">
+    <div class="a-section-head">
+      <div class="a-section-left">
+        <span class="emoji">📦</span>
+        <span class="name">Other</span>
+        <span class="cnt">1</span>
+      </div>
+      <span class="a-section-total">$300,000</span>
+    </div>
+    <div class="a-row"><span class="item-name">Mortgage Redraw</span><div class="item-right"><span class="item-val">$300,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <button class="a-add-btn">＋ Add Asset</button>
+
+</div>
+</div>
+</div>
+
+<!-- ==================== OPTION B ==================== -->
+<div id="mockup-b" class="mockup">
+<div class="b-page">
+<div class="container">
+
+  <div class="b-top">
+    <h1>Assets</h1>
+    <p>— Manage your cash, shares, super, vehicles & property</p>
+  </div>
+
+  <div class="b-kpi-grid">
+    <div class="b-kpi b-kpi-1">
+      <div class="label">Total Assets</div>
+      <div class="value">$8,032,074</div>
+    </div>
+    <div class="b-kpi b-kpi-2">
+      <div class="label">Financial Assets</div>
+      <div class="value">$952,074</div>
+    </div>
+    <div class="b-kpi b-kpi-3">
+      <div class="label">Properties</div>
+      <div class="value">$7,080,000</div>
+    </div>
+    <div class="b-kpi b-kpi-4">
+      <div class="label">Total Equity</div>
+      <div class="value">$3,565,000</div>
+    </div>
+  </div>
+
+  <!-- Cash & Savings -->
+  <div class="b-section cash">
+    <div class="b-section-head">
+      <div class="b-section-left">
+        <span class="emoji">💰</span>
+        <span class="name">Cash & Savings</span>
+        <span class="cnt">5</span>
+      </div>
+      <span class="b-section-total">$59,300</span>
+    </div>
+    <div class="b-row"><span class="item-name">John Savings CBA</span><div class="item-right"><span class="item-val">$2,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">NAB <span class="item-sub">· Offset on Jacaranda Mortgage</span></span><div class="item-right"><span class="item-val">$25,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Commsec - holdings</span><div class="item-right"><span class="item-val">$11,800</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Superhero - holdings</span><div class="item-right"><span class="item-val">$20,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Cash</span><div class="item-right"><span class="item-val">$500</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Shares / Stocks -->
+  <div class="b-section stocks">
+    <div class="b-section-head">
+      <div class="b-section-left">
+        <span class="emoji">📈</span>
+        <span class="name">Shares / Stocks</span>
+        <span class="cnt">5</span>
+      </div>
+      <span class="b-section-total">$261,774</span>
+    </div>
+    <div class="b-row"><span class="item-name">Superhero - BITU</span><div class="item-right"><span class="item-val">$127,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Commsec - BITU</span><div class="item-right"><span class="item-val">$31,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Superhero - WDS</span><div class="item-right"><span class="item-val">$20,027</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Superhero - UCO</span><div class="item-right"><span class="item-val">$17,747</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Superhero - ETHT</span><div class="item-right"><span class="item-val">$66,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Superannuation -->
+  <div class="b-section super">
+    <div class="b-section-head">
+      <div class="b-section-left">
+        <span class="emoji">🏦</span>
+        <span class="name">Superannuation</span>
+        <span class="cnt">2</span>
+      </div>
+      <span class="b-section-total">$300,000</span>
+    </div>
+    <div class="b-row"><span class="item-name">SMSF</span><div class="item-right"><span class="item-val">$200,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+    <div class="b-row"><span class="item-name">Super - Bovem</span><div class="item-right"><span class="item-val">$100,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Vehicles -->
+  <div class="b-section vehicles">
+    <div class="b-section-head">
+      <div class="b-section-left">
+        <span class="emoji">🚗</span>
+        <span class="name">Vehicles</span>
+        <span class="cnt">1</span>
+      </div>
+      <span class="b-section-total">$31,000</span>
+    </div>
+    <div class="b-row"><span class="item-name">Tesla 3</span><div class="item-right"><span class="item-val">$31,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <!-- Other -->
+  <div class="b-section other">
+    <div class="b-section-head">
+      <div class="b-section-left">
+        <span class="emoji">📦</span>
+        <span class="name">Other</span>
+        <span class="cnt">1</span>
+      </div>
+      <span class="b-section-total">$300,000</span>
+    </div>
+    <div class="b-row"><span class="item-name">Mortgage Redraw</span><div class="item-right"><span class="item-val">$300,000</span><div class="item-actions"><button title="Edit">✏️</button><button class="del" title="Delete">🗑️</button></div></div></div>
+  </div>
+
+  <button class="b-add-btn">＋ Add Asset</button>
+
+</div>
+</div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.mockup').forEach(m => m.classList.remove('active'));
+  document.getElementById('mockup-' + id).classList.add('active');
+  document.querySelectorAll('.picker button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

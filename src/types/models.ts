@@ -99,6 +99,8 @@ export interface Liability extends BaseEntity {
   offsetAccountIds?: string[]
   mortgageType?: MortgageType
   loanTermYears?: number
+  /** When true, interest on this loan is deductible for negative gearing (e.g. personal loan used for investment) */
+  isInvestmentPurpose?: boolean
 }
 
 export interface IncomeItem extends BaseEntity {
