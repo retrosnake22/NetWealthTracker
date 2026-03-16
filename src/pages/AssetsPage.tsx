@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
-import type { Asset, Property, AssetCategory } from '@/types/models'
+import type { Asset, Property, AssetCategory, MortgageType } from '@/types/models'
 import { formatCurrency } from '@/lib/format'
 import { PropertyPnL } from '@/components/properties/PropertyPnL'
 
@@ -40,6 +40,23 @@ const CATEGORY_COLORS: Record<string, { border: string; badge: string; badgeText
 	vehicles: { border: 'border-l-orange-500',  badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300', badgeText: '', total: 'text-orange-600', darkTotal: 'dark:text-orange-400' },
 	other:    { border: 'border-l-slate-400',   badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',    badgeText: '', total: 'text-slate-600', darkTotal: 'dark:text-slate-400' },
 	property: { border: 'border-l-teal-500',    badge: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',     badgeText: '', total: 'text-teal-600', darkTotal: 'dark:text-teal-400' },
+}
+
+// Mortgage calculation helpers (same as wizard)
+function calcMortgageMonthly(balance: number, annualRate: number, type: MortgageType, termYears: number): number {
+	if (type === 'interest_only') return (balance * annualRate) / 12
+	if (annualRate === 0) return balance / (termYears * 12)
+	const r = annualRate / 12
+	const n = termYears * 12
+	return balance * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+}
+
+function autoCalcRepayment(balance: string, rate: string, type: MortgageType, term: string): string {
+	const bal = parseFloat(balance) || 0
+	const r = (parseFloat(rate) || 0) / 100
+	const t = parseInt(term) || 30
+	if (bal <= 0) return ''
+	return Math.round(calcMortgageMonthly(bal, r, type, t)).toString()
 }
 
 export default function AssetsPage() {
@@ -115,6 +132,13 @@ export default function AssetsPage() {
 		councilRatesPA: '', waterRatesPA: '', insurancePA: '',
 		strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
 		linkedMortgageId: '',
+		hasMortgage: false,
+		mortgageBalance: '',
+		interestRate: '',
+		mortgageType: 'principal_and_interest' as MortgageType,
+		loanTermYears: '30',
+		repayment: '',
+		repaymentOverridden: false,
 	})
 
 	const filteredAssets = useMemo(() => {
@@ -146,6 +170,17 @@ export default function AssetsPage() {
 			if (m) return m
 		}
 		return liabilities.find(l => l.linkedPropertyId === p.id)
+	}
+
+	// Auto-calc repayment when mortgage fields change
+	const updateMortgageField = (updates: Partial<typeof propForm>) => {
+		setPropForm(prev => {
+			const merged = { ...prev, ...updates }
+			if (!merged.repaymentOverridden && merged.mortgageBalance && merged.interestRate) {
+				merged.repayment = autoCalcRepayment(merged.mortgageBalance, merged.interestRate, merged.mortgageType, merged.loanTermYears)
+			}
+			return merged
+		})
 	}
 
 	// Calculate total offset balance for a mortgage
@@ -504,11 +539,15 @@ export default function AssetsPage() {
 			councilRatesPA: '', waterRatesPA: '', insurancePA: '',
 			strataPA: '', maintenanceBudgetPA: '', propertyManagementPct: '', landTaxPA: '',
 			linkedMortgageId: '',
+			hasMortgage: false, mortgageBalance: '', interestRate: '',
+			mortgageType: 'principal_and_interest' as MortgageType, loanTermYears: '30',
+			repayment: '', repaymentOverridden: false,
 		})
 		setEditingProperty(null)
 		setShowAddProperty(true)
 	}
 	function openEditProperty(p: Property) {
+		const mortgage = p.mortgageId ? liabilities.find(l => l.id === p.mortgageId) : findMortgage(p)
 		setPropForm({
 			name: p.name,
 			type: p.type,
@@ -522,13 +561,19 @@ export default function AssetsPage() {
 			maintenanceBudgetPA: String(p.maintenanceBudgetPA ?? ''),
 			propertyManagementPct: String(p.propertyManagementPct ?? ''),
 			landTaxPA: String(p.landTaxPA ?? ''),
-			linkedMortgageId: p.mortgageId ?? findMortgage(p)?.id ?? '',
+			linkedMortgageId: mortgage?.id ?? '',
+			hasMortgage: !!mortgage,
+			mortgageBalance: mortgage ? String(mortgage.currentBalance) : '',
+			interestRate: mortgage ? (mortgage.interestRatePA * 100).toFixed(2) : '',
+			mortgageType: mortgage?.mortgageType ?? 'principal_and_interest',
+			loanTermYears: mortgage?.loanTermYears ? String(mortgage.loanTermYears) : '30',
+			repayment: mortgage ? String(mortgage.minimumRepayment) : '',
+			repaymentOverridden: false,
 		})
 		setEditingProperty(p)
 		setShowAddProperty(true)
 	}
 	function saveProperty() {
-		const selectedMortgageId = propForm.linkedMortgageId || undefined
 		const data: any = {
 			name: propForm.name,
 			type: propForm.type,
@@ -543,7 +588,6 @@ export default function AssetsPage() {
 			maintenanceBudgetPA: parseFloat(propForm.maintenanceBudgetPA) || 0,
 			propertyManagementPct: parseFloat(propForm.propertyManagementPct) || 0,
 			landTaxPA: parseFloat(propForm.landTaxPA) || 0,
-			mortgageId: selectedMortgageId,
 		}
 
 		let propertyId = editingProperty?.id
@@ -555,14 +599,46 @@ export default function AssetsPage() {
 			propertyId = newProps[newProps.length - 1]?.id
 		}
 
-		// Update the linked mortgage's linkedPropertyId (both directions)
-		if (propertyId && selectedMortgageId) {
-			updateLiability(selectedMortgageId, { linkedPropertyId: propertyId })
-		}
+		// Handle mortgage: create, update, or remove
+		const existingMortgageId = editingProperty?.mortgageId || propForm.linkedMortgageId
+		if (propForm.hasMortgage) {
+			const mortBal = parseFloat(propForm.mortgageBalance) || 0
+			const mortRate = (parseFloat(propForm.interestRate) || 0) / 100
+			const mortRepayment = parseFloat(propForm.repayment) || 0
+			const mortTerm = parseInt(propForm.loanTermYears) || 30
 
-		// If we changed the mortgage link, clear the old mortgage's linkedPropertyId
-		if (editingProperty?.id && editingProperty.mortgageId && editingProperty.mortgageId !== selectedMortgageId) {
-			updateLiability(editingProperty.mortgageId, { linkedPropertyId: undefined })
+			if (existingMortgageId) {
+				// Update existing mortgage
+				updateLiability(existingMortgageId, {
+					currentBalance: mortBal,
+					interestRatePA: mortRate,
+					minimumRepayment: mortRepayment,
+					mortgageType: propForm.mortgageType,
+					loanTermYears: mortTerm,
+					linkedPropertyId: propertyId,
+				})
+				if (propertyId) updateProperty(propertyId, { mortgageId: existingMortgageId })
+			} else {
+				// Create new mortgage
+				addLiability({
+					name: `${propForm.name} Mortgage`,
+					category: 'mortgage',
+					currentBalance: mortBal,
+					interestRatePA: mortRate,
+					minimumRepayment: mortRepayment,
+					repaymentFrequency: 'monthly',
+					mortgageType: propForm.mortgageType,
+					loanTermYears: mortTerm,
+					linkedPropertyId: propertyId,
+				})
+				const newLiabs = useFinanceStore.getState().liabilities
+				const newMort = newLiabs[newLiabs.length - 1]
+				if (newMort && propertyId) updateProperty(propertyId, { mortgageId: newMort.id })
+			}
+		} else if (!propForm.hasMortgage && existingMortgageId) {
+			// Remove mortgage if user unchecked it
+			removeLiability(existingMortgageId)
+			if (propertyId) updateProperty(propertyId, { mortgageId: undefined })
 		}
 
 		setShowAddProperty(false)
@@ -1276,54 +1352,84 @@ export default function AssetsPage() {
 							</div>
 						</div>
 
-						{/* Linked Mortgage */}
+						{/* Mortgage Section */}
 						<div className="border-t pt-4">
-							<h4 className="font-semibold text-sm mb-3">Linked Mortgage</h4>
-							{mortgageLiabilities.length > 0 ? (
-								<>
-									<Select
-										value={propForm.linkedMortgageId || '_none'}
-										onValueChange={v => setPropForm(f => ({ ...f, linkedMortgageId: v === '_none' ? '' : v }))}
-									>
-										<SelectTrigger><SelectValue placeholder="Select a mortgage..." /></SelectTrigger>
-										<SelectContent>
-											<SelectItem value="_none">No mortgage linked</SelectItem>
-											{mortgageLiabilities.map(m => (
-												<SelectItem key={m.id} value={m.id}>
-													{m.name} — {formatCurrency(m.currentBalance)} @ {(m.interestRatePA * 100).toFixed(2)}%
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									{propForm.linkedMortgageId && (() => {
-										const info = getMortgageSummary(propForm.linkedMortgageId)
-										if (!info) return null
-										return (
-											<div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Balance</span>
-													<span className="font-medium">{formatCurrency(info.balance)}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Interest Rate</span>
-													<span className="font-medium">{info.rate.toFixed(2)}% p.a.</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-muted-foreground">Repayment</span>
-													<span className="font-medium">{formatCurrency(info.repayment)}{info.freq}</span>
-												</div>
-												<Separator className="my-2" />
-												<p className="text-xs text-muted-foreground">
-													Edit mortgage details in Liabilities
-												</p>
-											</div>
-										)
-									})()}
-								</>
-							) : (
-								<p className="text-sm text-muted-foreground">
-									No mortgages found. Add one in Liabilities first.
-								</p>
+							<label className="flex items-center gap-2 cursor-pointer">
+								<input
+									type="checkbox"
+									checked={propForm.hasMortgage}
+									onChange={e => setPropForm(f => ({ ...f, hasMortgage: e.target.checked }))}
+									className="rounded"
+								/>
+								<span className="text-sm font-medium">This property has a mortgage</span>
+							</label>
+
+							{propForm.hasMortgage && (
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+									<div className="space-y-1.5">
+										<Label className="text-xs">Mortgage Balance</Label>
+										<Input
+											type="number"
+											value={propForm.mortgageBalance}
+											onChange={e => updateMortgageField({ mortgageBalance: e.target.value })}
+											placeholder="0"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label className="text-xs">Mortgage Type</Label>
+										<Select value={propForm.mortgageType} onValueChange={(v: MortgageType) => updateMortgageField({ mortgageType: v })}>
+											<SelectTrigger><SelectValue /></SelectTrigger>
+											<SelectContent>
+												<SelectItem value="principal_and_interest">Principal & Interest</SelectItem>
+												<SelectItem value="interest_only">Interest Only</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="space-y-1.5">
+										<Label className="text-xs">Loan Term (years)</Label>
+										<Input
+											type="number"
+											value={propForm.loanTermYears}
+											onChange={e => updateMortgageField({ loanTermYears: e.target.value })}
+											placeholder="30"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label className="text-xs">Interest Rate (%)</Label>
+										<Input
+											type="number" step="0.01" min="0" max="30"
+											value={propForm.interestRate}
+											onChange={e => updateMortgageField({ interestRate: e.target.value })}
+											onBlur={e => {
+												const clamped = parseFloat(e.target.value || '0').toFixed(2)
+												updateMortgageField({ interestRate: clamped })
+											}}
+										/>
+									</div>
+									<div className="space-y-1.5 sm:col-span-2">
+										<Label className="text-xs">
+											Min. Monthly Repayment
+											{!propForm.repaymentOverridden && propForm.repayment ? ' (auto-calculated)' : ''}
+										</Label>
+										<Input
+											type="number"
+											value={propForm.repayment}
+											onChange={e => setPropForm(f => ({ ...f, repayment: e.target.value, repaymentOverridden: true }))}
+											placeholder="0"
+										/>
+										{propForm.repaymentOverridden && propForm.mortgageBalance && propForm.interestRate && (
+											<button
+												className="text-xs text-primary hover:underline"
+												onClick={() => {
+													const calc = autoCalcRepayment(propForm.mortgageBalance, propForm.interestRate, propForm.mortgageType, propForm.loanTermYears)
+													setPropForm(f => ({ ...f, repayment: calc, repaymentOverridden: false }))
+												}}
+											>
+												Reset to auto-calculated
+											</button>
+										)}
+									</div>
+								</div>
 							)}
 						</div>
 
