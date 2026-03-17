@@ -8,6 +8,19 @@ import type {
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
+export interface WhatIfMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface WhatIfConversation {
+  id: string
+  title: string
+  messages: WhatIfMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
 export interface FinanceState {
   // Data
   assets: Asset[]
@@ -18,6 +31,7 @@ export interface FinanceState {
   expenseActuals: ExpenseActual[]
   projectionSettings: ProjectionSettings
   userProfile: UserProfile
+  whatIfConversations: WhatIfConversation[]
 
   // Cloud sync
   resetStore: () => void
@@ -71,6 +85,11 @@ export interface FinanceState {
   // Projection Settings
   updateProjectionSettings: (settings: Partial<ProjectionSettings>) => void
   setSurplusAllocations: (allocations: SurplusAllocation[]) => void
+
+  // What If Conversations
+  addWhatIfConversation: (conv: WhatIfConversation) => void
+  updateWhatIfConversation: (id: string, updates: Partial<WhatIfConversation>) => void
+  removeWhatIfConversation: (id: string) => void
 }
 
 const now = () => new Date().toISOString()
@@ -114,6 +133,7 @@ export const useFinanceStore = create<FinanceState>()(
       expenseActuals: [],
       projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
       userProfile: { ...DEFAULT_PROFILE },
+      whatIfConversations: [],
 
       // Reset store to empty state (used on user switch)
       resetStore: () => set(() => ({
@@ -125,12 +145,13 @@ export const useFinanceStore = create<FinanceState>()(
         expenseActuals: [],
         projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
         userProfile: { ...DEFAULT_PROFILE },
+        whatIfConversations: [],
       })),
 
       // Cloud sync — replaces store data with cloud data
       hydrateFromCloud: (data: Record<string, unknown>) => set(() => {
         const hydrated: Record<string, unknown> = {}
-        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile']
+        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile', 'whatIfConversations']
         for (const key of keys) {
           if (data[key] !== undefined) {
             hydrated[key] = data[key]
@@ -299,6 +320,19 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       setSurplusAllocations: (allocations: SurplusAllocation[]) => set((state: FinanceState) => ({
         projectionSettings: { ...state.projectionSettings, surplusAllocations: allocations }
+      })),
+
+      // What If Conversations
+      addWhatIfConversation: (conv: WhatIfConversation) => set((state: FinanceState) => ({
+        whatIfConversations: [conv, ...state.whatIfConversations],
+      })),
+      updateWhatIfConversation: (id: string, updates: Partial<WhatIfConversation>) => set((state: FinanceState) => ({
+        whatIfConversations: state.whatIfConversations.map(c =>
+          c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c
+        ),
+      })),
+      removeWhatIfConversation: (id: string) => set((state: FinanceState) => ({
+        whatIfConversations: state.whatIfConversations.filter(c => c.id !== id),
       })),
     }),
     {

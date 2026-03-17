@@ -1,14 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Send, Loader2, RotateCcw, Lightbulb } from 'lucide-react'
-import { useFinanceStore } from '@/stores/useFinanceStore'
+import { Sparkles, Send, Loader2, Lightbulb, Trash2, Plus, MessageSquare } from 'lucide-react'
+import { useFinanceStore, type WhatIfConversation, type WhatIfMessage } from '@/stores/useFinanceStore'
 import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/format'
-
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-}
+import { generateId } from '@/lib/format'
 
 const EXAMPLE_QUESTIONS = [
   'What if I sold one of my investment properties and used the equity to pay down my mortgage?',
@@ -120,7 +116,6 @@ function MarkdownRenderer({ content }: { content: string }) {
 
   const renderInline = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = []
-    // Match **bold**, then *italic*, then `code`
     const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)/g
     let lastIndex = 0
     let match
@@ -141,7 +136,6 @@ function MarkdownRenderer({ content }: { content: string }) {
   while (i < lines.length) {
     const line = lines[i]
 
-    // Headings
     if (line.startsWith('#### ')) {
       elements.push(<h4 key={i} className="text-sm font-semibold text-foreground mt-4 mb-1">{renderInline(line.slice(5))}</h4>)
     } else if (line.startsWith('### ')) {
@@ -151,7 +145,6 @@ function MarkdownRenderer({ content }: { content: string }) {
     } else if (line.startsWith('# ')) {
       elements.push(<h1 key={i} className="text-lg font-bold text-foreground mt-4 mb-2">{renderInline(line.slice(2))}</h1>)
     }
-    // Blockquote
     else if (line.startsWith('> ')) {
       elements.push(
         <div key={i} className="border-l-2 border-purple-400/50 pl-3 py-1 my-2 text-sm text-purple-300 dark:text-purple-300 bg-purple-500/5 rounded-r-md">
@@ -159,7 +152,6 @@ function MarkdownRenderer({ content }: { content: string }) {
         </div>
       )
     }
-    // Bullet list
     else if (line.match(/^[-*] /)) {
       const items: React.ReactNode[] = []
       while (i < lines.length && lines[i].match(/^[-*] /)) {
@@ -167,9 +159,8 @@ function MarkdownRenderer({ content }: { content: string }) {
         i++
       }
       elements.push(<ul key={`ul-${i}`} className="list-disc list-outside ml-4 my-1.5 space-y-0.5">{items}</ul>)
-      continue // skip i++ at bottom
+      continue
     }
-    // Numbered list
     else if (line.match(/^\d+\. /)) {
       const items: React.ReactNode[] = []
       while (i < lines.length && lines[i].match(/^\d+\. /)) {
@@ -179,14 +170,12 @@ function MarkdownRenderer({ content }: { content: string }) {
       elements.push(<ol key={`ol-${i}`} className="list-decimal list-outside ml-4 my-1.5 space-y-0.5">{items}</ol>)
       continue
     }
-    // Table (simple pipe table)
     else if (line.includes('|') && line.trim().startsWith('|')) {
       const tableRows: string[] = []
       while (i < lines.length && lines[i].includes('|') && lines[i].trim().startsWith('|')) {
         tableRows.push(lines[i])
         i++
       }
-      // Filter out separator rows (|---|---|)
       const dataRows = tableRows.filter(r => !r.match(/^\|[\s-:|]+\|$/))
       if (dataRows.length > 0) {
         const headerCells = dataRows[0].split('|').filter(c => c.trim()).map(c => c.trim())
@@ -219,15 +208,12 @@ function MarkdownRenderer({ content }: { content: string }) {
       }
       continue
     }
-    // Horizontal rule
     else if (line.match(/^---+$/)) {
       elements.push(<hr key={i} className="border-border/30 my-3" />)
     }
-    // Empty line
     else if (line.trim() === '') {
       elements.push(<div key={i} className="h-2" />)
     }
-    // Regular paragraph
     else {
       elements.push(<p key={i} className="text-sm leading-relaxed my-1">{renderInline(line)}</p>)
     }
@@ -239,18 +225,26 @@ function MarkdownRenderer({ content }: { content: string }) {
 }
 
 export function WhatIfPage() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const conversations = useFinanceStore(s => s.whatIfConversations) ?? []
+  const addConversation = useFinanceStore(s => s.addWhatIfConversation)
+  const updateConversation = useFinanceStore(s => s.updateWhatIfConversation)
+  const removeConversation = useFinanceStore(s => s.removeWhatIfConversation)
+
+  const [activeConvId, setActiveConvId] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // Get active conversation
+  const activeConv = conversations.find(c => c.id === activeConvId) ?? null
+  const messages = activeConv?.messages ?? []
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto'
@@ -258,12 +252,47 @@ export function WhatIfPage() {
     }
   }, [input])
 
+  const startNewConversation = () => {
+    setActiveConvId(null)
+    setError(null)
+  }
+
+  const deleteConversation = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    removeConversation(id)
+    if (activeConvId === id) {
+      setActiveConvId(null)
+    }
+  }
+
   const askQuestion = async (question: string) => {
     if (!question.trim() || loading) return
 
     setError(null)
-    const userMessage: Message = { role: 'user', content: question.trim() }
-    setMessages(prev => [...prev, userMessage])
+    const userMessage: WhatIfMessage = { role: 'user', content: question.trim() }
+
+    // Create or update conversation
+    let convId = activeConvId
+    if (!convId) {
+      // New conversation
+      convId = generateId()
+      const title = question.trim().length > 60 ? question.trim().slice(0, 57) + '...' : question.trim()
+      const newConv: WhatIfConversation = {
+        id: convId,
+        title,
+        messages: [userMessage],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      addConversation(newConv)
+      setActiveConvId(convId)
+    } else {
+      // Add to existing conversation
+      updateConversation(convId, {
+        messages: [...messages, userMessage],
+      })
+    }
+
     setInput('')
     setLoading(true)
 
@@ -271,7 +300,6 @@ export function WhatIfPage() {
       const state = useFinanceStore.getState()
       const financialContext = buildFinancialContext(state)
 
-      // Use fetch directly for better error visibility
       const session = await supabase.auth.getSession()
       const accessToken = session.data.session?.access_token
 
@@ -291,11 +319,18 @@ export function WhatIfPage() {
         throw new Error(data?.error || `Server error ${res.status}: ${res.statusText}`)
       }
 
-      const assistantMessage: Message = {
+      const assistantMessage: WhatIfMessage = {
         role: 'assistant',
         content: data.answer || 'No response generated.',
       }
-      setMessages(prev => [...prev, assistantMessage])
+
+      // Get current messages from store (may have changed)
+      const currentConv = useFinanceStore.getState().whatIfConversations.find(c => c.id === convId)
+      if (currentConv) {
+        updateConversation(convId!, {
+          messages: [...currentConv.messages, assistantMessage],
+        })
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
       setError(msg)
@@ -316,149 +351,185 @@ export function WhatIfPage() {
     }
   }
 
-  const clearChat = () => {
-    setMessages([])
-    setError(null)
-  }
-
   const hasMessages = messages.length > 0
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
-      {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-border/40">
-        <div className="flex items-center justify-between">
+    <div className="flex h-[calc(100vh-64px)]">
+      {/* Conversation sidebar */}
+      <div className="w-64 flex-shrink-0 border-r border-border/40 flex flex-col bg-muted/20">
+        <div className="p-3 border-b border-border/40">
+          <button
+            onClick={startNewConversation}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-400 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New question
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {conversations.length === 0 ? (
+            <p className="text-xs text-muted-foreground/50 text-center py-4 px-2">
+              Your conversations will appear here
+            </p>
+          ) : (
+            conversations.map(conv => (
+              <div
+                key={conv.id}
+                onClick={() => { setActiveConvId(conv.id); setError(null) }}
+                className={`group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-left ${
+                  activeConvId === conv.id
+                    ? 'bg-purple-500/15 text-foreground'
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 opacity-50" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{conv.title}</p>
+                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                    {conv.messages.length} message{conv.messages.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={(e) => deleteConversation(conv.id, e)}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-all flex-shrink-0"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Main chat area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-border/40">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-purple-500/15">
               <Sparkles className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">What if...?</h1>
+              <h1 className="text-lg font-semibold">
+                {activeConv ? activeConv.title : 'What if...?'}
+              </h1>
               <p className="text-xs text-muted-foreground">
                 Ask AI questions about your finances — powered by your real data
               </p>
             </div>
           </div>
-          {hasMessages && (
-            <button
-              onClick={clearChat}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Clear
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {!hasMessages ? (
-          <div className="flex flex-col items-center justify-center h-full max-w-xl mx-auto">
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-500/10 mb-4">
-              <Sparkles className="w-7 h-7 text-purple-400" />
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {!hasMessages ? (
+            <div className="flex flex-col items-center justify-center h-full max-w-xl mx-auto">
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-500/10 mb-4">
+                <Sparkles className="w-7 h-7 text-purple-400" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Explore scenarios</h2>
+              <p className="text-sm text-muted-foreground text-center mb-8">
+                Ask any "what if" question about your finances. The AI analyses your
+                actual assets, liabilities, income and expenses to give you personalised answers.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                {EXAMPLE_QUESTIONS.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => askQuestion(q)}
+                    className="flex items-start gap-2.5 text-left px-3.5 py-3 rounded-lg border border-border/50 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all text-xs text-muted-foreground hover:text-foreground group"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5 mt-0.5 text-purple-400/50 group-hover:text-purple-400 flex-shrink-0" />
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Explore scenarios</h2>
-            <p className="text-sm text-muted-foreground text-center mb-8">
-              Ask any "what if" question about your finances. The AI analyses your
-              actual assets, liabilities, income and expenses to give you personalised answers.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-              {EXAMPLE_QUESTIONS.map((q, i) => (
-                <button
+          ) : (
+            <div className="max-w-3xl mx-auto space-y-4">
+              {messages.map((msg, i) => (
+                <div
                   key={i}
-                  onClick={() => askQuestion(q)}
-                  className="flex items-start gap-2.5 text-left px-3.5 py-3 rounded-lg border border-border/50 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all text-xs text-muted-foreground hover:text-foreground group"
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <Lightbulb className="w-3.5 h-3.5 mt-0.5 text-purple-400/50 group-hover:text-purple-400 flex-shrink-0" />
-                  {q}
-                </button>
+                  {msg.role === 'user' ? (
+                    <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md bg-purple-500/20 text-sm">
+                      {msg.content}
+                    </div>
+                  ) : (
+                    <Card className="max-w-[90%] border-border/40">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-4 h-4 text-purple-400" />
+                          <span className="text-xs font-medium text-purple-400">AI Analysis</span>
+                        </div>
+                        <div className="text-sm leading-relaxed max-w-none text-muted-foreground">
+                          <MarkdownRenderer content={msg.content} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               ))}
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto space-y-4">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role === 'user' ? (
-                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md bg-purple-500/20 text-sm">
-                    {msg.content}
-                  </div>
-                ) : (
-                  <Card className="max-w-[90%] border-border/40">
+
+              {loading && (
+                <div className="flex justify-start">
+                  <Card className="border-border/40">
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-purple-400" />
-                        <span className="text-xs font-medium text-purple-400">AI Analysis</span>
-                      </div>
-                      <div className="text-sm leading-relaxed max-w-none text-muted-foreground">
-                        <MarkdownRenderer content={msg.content} />
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Analysing your finances...</span>
                       </div>
                     </CardContent>
                   </Card>
-                )}
-              </div>
-            ))}
-
-            {loading && (
-              <div className="flex justify-start">
-                <Card className="border-border/40">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-                      <span className="text-sm text-muted-foreground">Analysing your finances...</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex justify-start">
-                <div className="px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
-                  {error}
                 </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      {/* Input area */}
-      <div className="flex-shrink-0 px-6 py-4 border-t border-border/40">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-2 rounded-xl border border-border/50 focus-within:border-purple-500/40 bg-muted/30 px-4 py-2 transition-colors">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="What if I..."
-              rows={1}
-              disabled={loading}
-              className="flex-1 bg-transparent border-none outline-none resize-none text-sm placeholder:text-muted-foreground/50 min-h-[36px] py-2"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || loading}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 disabled:opacity-30 disabled:hover:bg-purple-500 transition-colors mb-0.5"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 text-white" />
               )}
-            </button>
-          </div>
-          <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
-            AI analysis based on your NWT data • Not financial advice • Powered by GPT-4o-mini
-          </p>
-        </form>
+
+              {error && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+                    {error}
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Input area */}
+        <div className="flex-shrink-0 px-6 py-4 border-t border-border/40">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+            <div className="flex items-end gap-2 rounded-xl border border-border/50 focus-within:border-purple-500/40 bg-muted/30 px-4 py-2 transition-colors">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="What if I..."
+                rows={1}
+                disabled={loading}
+                className="flex-1 bg-transparent border-none outline-none resize-none text-sm placeholder:text-muted-foreground/50 min-h-[36px] py-2"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || loading}
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 disabled:opacity-30 disabled:hover:bg-purple-500 transition-colors mb-0.5"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 text-white" />
+                )}
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
+              AI analysis based on your NWT data • Not financial advice • Powered by GPT-4o-mini
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   )
