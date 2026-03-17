@@ -269,8 +269,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                         <span className="truncate flex-1">{item.label}</span>
                       </NavLink>
 
-                      {/* Sub-items — only shown when section is expanded */}
-                      {hasSubItems && expanded && (
+                      {/* Sub-items — always visible */}
+                      {hasSubItems && (
                         <div className="pl-4 pr-1 pb-1 space-y-0.5 mt-0.5">
                           {subItems.map((sub: any) => {
                             const subActive = isItemActive(sub.to)
