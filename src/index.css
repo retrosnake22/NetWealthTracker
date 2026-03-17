@@ -319,26 +319,30 @@
       animation: count-up 0.6s ease-out;
     }
 
-    /* ─── Sidebar Section Styles — Option B: Grouped Cards with Gradient Accents ─── */
-    /* Matches mockup HTML exactly: sidebar-option-b---grouped-cards-with-gradient-accents.html */
+    /* ═══════════════════════════════════════════════════════════════════
+       SIDEBAR — Option B: Grouped Cards with Gradient Accents
+       Copied VERBATIM from mockup: sidebar-option-b---grouped-cards-with-gradient-accents.html
+       Class names match mockup exactly: s-blue, s-emerald, icon-badge, etc.
+       ═══════════════════════════════════════════════════════════════════ */
 
-    /* Section card container */
+    /* Sidebar container — mockup: .sidebar */
+    .sidebar-container {
+      border-right: 1px solid rgba(99,130,191,0.12);
+    }
+    .dark .sidebar-container { background: #0D1425; }
+    :root .sidebar-container { background: #ffffff; border-right-color: #e5e7eb; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+
+    /* Section card — mockup: .section-card */
     .section-card {
-      position: relative;
-      overflow: hidden;
       border-radius: 12px;
+      overflow: hidden;
+      position: relative;
       padding: 6px;
     }
-    .dark .section-card {
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(99, 130, 191, 0.08);
-    }
-    :root .section-card {
-      background: #f9fafb;
-      border: 1px solid #f0f0f0;
-    }
+    .dark .section-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(99,130,191,0.08); }
+    :root .section-card { background: #f9fafb; border: 1px solid #f0f0f0; }
 
-    /* Gradient LEFT border accent */
+    /* Left gradient accent — mockup: .section-card::before */
     .section-card::before {
       content: '';
       position: absolute;
@@ -348,117 +352,107 @@
       width: 3px;
       border-radius: 0 3px 3px 0;
     }
+    .s-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+    .s-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
+    .s-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
+    .s-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
+    .s-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
+    .s-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
 
-    /* ─── Nav item base styles ─── */
-    .dark .nav-item-default { color: rgba(255, 255, 255, 0.65); }
-    :root .nav-item-default { color: #4b5563; }
-    .dark .nav-item-default:hover,
-    .dark .hover\:nav-item-hover:hover { background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.9); }
-    :root .nav-item-default:hover,
-    :root .hover\:nav-item-hover:hover { background: rgba(0, 0, 0, 0.03); color: #111827; }
+    /* Section header label — mockup: .section-header-label */
+    .dark .s-blue .section-header-label { color: #60a5fa; }
+    .dark .s-emerald .section-header-label { color: #34d399; }
+    .dark .s-rose .section-header-label { color: #fb7185; }
+    .dark .s-purple .section-header-label { color: #a78bfa; }
+    .dark .s-amber .section-header-label { color: #fbbf24; }
+    .dark .s-cyan .section-header-label { color: #22d3ee; }
+    :root .s-blue .section-header-label { color: #2563eb; }
+    :root .s-emerald .section-header-label { color: #059669; }
+    :root .s-rose .section-header-label { color: #e11d48; }
+    :root .s-purple .section-header-label { color: #7c3aed; }
+    :root .s-amber .section-header-label { color: #d97706; }
+    :root .s-cyan .section-header-label { color: #0891b2; }
 
-    /* ─── Sub-item base styles ─── */
-    .dark .sub-item-default { color: rgba(255, 255, 255, 0.4); }
-    :root .sub-item-default { color: #9ca3af; }
-    .dark .sub-item-default:hover,
-    .dark .hover\:sub-item-hover:hover { color: rgba(255, 255, 255, 0.7); }
-    :root .sub-item-default:hover,
-    :root .hover\:sub-item-hover:hover { color: #374151; }
+    /* Count badge — mockup: .section-count */
+    .dark .section-count { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); }
+    :root .section-count { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.3); }
 
-    /* ─── Count badge — neutral/muted (NOT section-colored) ─── */
-    .section-count {
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 10px;
-    }
-    .dark .section-count { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.3); }
-    :root .section-count { background: rgba(0, 0, 0, 0.04); color: rgba(0, 0, 0, 0.3); }
+    /* Nav items — mockup: .nav-item */
+    .dark .nav-item { color: rgba(255,255,255,0.65); }
+    :root .nav-item { color: #4b5563; }
+    .dark .nav-item:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.9); }
+    :root .nav-item:hover { background: rgba(0,0,0,0.03); color: #111827; }
 
-    /* ─── Section color themes ─── */
+    /* Icon badge — mockup: .icon-badge */
+    .s-blue .icon-badge { background: rgba(59,130,246,0.12); }
+    .s-emerald .icon-badge { background: rgba(16,185,129,0.12); }
+    .s-rose .icon-badge { background: rgba(244,63,94,0.12); }
+    .s-purple .icon-badge { background: rgba(139,92,246,0.12); }
+    .s-amber .icon-badge { background: rgba(245,158,11,0.12); }
+    .s-cyan .icon-badge { background: rgba(6,182,212,0.12); }
+    :root .s-blue .icon-badge { background: rgba(59,130,246,0.08); }
+    :root .s-emerald .icon-badge { background: rgba(16,185,129,0.08); }
+    :root .s-rose .icon-badge { background: rgba(244,63,94,0.08); }
+    :root .s-purple .icon-badge { background: rgba(139,92,246,0.08); }
+    :root .s-amber .icon-badge { background: rgba(245,158,11,0.08); }
+    :root .s-cyan .icon-badge { background: rgba(6,182,212,0.08); }
 
-    /* Blue — Overview */
-    .section-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
-    .dark .section-blue .section-label { color: #60a5fa; }
-    .dark .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.12); }
-    .dark .section-blue .section-active { background: rgba(59, 130, 246, 0.15) !important; color: #93bbfd !important; }
-    .dark .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.25); }
-    .dark .section-blue .sub-item-active { color: #93bbfd; }
+    /* Active nav item — mockup: .nav-item.active */
+    .dark .s-blue .nav-item.active { background: rgba(59,130,246,0.15); color: #93bbfd; }
+    .dark .s-emerald .nav-item.active { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+    .dark .s-rose .nav-item.active { background: rgba(244,63,94,0.15); color: #fda4af; }
+    .dark .s-purple .nav-item.active { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .dark .s-amber .nav-item.active { background: rgba(245,158,11,0.15); color: #fde68a; }
+    .dark .s-cyan .nav-item.active { background: rgba(6,182,212,0.15); color: #67e8f9; }
+    :root .s-blue .nav-item.active { background: rgba(59,130,246,0.1); color: #1e40af; }
+    :root .s-emerald .nav-item.active { background: rgba(16,185,129,0.1); color: #065f46; }
+    :root .s-rose .nav-item.active { background: rgba(244,63,94,0.1); color: #9f1239; }
+    :root .s-purple .nav-item.active { background: rgba(139,92,246,0.1); color: #5b21b6; }
+    :root .s-amber .nav-item.active { background: rgba(245,158,11,0.1); color: #92400e; }
+    :root .s-cyan .nav-item.active { background: rgba(6,182,212,0.1); color: #155e75; }
 
-    /* Emerald — Assets */
-    .section-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
-    .dark .section-emerald .section-label { color: #34d399; }
-    .dark .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.12); }
-    .dark .section-emerald .section-active { background: rgba(16, 185, 129, 0.15) !important; color: #6ee7b7 !important; }
-    .dark .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.25); }
-    .dark .section-emerald .sub-item-active { color: #6ee7b7; }
+    /* Active icon badge glow — mockup: .nav-item.active .icon-badge */
+    .nav-item.active .icon-badge { box-shadow: 0 0 12px rgba(255,255,255,0.05); }
+    .s-blue .nav-item.active .icon-badge { background: rgba(59,130,246,0.25); }
+    .s-emerald .nav-item.active .icon-badge { background: rgba(16,185,129,0.25); }
+    .s-rose .nav-item.active .icon-badge { background: rgba(244,63,94,0.25); }
+    .s-purple .nav-item.active .icon-badge { background: rgba(139,92,246,0.25); }
+    .s-amber .nav-item.active .icon-badge { background: rgba(245,158,11,0.25); }
+    .s-cyan .nav-item.active .icon-badge { background: rgba(6,182,212,0.25); }
 
-    /* Rose — Liabilities */
-    .section-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
-    .dark .section-rose .section-label { color: #fb7185; }
-    .dark .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.12); }
-    .dark .section-rose .section-active { background: rgba(244, 63, 94, 0.15) !important; color: #fda4af !important; }
-    .dark .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.25); }
-    .dark .section-rose .sub-item-active { color: #fda4af; }
+    /* Sub items — mockup: .sub-item */
+    .dark .sub-item { color: rgba(255,255,255,0.4); }
+    :root .sub-item { color: #9ca3af; }
+    .dark .sub-item:hover { color: rgba(255,255,255,0.7); }
+    :root .sub-item:hover { color: #374151; }
 
-    /* Purple — Income */
-    .section-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
-    .dark .section-purple .section-label { color: #a78bfa; }
-    .dark .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.12); }
-    .dark .section-purple .section-active { background: rgba(139, 92, 246, 0.15) !important; color: #c4b5fd !important; }
-    .dark .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.25); }
-    .dark .section-purple .sub-item-active { color: #c4b5fd; }
+    /* Active sub item — mockup: .sub-item.active */
+    .dark .s-emerald .sub-item.active { color: #6ee7b7; }
+    .dark .s-rose .sub-item.active { color: #fda4af; }
+    .dark .s-blue .sub-item.active { color: #93bbfd; }
+    .dark .s-purple .sub-item.active { color: #c4b5fd; }
+    .dark .s-amber .sub-item.active { color: #fde68a; }
+    .dark .s-cyan .sub-item.active { color: #67e8f9; }
+    :root .s-emerald .sub-item.active { color: #059669; }
+    :root .s-rose .sub-item.active { color: #e11d48; }
+    :root .s-blue .sub-item.active { color: #1e40af; }
+    :root .s-purple .sub-item.active { color: #7c3aed; }
+    :root .s-amber .sub-item.active { color: #d97706; }
+    :root .s-cyan .sub-item.active { color: #0891b2; }
 
-    /* Amber — Expenses */
-    .section-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
-    .dark .section-amber .section-label { color: #fbbf24; }
-    .dark .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.12); }
-    .dark .section-amber .section-active { background: rgba(245, 158, 11, 0.15) !important; color: #fde68a !important; }
-    .dark .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.25); }
-    .dark .section-amber .sub-item-active { color: #fde68a; }
+    /* Footer — mockup: .footer */
+    .sidebar-footer { border-top: 1px solid rgba(99,130,191,0.06); }
+    :root .sidebar-footer { border-top-color: #f3f4f6; }
 
-    /* Cyan — Planning */
-    .section-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
-    .dark .section-cyan .section-label { color: #22d3ee; }
-    .dark .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.12); }
-    .dark .section-cyan .section-active { background: rgba(6, 182, 212, 0.15) !important; color: #67e8f9 !important; }
-    .dark .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.25); }
-    .dark .section-cyan .sub-item-active { color: #67e8f9; }
+    /* User card — mockup: .user-card */
+    .dark .user-card-sidebar { background: rgba(255,255,255,0.025); }
+    :root .user-card-sidebar { background: #f9fafb; }
 
-    /* ─── Light mode overrides ─── */
-    :root .section-blue .section-label { color: #2563eb; }
-    :root .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.08); }
-    :root .section-blue .section-active { background: rgba(59, 130, 246, 0.1) !important; color: #1e40af !important; }
-    :root .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.18); }
-    :root .section-blue .sub-item-active { color: #1e40af; }
+    /* User avatar — mockup: .user-avatar */
+    .dark .user-avatar-sidebar { background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.05)); border: 1px solid rgba(96,165,250,0.2); color: #60a5fa; }
+    :root .user-avatar-sidebar { background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.03)); border: 1px solid rgba(37,99,235,0.15); color: #2563eb; }
 
-    :root .section-emerald .section-label { color: #059669; }
-    :root .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.08); }
-    :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.1) !important; color: #065f46 !important; }
-    :root .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.18); }
-    :root .section-emerald .sub-item-active { color: #059669; }
-
-    :root .section-rose .section-label { color: #e11d48; }
-    :root .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.08); }
-    :root .section-rose .section-active { background: rgba(244, 63, 94, 0.1) !important; color: #9f1239 !important; }
-    :root .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.18); }
-    :root .section-rose .sub-item-active { color: #e11d48; }
-
-    :root .section-purple .section-label { color: #7c3aed; }
-    :root .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.08); }
-    :root .section-purple .section-active { background: rgba(139, 92, 246, 0.1) !important; color: #5b21b6 !important; }
-    :root .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.18); }
-    :root .section-purple .sub-item-active { color: #7c3aed; }
-
-    :root .section-amber .section-label { color: #d97706; }
-    :root .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.08); }
-    :root .section-amber .section-active { background: rgba(245, 158, 11, 0.1) !important; color: #92400e !important; }
-    :root .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.18); }
-    :root .section-amber .sub-item-active { color: #d97706; }
-
-    :root .section-cyan .section-label { color: #0891b2; }
-    :root .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.08); }
-    :root .section-cyan .section-active { background: rgba(6, 182, 212, 0.1) !important; color: #155e75 !important; }
-    :root .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.18); }
-    :root .section-cyan .sub-item-active { color: #0891b2; }
+    /* User name */
+    .dark .user-name-sidebar { color: #f1f3f8; }
+    :root .user-name-sidebar { color: #111827; }
 }

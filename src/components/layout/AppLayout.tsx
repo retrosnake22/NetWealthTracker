@@ -23,18 +23,40 @@ import type { ThemeMode } from '@/hooks/useThemeMode'
 import { NotificationBell } from '@/components/NotificationBell'
 
 // ─── Nav structure — Option B: Grouped Cards with Gradient Accents ───
+// Matches mockup: sidebar-option-b---grouped-cards-with-gradient-accents.html
 
-const navSections = [
+interface SubItem {
+  to: string
+  category: string
+  label: string
+  emoji: string
+}
+
+interface NavItem {
+  to: string
+  emoji: string
+  label: string
+  end?: boolean
+  subItems?: SubItem[]
+}
+
+interface NavSection {
+  label: string
+  theme: string
+  items: NavItem[]
+}
+
+const navSections: NavSection[] = [
   {
     label: 'Overview',
-    theme: 'section-blue',
+    theme: 's-blue',
     items: [
       { to: '/', emoji: '📊', label: 'Dashboard', end: true },
     ],
   },
   {
     label: 'Assets',
-    theme: 'section-emerald',
+    theme: 's-emerald',
     items: [
       {
         to: '/assets',
@@ -53,7 +75,7 @@ const navSections = [
   },
   {
     label: 'Liabilities',
-    theme: 'section-rose',
+    theme: 's-rose',
     items: [
       {
         to: '/liabilities',
@@ -72,7 +94,7 @@ const navSections = [
   },
   {
     label: 'Income',
-    theme: 'section-purple',
+    theme: 's-purple',
     items: [
       {
         to: '/income',
@@ -89,7 +111,7 @@ const navSections = [
   },
   {
     label: 'Expenses',
-    theme: 'section-amber',
+    theme: 's-amber',
     items: [
       {
         to: '/expenses',
@@ -104,7 +126,7 @@ const navSections = [
   },
   {
     label: 'Planning',
-    theme: 'section-cyan',
+    theme: 's-cyan',
     items: [
       { to: '/projections', emoji: '📉', label: 'Projections' },
     ],
@@ -143,20 +165,31 @@ function useFirstName() {
   return firstName
 }
 
+/* ─── Brand — mockup: .brand ─── */
 function BrandLogo() {
   return (
-    <div className="flex items-center gap-3 px-2">
-      <div className="h-[38px] w-[38px] rounded-xl gradient-sapphire glow-sapphire flex items-center justify-center shrink-0">
-        <ArrowUpRight className="h-4 w-4 text-white" />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '20px 20px 12px' }}>
+      {/* mockup: .brand-icon — 38×38, border-radius: 12px */}
+      <div
+        style={{
+          width: 38, height: 38, borderRadius: 12,
+          background: 'linear-gradient(135deg, #2563eb, #60a5fa)',
+          boxShadow: '0 0 20px rgba(59,130,246,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <ArrowUpRight style={{ width: 16, height: 16, color: 'white' }} />
       </div>
       <div>
-        <h1 className="text-base font-extrabold tracking-tight text-foreground" style={{ letterSpacing: '-0.5px' }}>NWT</h1>
-        <p className="text-[10px] text-muted-foreground leading-none">Net Wealth Tracker</p>
+        <h1 style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.5 }} className="text-foreground">NWT</h1>
+        <p style={{ fontSize: 10, color: '#5a6e94', lineHeight: 1 }}>Net Wealth Tracker</p>
       </div>
     </div>
   )
 }
 
+/* ─── Sidebar Nav — translates mockup .nav-area exactly ─── */
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -183,73 +216,90 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-1 pb-6 space-y-2 overflow-y-auto min-h-0">
+    /* mockup: .nav-area — flex:1, padding: 4px 12px 12px, gap: 8px */
+    <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
       {navSections.map((section) => (
+        /* mockup: .s-blue / .s-emerald / etc wrapper */
         <div key={section.label} className={section.theme}>
-          {/* Section card */}
+          {/* mockup: .section-card */}
           <div className="section-card">
-            {/* Section header row */}
-            <div className="flex items-center gap-2.5 px-3 pt-2 pb-1">
-              <span className="section-label text-[10px] font-bold uppercase tracking-wider flex-1">
+            {/* mockup: .section-header — padding: 8px 8px 4px 12px */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px 4px 12px' }}>
+              {/* mockup: .section-header-label */}
+              <span className="section-header-label" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, flex: 1 }}>
                 {section.label}
               </span>
-              {/* Count badge — neutral/muted */}
-              {section.items[0] && 'subItems' in section.items[0] && (section.items[0] as any).subItems && (
-                <span className="section-count">
-                  {(section.items[0] as any).subItems.length}
+              {/* mockup: .section-count — only if has subItems */}
+              {section.items[0]?.subItems && (
+                <span className="section-count" style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>
+                  {section.items[0].subItems.length}
                 </span>
               )}
             </div>
 
             {/* Nav items */}
             {section.items.map((item) => {
-              const subItems = 'subItems' in item ? (item as any).subItems : undefined
-              const hasSubItems = subItems && subItems.length > 0
+              const hasSubItems = item.subItems && item.subItems.length > 0
               const parentActive = hasSubItems
                 ? location.pathname.startsWith(item.to)
-                : isItemActive(item.to, 'end' in item ? (item as any).end : false)
+                : isItemActive(item.to, item.end)
 
               return (
                 <div key={item.to}>
-                  {/* Parent nav item */}
+                  {/* mockup: .nav-item — gap:10px, padding: 8px 10px, border-radius: 8px, font-size: 13px, font-weight: 500 */}
                   <NavLink
                     to={item.to}
-                    end={'end' in item ? (item as any).end : undefined}
+                    end={item.end}
                     onClick={onNavigate}
-                    className={`nav-item group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                      parentActive
-                        ? 'section-active font-semibold'
-                        : 'nav-item-default hover:nav-item-hover'
-                    }`}
+                    className={`nav-item ${parentActive ? 'active' : ''}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 10px', borderRadius: 8,
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      fontSize: 13, fontWeight: parentActive ? 600 : 500,
+                      textDecoration: 'none',
+                    }}
                   >
-                    {/* Translucent icon badge — rounded-lg, 30×30 */}
-                    <span className="section-icon-badge flex items-center justify-center h-[30px] w-[30px] rounded-lg shrink-0 text-sm">
-                      {'emoji' in item ? (item as any).emoji : ''}
+                    {/* mockup: .icon-badge — 30×30, border-radius: 8px, font-size: 14px */}
+                    <span
+                      className="icon-badge"
+                      style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 14, flexShrink: 0,
+                      }}
+                    >
+                      {item.emoji}
                     </span>
-                    <span className="truncate flex-1">{item.label}</span>
-                    {/* Chevron for items with sub-items */}
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {/* mockup: .chevron */}
                     {hasSubItems && (
-                      <span className="text-[11px] opacity-30 ml-auto">›</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.3 }}>›</span>
                     )}
                   </NavLink>
 
-                  {/* Sub-items — always visible */}
+                  {/* mockup: .sub-items — always visible, padding: 2px 6px 4px 42px */}
                   {hasSubItems && (
-                    <div className="sub-items-container" style={{ padding: '2px 6px 4px 42px' }}>
-                      {subItems.map((sub: any) => {
+                    <div style={{ padding: '2px 6px 4px 42px' }}>
+                      {item.subItems!.map((sub) => {
                         const subActive = isItemActive(sub.to)
                         return (
                           <Link
                             key={sub.to}
                             to={sub.to}
                             onClick={onNavigate}
-                            className={`flex items-center gap-2 px-2.5 py-[5px] rounded-md text-xs transition-all duration-150 ${
-                              subActive
-                                ? 'sub-item-active font-semibold'
-                                : 'sub-item-default hover:sub-item-hover font-medium'
-                            }`}
+                            className={`sub-item ${subActive ? 'active' : ''}`}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '5px 10px', borderRadius: 6,
+                              cursor: 'pointer', fontSize: 12,
+                              fontWeight: subActive ? 600 : 500,
+                              transition: 'all 0.15s',
+                              textDecoration: 'none',
+                            }}
                           >
-                            <span className="text-[11px] w-3.5 flex items-center justify-center shrink-0">
+                            {/* mockup: .sub-icon — font-size: 11px, width: 14px */}
+                            <span style={{ fontSize: 11, width: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {sub.emoji}
                             </span>
                             {sub.label}
@@ -275,8 +325,13 @@ function UserAvatar({ name }: { name: string }) {
   }, [name])
 
   return (
-    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
-      <span className="text-xs font-bold text-primary">{initials}</span>
+    /* mockup: .user-avatar — 32×32, border-radius: 8px */
+    <div className="user-avatar-sidebar" style={{
+      width: 32, height: 32, borderRadius: 8,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 12, fontWeight: 700,
+    }}>
+      {initials}
     </div>
   )
 }
@@ -362,35 +417,44 @@ function SidebarFooter() {
   }
 
   return (
-    <div className="px-3 pb-4 space-y-1">
-      {/* Cloud sync status */}
-      <div className="flex items-center gap-2 px-3 py-1.5 mb-1">
+    /* mockup: .footer — padding: 12px, border-top */
+    <div className="sidebar-footer" style={{ padding: 12 }}>
+      {/* mockup: .sync-row */}
+      <div className="sync-row" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', fontSize: 10, fontWeight: 500 }}>
         {syncStatus === 'saving' ? (
-          <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+          <Loader2 style={{ width: 10, height: 10 }} className="text-blue-400 animate-spin" />
         ) : syncStatus === 'saved' ? (
-          <Cloud className="h-3.5 w-3.5 text-emerald-400" />
+          <>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399' }} />
+            <span style={{ color: '#34d399' }}>
+              Saved {lastSaved ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+            </span>
+          </>
         ) : syncStatus === 'error' ? (
-          <CloudOff className="h-3.5 w-3.5 text-red-400" />
+          <span className="text-red-400">Sync failed</span>
         ) : (
-          <Cloud className="h-3.5 w-3.5 text-muted-foreground/50" />
+          <>
+            <Cloud style={{ width: 10, height: 10 }} className="text-muted-foreground/50" />
+            <span className="text-muted-foreground/50">Connected</span>
+          </>
         )}
-        <span className={`text-[10px] font-medium ${syncStatus === 'saving' ? 'text-blue-400' : syncStatus === 'saved' ? 'text-emerald-400' : syncStatus === 'error' ? 'text-red-400' : 'text-muted-foreground/50'}`}>
-          {syncStatus === 'saving' ? 'Syncing...' : syncStatus === 'saved' ? `Saved ${lastSaved ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : syncStatus === 'error' ? 'Sync failed' : 'Connected'}
-        </span>
       </div>
 
-      {/* User profile card */}
+      {/* mockup: .user-card */}
       {email && (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-lg bg-muted/30">
+        <div className="user-card-sidebar" style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', borderRadius: 10, marginTop: 6,
+        }}>
           <UserAvatar name={displayName} />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
-            <p className="text-[10px] text-muted-foreground/60 truncate">{email}</p>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="user-name-sidebar" style={{ fontSize: 12, fontWeight: 600 }}>{displayName}</div>
+            <div style={{ fontSize: 10, color: '#5a6e94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</div>
           </div>
         </div>
       )}
 
-      <div className="h-px bg-border/30 mb-2" />
+      <div style={{ height: 1, margin: '8px 0' }} className="bg-border/30" />
 
       <NavLink
         to="/setup"
@@ -446,18 +510,12 @@ function SidebarFooter() {
 
 function DesktopSidebar() {
   return (
-    <aside className="hidden md:flex w-60 flex-col border-r border-border/50 bg-sidebar h-screen sticky top-0">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] via-transparent to-primary/[0.01] pointer-events-none" />
-      
-      <div className="relative flex flex-col h-full">
-        <div className="p-5 pb-4 shrink-0">
-          <BrandLogo />
-        </div>
-        <SidebarNav />
-        <div className="shrink-0">
-          <SidebarFooter />
-        </div>
+    /* mockup: .sidebar — width: 260px, background, border */
+    <aside className="hidden md:flex w-[260px] flex-col h-screen sticky top-0 sidebar-container">
+      <BrandLogo />
+      <SidebarNav />
+      <div style={{ flexShrink: 0 }}>
+        <SidebarFooter />
       </div>
     </aside>
   )
@@ -543,17 +601,10 @@ function MobileHeader() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-60 p-0 bg-sidebar">
-            <div className="flex flex-col h-full relative">
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] via-transparent to-primary/[0.01] pointer-events-none" />
-              <div className="relative flex flex-col h-full">
-                <div className="p-5 pb-4">
-                  <BrandLogo />
-                </div>
-                <SidebarNav onNavigate={() => setOpen(false)} />
-                <SidebarFooter />
-              </div>
-            </div>
+          <SheetContent side="left" className="w-[260px] p-0 sidebar-container">
+            <BrandLogo />
+            <SidebarNav onNavigate={() => setOpen(false)} />
+            <SidebarFooter />
           </SheetContent>
         </Sheet>
         <h1 className="text-base font-semibold flex-1">{title}</h1>
