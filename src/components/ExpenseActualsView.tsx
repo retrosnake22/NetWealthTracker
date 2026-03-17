@@ -490,9 +490,11 @@ export function ExpenseActualsView() {
                   return (
                     <div
                       key={cat}
-                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                        idx !== visibleCategories.length - 1 ? 'border-b border-border/20' : ''
-                      }`}
+                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 transition-colors ${
+                        hasValue
+                          ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] hover:bg-emerald-100/80 dark:hover:bg-emerald-500/[0.12] border-l-2 border-l-emerald-500 dark:border-l-emerald-400'
+                          : 'hover:bg-muted/30 border-l-2 border-l-transparent'
+                      } ${idx !== visibleCategories.length - 1 ? 'border-b border-border/20' : ''}`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`text-sm truncate ${hasValue ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
@@ -540,13 +542,16 @@ export function ExpenseActualsView() {
                   const actualNum = parseFloat(actualStr) || 0
                   const diff = actualStr !== '' ? actualNum - b.monthlyBudget : null
                   const hasSavedActual = monthActuals.has(b.id)
+                  const hasCustomValue = b.monthlyBudget > 0 || actualStr !== ''
 
                   return (
                     <div
                       key={b.id}
-                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 hover:bg-muted/30 transition-colors ${
-                        idx !== arr.length - 1 ? 'border-b border-border/20' : ''
-                      }`}
+                      className={`grid grid-cols-[1fr_100px_100px_80px] sm:grid-cols-[1fr_120px_120px_100px] items-center px-4 py-2.5 gap-2 transition-colors ${
+                        hasCustomValue
+                          ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] hover:bg-emerald-100/80 dark:hover:bg-emerald-500/[0.12] border-l-2 border-l-emerald-500 dark:border-l-emerald-400'
+                          : 'hover:bg-muted/30 border-l-2 border-l-transparent'
+                      } ${idx !== arr.length - 1 ? 'border-b border-border/20' : ''}`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 dark:bg-blue-400/10 dark:text-blue-400 font-medium uppercase tracking-wider">Custom</span>
