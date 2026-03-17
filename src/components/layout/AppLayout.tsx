@@ -48,6 +48,7 @@ const navSections = [
   {
     label: 'Overview',
     color: 'bg-blue-500',
+    theme: 'section-blue',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
     ],
@@ -55,6 +56,7 @@ const navSections = [
   {
     label: 'Balance Sheet',
     color: 'bg-emerald-500',
+    theme: 'section-emerald',
     items: [
       {
         to: '/assets',
@@ -75,7 +77,6 @@ const navSections = [
         label: 'Liabilities',
         subItems: [
           { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', icon: Landmark },
-          
           { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', icon: Car },
           { to: '/liabilities?category=personal_loan', category: 'personal_loan', label: 'Personal Loans', icon: HandCoins },
           { to: '/liabilities?category=credit_card', category: 'credit_card', label: 'Credit Cards', icon: CreditCard },
@@ -88,6 +89,7 @@ const navSections = [
   {
     label: 'Income Statement',
     color: 'bg-purple-500',
+    theme: 'section-purple',
     items: [
       { to: '/income', icon: TrendingUp, label: 'Income' },
       {
@@ -104,6 +106,7 @@ const navSections = [
   {
     label: 'Planning',
     color: 'bg-amber-500',
+    theme: 'section-amber',
     items: [
       { to: '/projections', icon: LineChart, label: 'Projections' },
     ],
@@ -185,15 +188,18 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-4 overflow-y-auto min-h-0">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-3 overflow-y-auto min-h-0">
       {navSections.map((section) => (
-        <div key={section.label}>
-          <div className="flex items-center gap-2 px-3 mb-2">
+        <div key={section.label} className={`${section.theme} section-card rounded-xl p-2`}>
+          {/* Section header */}
+          <div className="flex items-center gap-2 px-2 mb-1.5 pt-1">
             <span className={`h-1.5 w-1.5 rounded-full ${section.color}`} />
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            <p className="section-label text-[10px] font-semibold uppercase tracking-widest">
               {section.label}
             </p>
           </div>
+
+          {/* Nav items */}
           <div className="space-y-0.5">
             {section.items.map((item) => {
               const subItems = 'subItems' in item ? (item as any).subItems : undefined
@@ -211,17 +217,17 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       parentActive
-                        ? 'bg-sapphire-subtle text-primary shadow-sm shadow-primary/5'
-                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5'
+                        ? 'section-active'
+                        : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                     }`}
                   >
                     {parentActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full section-indicator" />
                     )}
-                    <item.icon className={`h-4 w-4 shrink-0 transition-colors ${parentActive ? 'text-primary' : 'group-hover:text-foreground'}`} />
+                    <item.icon className={`h-4 w-4 shrink-0 transition-colors ${parentActive ? 'section-icon-active' : 'group-hover:text-foreground'}`} />
                     <span className="truncate flex-1">{item.label}</span>
                     {hasSubItems && (
-                      <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 text-primary/50' : 'text-muted-foreground/30'}`} />
+                      <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 opacity-50' : 'text-muted-foreground/30'}`} />
                     )}
                   </NavLink>
 
@@ -237,11 +243,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                             onClick={onNavigate}
                             className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                               subActive
-                                ? 'bg-sapphire-subtle text-primary'
-                                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5'
+                                ? 'section-active'
+                                : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                             }`}
                           >
-                            <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'text-primary' : ''}`} />
+                            <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'section-icon-active' : ''}`} />
                             {sub.label}
                           </Link>
                         )

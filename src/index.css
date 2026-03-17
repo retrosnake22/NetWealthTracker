@@ -318,4 +318,142 @@
   .animate-count {
     animation: count-up 0.6s ease-out;
   }
+
+  /* ─── Color-Blocked Sidebar Sections ─── */
+
+  /* Shared section card base — gradient band at top */
+  .section-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+  }
+
+  /* Blue — Overview */
+  .section-blue.section-card {
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+  }
+  .section-blue.section-card::before {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd);
+  }
+  .section-blue .section-label { color: rgba(59, 130, 246, 0.7); }
+  .section-blue .section-active {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+  }
+  .section-blue .section-indicator { background-color: #3b82f6; }
+  .section-blue .section-icon-active { color: #3b82f6; }
+  .section-blue .hover\:section-hover:hover {
+    background: rgba(59, 130, 246, 0.06);
+    color: #93bbfd;
+  }
+
+  /* Emerald — Balance Sheet */
+  .section-emerald.section-card {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.12);
+  }
+  .section-emerald.section-card::before {
+    background: linear-gradient(90deg, #059669, #10b981, #6ee7b7);
+  }
+  .section-emerald .section-label { color: rgba(16, 185, 129, 0.7); }
+  .section-emerald .section-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+  }
+  .section-emerald .section-indicator { background-color: #10b981; }
+  .section-emerald .section-icon-active { color: #10b981; }
+  .section-emerald .hover\:section-hover:hover {
+    background: rgba(16, 185, 129, 0.06);
+    color: #6ee7b7;
+  }
+
+  /* Purple — Income Statement */
+  .section-purple.section-card {
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+  }
+  .section-purple.section-card::before {
+    background: linear-gradient(90deg, #7c3aed, #8b5cf6, #c4b5fd);
+  }
+  .section-purple .section-label { color: rgba(139, 92, 246, 0.7); }
+  .section-purple .section-active {
+    background: rgba(139, 92, 246, 0.12);
+    color: #8b5cf6;
+  }
+  .section-purple .section-indicator { background-color: #8b5cf6; }
+  .section-purple .section-icon-active { color: #8b5cf6; }
+  .section-purple .hover\:section-hover:hover {
+    background: rgba(139, 92, 246, 0.06);
+    color: #c4b5fd;
+  }
+
+  /* Amber — Planning */
+  .section-amber.section-card {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.12);
+  }
+  .section-amber.section-card::before {
+    background: linear-gradient(90deg, #d97706, #f59e0b, #fcd34d);
+  }
+  .section-amber .section-label { color: rgba(245, 158, 11, 0.7); }
+  .section-amber .section-active {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+  }
+  .section-amber .section-indicator { background-color: #f59e0b; }
+  .section-amber .section-icon-active { color: #f59e0b; }
+  .section-amber .hover\:section-hover:hover {
+    background: rgba(245, 158, 11, 0.06);
+    color: #fcd34d;
+  }
+
+  /* Light mode overrides — stronger tints on light backgrounds */
+  :root .section-blue.section-card {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.15);
+  }
+  :root .section-blue .section-active { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
+  :root .section-blue .section-indicator { background-color: #2563eb; }
+  :root .section-blue .section-icon-active { color: #2563eb; }
+  :root .section-blue .section-label { color: rgba(37, 99, 235, 0.6); }
+  :root .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.06); color: #1d4ed8; }
+
+  :root .section-emerald.section-card {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.15);
+  }
+  :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.10); color: #059669; }
+  :root .section-emerald .section-indicator { background-color: #059669; }
+  :root .section-emerald .section-icon-active { color: #059669; }
+  :root .section-emerald .section-label { color: rgba(5, 150, 105, 0.6); }
+  :root .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.06); color: #047857; }
+
+  :root .section-purple.section-card {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.15);
+  }
+  :root .section-purple .section-active { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
+  :root .section-purple .section-indicator { background-color: #7c3aed; }
+  :root .section-purple .section-icon-active { color: #7c3aed; }
+  :root .section-purple .section-label { color: rgba(124, 58, 237, 0.6); }
+  :root .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.06); color: #6d28d9; }
+
+  :root .section-amber.section-card {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.15);
+  }
+  :root .section-amber .section-active { background: rgba(245, 158, 11, 0.10); color: #d97706; }
+  :root .section-amber .section-indicator { background-color: #d97706; }
+  :root .section-amber .section-icon-active { color: #d97706; }
+  :root .section-amber .section-label { color: rgba(217, 119, 6, 0.6); }
+  :root .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.06); color: #b45309; }
 }
