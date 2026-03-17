@@ -121,8 +121,14 @@ export function ExpenseActualsView() {
     return map
   }, [expenseActuals, selectedMonth])
 
+  // Initialize edit values from saved actuals ONLY when month changes
+  const initializedMonthRef = useRef<string | null>(null)
   // Initialize edit values from saved actuals — use budgetId as key for standard, budget.id for custom
   useEffect(() => {
+    // Only re-init when month actually changes (not when actuals save updates the store)
+    if (initializedMonthRef.current === selectedMonth) return
+    initializedMonthRef.current = selectedMonth
+
     const values: Record<string, string> = {}
     // Standard categories: key by category name
     for (const group of SUPER_CATEGORIES) {
@@ -212,12 +218,20 @@ export function ExpenseActualsView() {
       clearTimeout(debounceRef.current)
       debounceRef.current = null
     }
+    // Re-read from the latest store state (not the stale monthActuals memo)
+    const currentActuals = useFinanceStore.getState().expenseActuals
+    const currentMonthActuals = new Map<string, { actualAmount: number }>()
+    for (const a of currentActuals) {
+      if (a.month === selectedMonth) {
+        currentMonthActuals.set(a.budgetId, { actualAmount: a.actualAmount })
+      }
+    }
     const values: Record<string, string> = {}
     for (const group of SUPER_CATEGORIES) {
       for (const cat of group.categories) {
         const budget = budgetByCategory.get(cat)
         if (budget) {
-          const actual = monthActuals.get(budget.id)
+          const actual = currentMonthActuals.get(budget.id)
           values[cat] = actual ? String(actual.actualAmount) : ''
         } else {
           values[cat] = ''
@@ -225,13 +239,13 @@ export function ExpenseActualsView() {
       }
     }
     for (const b of customBudgets) {
-      const actual = monthActuals.get(b.id)
+      const actual = currentMonthActuals.get(b.id)
       values[`custom_${b.id}`] = actual ? String(actual.actualAmount) : ''
     }
     setEditValues(values)
     setHasChanges(false)
     setSaveStatus('idle')
-  }, [budgetByCategory, customBudgets, monthActuals])
+  }, [budgetByCategory, customBudgets, selectedMonth])
 
   // Copy budget values to actuals (quick-fill)
   const handleCopyBudget = useCallback(() => {
