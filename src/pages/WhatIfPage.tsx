@@ -154,7 +154,15 @@ export function WhatIfPage() {
         body: { question: question.trim(), financialContext },
       })
 
-      if (fnError) throw fnError
+      // The Supabase client may return both data and error for non-2xx responses
+      if (fnError) {
+        const errorBody = typeof data === 'object' && data?.error ? data.error : fnError.message
+        throw new Error(errorBody)
+      }
+
+      if (data?.error) {
+        throw new Error(data.error)
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',

@@ -1,9 +1,10 @@
 // supabase/functions/what-if/index.ts
 // Deno Edge Function — proxies OpenAI calls so the API key stays server-side
 
-import { corsHeaders } from '../_shared/cors.ts'
-
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -12,8 +13,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
     if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured')
+      return new Response(
+        JSON.stringify({ error: 'OPENAI_API_KEY not configured on server' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const { question, financialContext } = await req.json()
@@ -65,7 +70,10 @@ Rules:
 
     if (!response.ok) {
       const err = await response.text()
-      throw new Error(`OpenAI API error: ${response.status} — ${err}`)
+      return new Response(
+        JSON.stringify({ error: `OpenAI API error: ${response.status} — ${err}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const data = await response.json()
@@ -73,11 +81,11 @@ Rules:
 
     return new Response(
       JSON.stringify({ answer }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message ?? 'Unknown server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
