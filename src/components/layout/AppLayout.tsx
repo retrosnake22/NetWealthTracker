@@ -44,14 +44,44 @@ import { NotificationBell } from '@/components/NotificationBell'
 
 // ─── Nav structure with sections ───
 
-// Badge color classes for each nav item
-const badgeColors: Record<string, { bg: string; activeBg: string; color: string }> = {
-  '/':            { bg: 'rgba(59,130,246,0.1)',  activeBg: 'rgba(59,130,246,0.2)',  color: '#60a5fa' },
-  '/assets':      { bg: 'rgba(16,185,129,0.1)',  activeBg: 'rgba(16,185,129,0.2)',  color: '#34d399' },
-  '/liabilities': { bg: 'rgba(244,63,94,0.1)',   activeBg: 'rgba(244,63,94,0.2)',   color: '#fb7185' },
-  '/income':      { bg: 'rgba(139,92,246,0.1)',  activeBg: 'rgba(139,92,246,0.2)',  color: '#a78bfa' },
-  '/expenses':    { bg: 'rgba(245,158,11,0.1)',  activeBg: 'rgba(245,158,11,0.2)',  color: '#fbbf24' },
-  '/projections': { bg: 'rgba(6,182,212,0.1)',   activeBg: 'rgba(6,182,212,0.2)',   color: '#22d3ee' },
+// Badge color config for nav items — { bg, activeBg, color }
+type BadgeColor = { bg: string; activeBg: string; color: string }
+const badge = (r: number, g: number, b: number): BadgeColor => ({
+  bg: `rgba(${r},${g},${b},0.10)`,
+  activeBg: `rgba(${r},${g},${b},0.22)`,
+  color: `rgb(${r},${g},${b})`,
+})
+
+const badgeColors: Record<string, BadgeColor> = {
+  // Parents
+  '/':            badge(96, 165, 250),   // blue
+  '/assets':      badge(52, 211, 153),   // emerald
+  '/liabilities': badge(251, 113, 133),  // rose
+  '/income':      badge(167, 139, 250),  // violet
+  '/expenses':    badge(251, 191, 36),   // amber
+  '/projections': badge(34, 211, 238),   // cyan
+  // Asset sub-items
+  'cash':         badge(59, 130, 246),   // blue
+  'stocks':       badge(34, 197, 94),    // green
+  'super':        badge(249, 115, 22),   // orange
+  'vehicles':     badge(107, 114, 128),  // gray
+  'property':     badge(168, 85, 247),   // purple
+  // Liability sub-items
+  'mortgage':     badge(239, 68, 68),    // red
+  'car_loan':     badge(107, 114, 128),  // gray
+  'personal_loan': badge(245, 158, 11),  // amber
+  'credit_card':  badge(244, 63, 94),    // rose
+  'hecs':         badge(59, 130, 246),   // blue
+  // Income sub-items
+  'salary':       badge(99, 102, 241),   // indigo
+  'rental':       badge(168, 85, 247),   // purple
+  'dividends':    badge(34, 197, 94),    // green
+  'interest':     badge(234, 179, 8),    // yellow
+  // Expense sub-items
+  'fixed':        badge(107, 114, 128),  // gray
+  'living':       badge(249, 115, 22),   // orange
+  // Catch-all
+  'other':        badge(107, 114, 128),  // gray
 }
 
 const navSections = [
@@ -219,7 +249,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               const parentActive = hasSubItems
                 ? location.pathname.startsWith(item.to)
                 : isItemActive(item.to, 'end' in item ? (item as any).end : false)
-              const badge = badgeColors[item.to] || badgeColors['/']
+              const parentBadge = badgeColors[item.to] || badgeColors['/']
 
               return (
                 <div key={item.to}>
@@ -240,11 +270,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     {/* Colored icon badge */}
                     <span
                       className="flex items-center justify-center h-7 w-7 rounded-lg shrink-0 transition-colors"
-                      style={{ backgroundColor: parentActive ? badge.activeBg : badge.bg }}
+                      style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
                     >
                       <item.icon
                         className="h-4 w-4 transition-colors"
-                        style={{ color: badge.color, opacity: parentActive ? 1 : 0.7 }}
+                        style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.7 }}
                       />
                     </span>
                     <span className="truncate flex-1">{item.label}</span>
@@ -253,23 +283,32 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     )}
                   </NavLink>
 
-                  {/* Always-visible subcategories */}
+                  {/* Always-visible subcategories with colored icon badges */}
                   {hasSubItems && (
                     <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
                       {subItems.map((sub: any) => {
                         const subActive = isItemActive(sub.to)
+                        const subBadge = badgeColors[sub.category] || badgeColors['other']
                         return (
                           <Link
                             key={sub.to}
                             to={sub.to}
                             onClick={onNavigate}
-                            className={`group relative flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            className={`group relative flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                               subActive
                                 ? 'section-active'
                                 : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                             }`}
                           >
-                            <sub.icon className={`h-3.5 w-3.5 shrink-0 ${subActive ? 'section-icon-active' : ''}`} />
+                            <span
+                              className="flex items-center justify-center h-6 w-6 rounded-md shrink-0 transition-colors"
+                              style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
+                            >
+                              <sub.icon
+                                className="h-3.5 w-3.5 transition-colors"
+                                style={{ color: subBadge.color, opacity: subActive ? 1 : 0.7 }}
+                              />
+                            </span>
                             {sub.label}
                           </Link>
                         )
