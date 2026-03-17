@@ -44,7 +44,6 @@ import { NotificationBell } from '@/components/NotificationBell'
 const navSections = [
   {
     label: 'Overview',
-    color: 'bg-blue-500',
     theme: 'section-blue',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -52,7 +51,6 @@ const navSections = [
   },
   {
     label: 'Balance Sheet',
-    color: 'bg-emerald-500',
     theme: 'section-emerald',
     items: [
       {
@@ -85,7 +83,6 @@ const navSections = [
   },
   {
     label: 'Income Statement',
-    color: 'bg-purple-500',
     theme: 'section-purple',
     items: [
       { to: '/income', icon: TrendingUp, label: 'Income' },
@@ -102,7 +99,6 @@ const navSections = [
   },
   {
     label: 'Planning',
-    color: 'bg-amber-500',
     theme: 'section-amber',
     items: [
       { to: '/projections', icon: LineChart, label: 'Projections' },
@@ -189,9 +185,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       {navSections.map((section) => (
         <div key={section.label} className={`${section.theme} section-card rounded-xl p-2`}>
           {/* Section header */}
-          <div className="flex items-center gap-2 px-2 mb-1.5 pt-1">
-            <span className={`h-1.5 w-1.5 rounded-full ${section.color}`} />
-            <p className="section-label text-[10px] font-semibold uppercase tracking-widest">
+          <div className="px-2 mb-1.5 pt-1">
+            <p className="section-label text-xs font-bold uppercase tracking-wide">
               {section.label}
             </p>
           </div>
