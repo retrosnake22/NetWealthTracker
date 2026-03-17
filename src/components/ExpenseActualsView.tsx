@@ -185,21 +185,31 @@ export function ExpenseActualsView() {
     setTimeout(() => setSaveStatus(s => s === 'saved' ? 'idle' : s), 2000)
   }, [budgetByCategory, customBudgets, selectedMonth, bulkUpsertExpenseActuals])
 
+  // Keep a ref to doSave so cleanup/beforeunload always calls the latest version
+  const doSaveRef = useRef(doSave)
+  doSaveRef.current = doSave
+
   const handleValueChange = useCallback((key: string, value: string) => {
     setEditValues(prev => ({ ...prev, [key]: value }))
     setHasChanges(true)
     setSaveStatus('pending')
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => doSave(), 1500)
+    debounceRef.current = setTimeout(() => doSave(), 800)
   }, [doSave])
 
-  // Save on unmount to prevent data loss
+  // Flush pending saves on unmount AND browser refresh/close
   useEffect(() => {
-    return () => {
+    const flushPendingSave = () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
         debounceRef.current = null
+        doSaveRef.current()
       }
+    }
+    window.addEventListener('beforeunload', flushPendingSave)
+    return () => {
+      window.removeEventListener('beforeunload', flushPendingSave)
+      flushPendingSave() // also flush on component unmount
     }
   }, [])
 
@@ -263,7 +273,7 @@ export function ExpenseActualsView() {
     setHasChanges(true)
     setSaveStatus('pending')
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => doSave(), 1500)
+    debounceRef.current = setTimeout(() => doSave(), 800)
   }, [budgetByCategory, customBudgets, doSave])
 
   // Summary calculations
