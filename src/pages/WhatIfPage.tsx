@@ -113,8 +113,129 @@ Stock Growth Override: ${projectionSettings.stockGrowthOverride ? (projectionSet
   return sections.join('\n')
 }
 
-function formatAIResponse(content: string): string {
-  return content
+function MarkdownRenderer({ content }: { content: string }) {
+  const lines = content.split('\n')
+  const elements: React.ReactNode[] = []
+  let i = 0
+
+  const renderInline = (text: string): React.ReactNode[] => {
+    const parts: React.ReactNode[] = []
+    // Match **bold**, then *italic*, then `code`
+    const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)/g
+    let lastIndex = 0
+    let match
+    let key = 0
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+      if (match[1]) parts.push(<strong key={key++} className="font-semibold text-foreground">{match[2]}</strong>)
+      else if (match[3]) parts.push(<em key={key++}>{match[4]}</em>)
+      else if (match[5]) parts.push(<code key={key++} className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">{match[6]}</code>)
+      lastIndex = regex.lastIndex
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+    return parts
+  }
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    // Headings
+    if (line.startsWith('#### ')) {
+      elements.push(<h4 key={i} className="text-sm font-semibold text-foreground mt-4 mb-1">{renderInline(line.slice(5))}</h4>)
+    } else if (line.startsWith('### ')) {
+      elements.push(<h3 key={i} className="text-sm font-bold text-foreground mt-5 mb-1.5">{renderInline(line.slice(4))}</h3>)
+    } else if (line.startsWith('## ')) {
+      elements.push(<h2 key={i} className="text-base font-bold text-foreground mt-5 mb-2 pb-1 border-b border-border/30">{renderInline(line.slice(3))}</h2>)
+    } else if (line.startsWith('# ')) {
+      elements.push(<h1 key={i} className="text-lg font-bold text-foreground mt-4 mb-2">{renderInline(line.slice(2))}</h1>)
+    }
+    // Blockquote
+    else if (line.startsWith('> ')) {
+      elements.push(
+        <div key={i} className="border-l-2 border-purple-400/50 pl-3 py-1 my-2 text-sm text-purple-300 dark:text-purple-300 bg-purple-500/5 rounded-r-md">
+          {renderInline(line.slice(2))}
+        </div>
+      )
+    }
+    // Bullet list
+    else if (line.match(/^[-*] /)) {
+      const items: React.ReactNode[] = []
+      while (i < lines.length && lines[i].match(/^[-*] /)) {
+        items.push(<li key={i} className="text-sm leading-relaxed">{renderInline(lines[i].replace(/^[-*] /, ''))}</li>)
+        i++
+      }
+      elements.push(<ul key={`ul-${i}`} className="list-disc list-outside ml-4 my-1.5 space-y-0.5">{items}</ul>)
+      continue // skip i++ at bottom
+    }
+    // Numbered list
+    else if (line.match(/^\d+\. /)) {
+      const items: React.ReactNode[] = []
+      while (i < lines.length && lines[i].match(/^\d+\. /)) {
+        items.push(<li key={i} className="text-sm leading-relaxed">{renderInline(lines[i].replace(/^\d+\. /, ''))}</li>)
+        i++
+      }
+      elements.push(<ol key={`ol-${i}`} className="list-decimal list-outside ml-4 my-1.5 space-y-0.5">{items}</ol>)
+      continue
+    }
+    // Table (simple pipe table)
+    else if (line.includes('|') && line.trim().startsWith('|')) {
+      const tableRows: string[] = []
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim().startsWith('|')) {
+        tableRows.push(lines[i])
+        i++
+      }
+      // Filter out separator rows (|---|---|)
+      const dataRows = tableRows.filter(r => !r.match(/^\|[\s-:|]+\|$/))
+      if (dataRows.length > 0) {
+        const headerCells = dataRows[0].split('|').filter(c => c.trim()).map(c => c.trim())
+        const bodyRows = dataRows.slice(1)
+        elements.push(
+          <div key={`tbl-${i}`} className="overflow-x-auto my-3">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-border/40">
+                  {headerCells.map((cell, ci) => (
+                    <th key={ci} className="text-left py-1.5 px-2 font-semibold text-foreground text-xs">{cell}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bodyRows.map((row, ri) => {
+                  const cells = row.split('|').filter(c => c.trim()).map(c => c.trim())
+                  return (
+                    <tr key={ri} className="border-b border-border/20">
+                      {cells.map((cell, ci) => (
+                        <td key={ci} className="py-1.5 px-2 text-xs">{renderInline(cell)}</td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+      continue
+    }
+    // Horizontal rule
+    else if (line.match(/^---+$/)) {
+      elements.push(<hr key={i} className="border-border/30 my-3" />)
+    }
+    // Empty line
+    else if (line.trim() === '') {
+      elements.push(<div key={i} className="h-2" />)
+    }
+    // Regular paragraph
+    else {
+      elements.push(<p key={i} className="text-sm leading-relaxed my-1">{renderInline(line)}</p>)
+    }
+
+    i++
+  }
+
+  return <div className="space-y-0">{elements}</div>
 }
 
 export function WhatIfPage() {
@@ -273,8 +394,8 @@ export function WhatIfPage() {
                         <Sparkles className="w-4 h-4 text-purple-400" />
                         <span className="text-xs font-medium text-purple-400">AI Analysis</span>
                       </div>
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">
-                        {formatAIResponse(msg.content)}
+                      <div className="text-sm leading-relaxed max-w-none text-muted-foreground">
+                        <MarkdownRenderer content={msg.content} />
                       </div>
                     </CardContent>
                   </Card>
