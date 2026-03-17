@@ -45,13 +45,13 @@ import { NotificationBell } from '@/components/NotificationBell'
 // ─── Nav structure with sections ───
 
 // Badge color classes for each nav item
-const badgeColors: Record<string, { bg: string; text: string; activeBg: string; activeText: string }> = {
-  '/':            { bg: 'bg-blue-500/10',   text: 'text-blue-400',   activeBg: 'bg-blue-500/20',   activeText: 'text-blue-400' },
-  '/assets':      { bg: 'bg-emerald-500/10', text: 'text-emerald-400', activeBg: 'bg-emerald-500/20', activeText: 'text-emerald-400' },
-  '/liabilities': { bg: 'bg-rose-500/10',   text: 'text-rose-400',   activeBg: 'bg-rose-500/20',   activeText: 'text-rose-400' },
-  '/income':      { bg: 'bg-violet-500/10', text: 'text-violet-400', activeBg: 'bg-violet-500/20', activeText: 'text-violet-400' },
-  '/expenses':    { bg: 'bg-amber-500/10',  text: 'text-amber-400',  activeBg: 'bg-amber-500/20',  activeText: 'text-amber-400' },
-  '/projections': { bg: 'bg-cyan-500/10',   text: 'text-cyan-400',   activeBg: 'bg-cyan-500/20',   activeText: 'text-cyan-400' },
+const badgeColors: Record<string, { bg: string; activeBg: string; color: string }> = {
+  '/':            { bg: 'rgba(59,130,246,0.1)',  activeBg: 'rgba(59,130,246,0.2)',  color: '#60a5fa' },
+  '/assets':      { bg: 'rgba(16,185,129,0.1)',  activeBg: 'rgba(16,185,129,0.2)',  color: '#34d399' },
+  '/liabilities': { bg: 'rgba(244,63,94,0.1)',   activeBg: 'rgba(244,63,94,0.2)',   color: '#fb7185' },
+  '/income':      { bg: 'rgba(139,92,246,0.1)',  activeBg: 'rgba(139,92,246,0.2)',  color: '#a78bfa' },
+  '/expenses':    { bg: 'rgba(245,158,11,0.1)',  activeBg: 'rgba(245,158,11,0.2)',  color: '#fbbf24' },
+  '/projections': { bg: 'rgba(6,182,212,0.1)',   activeBg: 'rgba(6,182,212,0.2)',   color: '#22d3ee' },
 }
 
 const navSections = [
@@ -238,12 +238,14 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full section-indicator" />
                     )}
                     {/* Colored icon badge */}
-                    <span className={`flex items-center justify-center h-7 w-7 rounded-lg shrink-0 transition-colors ${
-                      parentActive ? badge.activeBg : badge.bg
-                    }`}>
-                      <item.icon className={`h-4 w-4 transition-colors ${
-                        parentActive ? badge.activeText : `${badge.text} opacity-70 group-hover:opacity-100`
-                      }`} />
+                    <span
+                      className="flex items-center justify-center h-7 w-7 rounded-lg shrink-0 transition-colors"
+                      style={{ backgroundColor: parentActive ? badge.activeBg : badge.bg }}
+                    >
+                      <item.icon
+                        className="h-4 w-4 transition-colors"
+                        style={{ color: badge.color, opacity: parentActive ? 1 : 0.7 }}
+                      />
                     </span>
                     <span className="truncate flex-1">{item.label}</span>
                     {hasSubItems && (
