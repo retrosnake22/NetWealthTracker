@@ -44,44 +44,38 @@ import { NotificationBell } from '@/components/NotificationBell'
 
 // ─── Nav structure with sections ───
 
-// Badge color config for nav items — { bg, activeBg, color }
-type BadgeColor = { bg: string; activeBg: string; color: string }
-const badge = (r: number, g: number, b: number): BadgeColor => ({
-  bg: `rgba(${r},${g},${b},0.18)`,
-  activeBg: `rgba(${r},${g},${b},0.35)`,
-  color: `rgb(${r},${g},${b})`,
-})
-
+// Badge color config — solid opaque backgrounds with white icons
+type BadgeColor = { bg: string; activeBg: string }
 const badgeColors: Record<string, BadgeColor> = {
-  // Parents
-  '/':            badge(96, 165, 250),   // blue
-  '/assets':      badge(52, 211, 153),   // emerald
-  '/liabilities': badge(251, 113, 133),  // rose
-  '/income':      badge(167, 139, 250),  // violet
-  '/expenses':    badge(251, 191, 36),   // amber
-  '/projections': badge(34, 211, 238),   // cyan
+  // Parents — solid opaque
+  '/':            { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
+  '/assets':      { bg: '#10b981', activeBg: '#059669' },   // emerald
+  '/liabilities': { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  '/income':      { bg: '#8b5cf6', activeBg: '#7c3aed' },   // violet
+  '/expenses':    { bg: '#f59e0b', activeBg: '#d97706' },   // amber
+  '/projections': { bg: '#06b6d4', activeBg: '#0891b2' },   // cyan
   // Asset sub-items
-  'cash':         badge(59, 130, 246),   // blue
-  'stocks':       badge(34, 197, 94),    // green
-  'super':        badge(249, 115, 22),   // orange
-  'vehicles':     badge(107, 114, 128),  // gray
-  'property':     badge(168, 85, 247),   // purple
+  'cash':         { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
+  'stocks':       { bg: '#22c55e', activeBg: '#16a34a' },   // green
+  'super':        { bg: '#f97316', activeBg: '#ea580c' },   // orange
+  'vehicles':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  'property':     { bg: '#a855f7', activeBg: '#9333ea' },   // purple
   // Liability sub-items
-  'mortgage':     badge(239, 68, 68),    // red
-  'car_loan':     badge(107, 114, 128),  // gray
-  'personal_loan': badge(245, 158, 11),  // amber
-  'credit_card':  badge(244, 63, 94),    // rose
-  'hecs':         badge(59, 130, 246),   // blue
+  'mortgage':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  'car_loan':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  'personal_loan': { bg: '#f59e0b', activeBg: '#d97706' },  // amber
+  'credit_card':  { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  'hecs':         { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
   // Income sub-items
-  'salary':       badge(99, 102, 241),   // indigo
-  'rental':       badge(168, 85, 247),   // purple
-  'dividends':    badge(34, 197, 94),    // green
-  'interest':     badge(234, 179, 8),    // yellow
+  'salary':       { bg: '#6366f1', activeBg: '#4f46e5' },   // indigo
+  'rental':       { bg: '#a855f7', activeBg: '#9333ea' },   // purple
+  'dividends':    { bg: '#22c55e', activeBg: '#16a34a' },   // green
+  'interest':     { bg: '#eab308', activeBg: '#ca8a04' },   // yellow
   // Expense sub-items
-  'fixed':        badge(107, 114, 128),  // gray
-  'living':       badge(249, 115, 22),   // orange
+  'fixed':        { bg: '#6b7280', activeBg: '#4b5563' },   // gray
+  'living':       { bg: '#f97316', activeBg: '#ea580c' },   // orange
   // Catch-all
-  'other':        badge(107, 114, 128),  // gray
+  'other':        { bg: '#6b7280', activeBg: '#4b5563' },   // gray
 }
 
 const navSections = [
@@ -243,10 +237,10 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-2 overflow-y-auto min-h-0">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-1.5 overflow-y-auto min-h-0">
       {navSections.map((section) => (
         <div key={section.label} className={section.theme}>
-          {/* Section card with gradient band */}
+          {/* Section card */}
           <div className="section-card">
             {/* Section header */}
             <div className="px-2 mb-1 pt-1">
@@ -272,24 +266,18 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       to={item.to}
                       end={'end' in item ? (item as any).end : undefined}
                       onClick={onNavigate}
-                      className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         parentActive
                           ? 'section-active'
                           : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                       }`}
                     >
-                      {parentActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full section-indicator" />
-                      )}
-                      {/* Colored icon badge */}
+                      {/* Solid opaque badge with white icon */}
                       <span
-                        className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors"
+                        className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0"
                         style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
                       >
-                        <item.icon
-                          className="h-4 w-4 transition-colors"
-                          style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.8 }}
-                        />
+                        <item.icon className="h-4 w-4 text-white" />
                       </span>
                       <span className="truncate flex-1">{item.label}</span>
                       {hasSubItems && (
@@ -297,7 +285,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       )}
                     </NavLink>
 
-                    {/* Always-visible subcategories with colored icon badges */}
+                    {/* Sub-items with smaller solid badges */}
                     {hasSubItems && (
                       <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
                         {subItems.map((sub: any) => {
@@ -308,20 +296,17 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                               key={sub.to}
                               to={sub.to}
                               onClick={onNavigate}
-                              className={`group relative flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                              className={`group flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                                 subActive
                                   ? 'section-active'
                                   : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                               }`}
                             >
                               <span
-                                className="flex items-center justify-center h-6 w-6 rounded-md shrink-0 transition-colors"
+                                className="flex items-center justify-center h-5 w-5 rounded-md shrink-0"
                                 style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
                               >
-                                <sub.icon
-                                  className="h-3 w-3 transition-colors"
-                                  style={{ color: subBadge.color, opacity: subActive ? 1 : 0.8 }}
-                                />
+                                <sub.icon className="h-2.5 w-2.5 text-white" />
                               </span>
                               {sub.label}
                             </Link>

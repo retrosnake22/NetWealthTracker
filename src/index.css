@@ -319,7 +319,7 @@
     animation: count-up 0.6s ease-out;
   }
 
-  /* ─── Sidebar Section Styles (One Card Per Category with gradient bands) ─── */
+  /* ─── Sidebar Section Styles (One Card Per Category) ─── */
 
   /* Section card container */
   .section-card {
@@ -327,17 +327,17 @@
     overflow: hidden;
     border-radius: 0.75rem;
     border: 1px solid rgba(99, 130, 191, 0.10);
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
     padding: 0.5rem;
   }
+  /* Thin solid colored top border */
   .section-card::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 8px;
-    right: 8px;
+    left: 0;
+    right: 0;
     height: 2px;
-    border-radius: 0 0 2px 2px;
   }
   :root .section-card {
     border-color: rgba(0, 0, 0, 0.06);
@@ -345,111 +345,99 @@
   }
 
   /* Blue — Overview */
-  .section-blue .section-card::before { background: linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd); }
-  .section-blue .section-label { color: rgba(59, 130, 246, 0.8); }
+  .section-blue .section-card::before { background: #3b82f6; }
+  .section-blue .section-label { color: #60a5fa; }
   .section-blue .section-active {
     background: rgba(59, 130, 246, 0.12);
-    color: #3b82f6;
+    color: #60a5fa;
   }
-  .section-blue .section-indicator { background-color: #3b82f6; }
   .section-blue .hover\:section-hover:hover {
     background: rgba(59, 130, 246, 0.06);
     color: #93bbfd;
   }
 
   /* Emerald — Assets */
-  .section-emerald .section-card::before { background: linear-gradient(90deg, #059669, #10b981, #6ee7b7); }
-  .section-emerald .section-label { color: rgba(16, 185, 129, 0.8); }
+  .section-emerald .section-card::before { background: #10b981; }
+  .section-emerald .section-label { color: #34d399; }
   .section-emerald .section-active {
     background: rgba(16, 185, 129, 0.12);
-    color: #10b981;
+    color: #34d399;
   }
-  .section-emerald .section-indicator { background-color: #10b981; }
   .section-emerald .hover\:section-hover:hover {
     background: rgba(16, 185, 129, 0.06);
     color: #6ee7b7;
   }
 
   /* Rose — Liabilities */
-  .section-rose .section-card::before { background: linear-gradient(90deg, #e11d48, #fb7185, #fda4af); }
-  .section-rose .section-label { color: rgba(251, 113, 133, 0.8); }
+  .section-rose .section-card::before { background: #f43f5e; }
+  .section-rose .section-label { color: #fb7185; }
   .section-rose .section-active {
-    background: rgba(251, 113, 133, 0.12);
+    background: rgba(244, 63, 94, 0.12);
     color: #fb7185;
   }
-  .section-rose .section-indicator { background-color: #fb7185; }
   .section-rose .hover\:section-hover:hover {
-    background: rgba(251, 113, 133, 0.06);
+    background: rgba(244, 63, 94, 0.06);
     color: #fda4af;
   }
 
   /* Purple — Income */
-  .section-purple .section-card::before { background: linear-gradient(90deg, #7c3aed, #8b5cf6, #c4b5fd); }
-  .section-purple .section-label { color: rgba(139, 92, 246, 0.8); }
+  .section-purple .section-card::before { background: #8b5cf6; }
+  .section-purple .section-label { color: #a78bfa; }
   .section-purple .section-active {
     background: rgba(139, 92, 246, 0.12);
-    color: #8b5cf6;
+    color: #a78bfa;
   }
-  .section-purple .section-indicator { background-color: #8b5cf6; }
   .section-purple .hover\:section-hover:hover {
     background: rgba(139, 92, 246, 0.06);
     color: #c4b5fd;
   }
 
   /* Amber — Expenses */
-  .section-amber .section-card::before { background: linear-gradient(90deg, #d97706, #f59e0b, #fcd34d); }
-  .section-amber .section-label { color: rgba(245, 158, 11, 0.8); }
+  .section-amber .section-card::before { background: #f59e0b; }
+  .section-amber .section-label { color: #fbbf24; }
   .section-amber .section-active {
     background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
+    color: #fbbf24;
   }
-  .section-amber .section-indicator { background-color: #f59e0b; }
   .section-amber .hover\:section-hover:hover {
     background: rgba(245, 158, 11, 0.06);
     color: #fcd34d;
   }
 
   /* Cyan — Planning */
-  .section-cyan .section-card::before { background: linear-gradient(90deg, #0891b2, #22d3ee, #67e8f9); }
-  .section-cyan .section-label { color: rgba(34, 211, 238, 0.8); }
+  .section-cyan .section-card::before { background: #06b6d4; }
+  .section-cyan .section-label { color: #22d3ee; }
   .section-cyan .section-active {
     background: rgba(34, 211, 238, 0.12);
     color: #22d3ee;
   }
-  .section-cyan .section-indicator { background-color: #22d3ee; }
   .section-cyan .hover\:section-hover:hover {
     background: rgba(34, 211, 238, 0.06);
     color: #67e8f9;
   }
 
   /* Light mode overrides */
+  :root .section-blue .section-label { color: #2563eb; }
   :root .section-blue .section-active { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
-  :root .section-blue .section-indicator { background-color: #2563eb; }
-  :root .section-blue .section-label { color: rgba(37, 99, 235, 0.7); }
   :root .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.06); color: #1d4ed8; }
 
+  :root .section-emerald .section-label { color: #059669; }
   :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.10); color: #059669; }
-  :root .section-emerald .section-indicator { background-color: #059669; }
-  :root .section-emerald .section-label { color: rgba(5, 150, 105, 0.7); }
   :root .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.06); color: #047857; }
 
-  :root .section-rose .section-active { background: rgba(251, 113, 133, 0.10); color: #e11d48; }
-  :root .section-rose .section-indicator { background-color: #e11d48; }
-  :root .section-rose .section-label { color: rgba(225, 29, 72, 0.7); }
+  :root .section-rose .section-label { color: #e11d48; }
+  :root .section-rose .section-active { background: rgba(244, 63, 94, 0.10); color: #e11d48; }
   :root .section-rose .hover\:section-hover:hover { background: rgba(251, 113, 133, 0.06); color: #be123c; }
 
+  :root .section-purple .section-label { color: #7c3aed; }
   :root .section-purple .section-active { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
-  :root .section-purple .section-indicator { background-color: #7c3aed; }
-  :root .section-purple .section-label { color: rgba(124, 58, 237, 0.7); }
   :root .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.06); color: #6d28d9; }
 
+  :root .section-amber .section-label { color: #d97706; }
   :root .section-amber .section-active { background: rgba(245, 158, 11, 0.10); color: #d97706; }
-  :root .section-amber .section-indicator { background-color: #d97706; }
-  :root .section-amber .section-label { color: rgba(217, 119, 6, 0.7); }
   :root .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.06); color: #b45309; }
 
+  :root .section-cyan .section-label { color: #0891b2; }
   :root .section-cyan .section-active { background: rgba(34, 211, 238, 0.10); color: #0891b2; }
-  :root .section-cyan .section-indicator { background-color: #0891b2; }
-  :root .section-cyan .section-label { color: rgba(8, 145, 178, 0.7); }
   :root .section-cyan .hover\:section-hover:hover { background: rgba(34, 211, 238, 0.06); color: #0e7490; }
 }
