@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LineChart, TrendingUp, Building2, ChevronDown } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { WealthChart } from '@/components/dashboard/WealthChart'
@@ -21,6 +21,18 @@ export function ProjectionsPage() {
   // Use growth overrides, defaulting to 7% if somehow undefined
   const propertyGrowth = projectionSettings.propertyGrowthOverride ?? 0.07
   const stockGrowth = projectionSettings.stockGrowthOverride ?? 0.07
+
+  // Local input state so typing isn't interrupted by .toFixed() re-renders
+  const [propGrowthInput, setPropGrowthInput] = useState((propertyGrowth * 100).toFixed(1))
+  const [stockGrowthInput, setStockGrowthInput] = useState((stockGrowth * 100).toFixed(1))
+
+  // Sync local state when store changes externally
+  useEffect(() => {
+    setPropGrowthInput((propertyGrowth * 100).toFixed(1))
+  }, [propertyGrowth])
+  useEffect(() => {
+    setStockGrowthInput((stockGrowth * 100).toFixed(1))
+  }, [stockGrowth])
 
   const data = projectNetWealth(
     assets, properties, liabilities, incomes, expenseBudgets,
@@ -131,12 +143,15 @@ export function ProjectionsPage() {
                   <Label>Property Growth (% p.a.)</Label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.1"
                     min={0}
                     max={30}
-                    value={(propertyGrowth * 100).toFixed(2)}
-                    onChange={e => {
-                      updateProjectionSettings({ propertyGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
+                    value={propGrowthInput}
+                    onChange={e => setPropGrowthInput(e.target.value)}
+                    onBlur={e => {
+                      const v = Math.min(30, Math.max(0, parseFloat(e.target.value) || 0))
+                      setPropGrowthInput(v.toFixed(1))
+                      updateProjectionSettings({ propertyGrowthOverride: v / 100 })
                     }}
                   />
                 </div>
@@ -144,12 +159,15 @@ export function ProjectionsPage() {
                   <Label>Stock / Super Growth (% p.a.)</Label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.1"
                     min={0}
                     max={30}
-                    value={(stockGrowth * 100).toFixed(2)}
-                    onChange={e => {
-                      updateProjectionSettings({ stockGrowthOverride: parseFloat(e.target.value) / 100 || 0 })
+                    value={stockGrowthInput}
+                    onChange={e => setStockGrowthInput(e.target.value)}
+                    onBlur={e => {
+                      const v = Math.min(30, Math.max(0, parseFloat(e.target.value) || 0))
+                      setStockGrowthInput(v.toFixed(1))
+                      updateProjectionSettings({ stockGrowthOverride: v / 100 })
                     }}
                   />
                 </div>
