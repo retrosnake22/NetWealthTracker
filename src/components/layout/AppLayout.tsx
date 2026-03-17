@@ -237,13 +237,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-3 overflow-y-auto min-h-0">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-2 overflow-y-auto min-h-0">
       {navSections.map((section) => (
         <div key={section.label} className={section.theme}>
           {/* Section card */}
           <div className="section-card">
             {/* Section header */}
-            <div className="px-2 mb-1 pt-1">
+            <div className="px-2.5 mb-1 pt-1.5">
               <p className="section-label text-[10px] font-bold uppercase tracking-widest">
                 {section.label}
               </p>
@@ -257,7 +257,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 const parentActive = hasSubItems
                   ? location.pathname.startsWith(item.to)
                   : isItemActive(item.to, 'end' in item ? (item as any).end : false)
-                const parentBadge = badgeColors[item.to] || badgeColors['/']
 
                 return (
                   <div key={item.to}>
@@ -272,25 +271,26 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                           : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                       }`}
                     >
-                      {/* Solid opaque badge with white icon */}
-                      <span
-                        className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0"
-                        style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
-                      >
-                        <item.icon className="h-4 w-4 text-white" />
+                      {/* Translucent tinted badge */}
+                      <span className="section-icon-badge flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors">
+                        <item.icon className="h-4 w-4" />
                       </span>
                       <span className="truncate flex-1">{item.label}</span>
+                      {hasSubItems && (
+                        <span className="section-count text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none">
+                          {subItems.length}
+                        </span>
+                      )}
                       {hasSubItems && (
                         <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 opacity-50' : 'text-muted-foreground/30'}`} />
                       )}
                     </NavLink>
 
-                    {/* Sub-items with smaller solid badges */}
+                    {/* Sub-items with translucent badges */}
                     {hasSubItems && (
-                      <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
+                      <div className="pl-5 pr-1 pb-0.5 space-y-0.5 mt-0.5">
                         {subItems.map((sub: any) => {
                           const subActive = isItemActive(sub.to)
-                          const subBadge = badgeColors[sub.category] || badgeColors['other']
                           return (
                             <Link
                               key={sub.to}
@@ -302,11 +302,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                                   : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
                               }`}
                             >
-                              <span
-                                className="flex items-center justify-center h-5 w-5 rounded-md shrink-0"
-                                style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
-                              >
-                                <sub.icon className="h-2.5 w-2.5 text-white" />
+                              <span className="section-icon-badge flex items-center justify-center h-5 w-5 rounded-md shrink-0 transition-colors">
+                                <sub.icon className="h-2.5 w-2.5" />
                               </span>
                               {sub.label}
                             </Link>
