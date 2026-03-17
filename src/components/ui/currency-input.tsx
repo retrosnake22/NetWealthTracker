@@ -60,6 +60,12 @@ export function CurrencyInput({
     emitChange(cleaned)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault()
+    }
+  }
+
   return (
     <div className="relative">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
@@ -67,11 +73,14 @@ export function CurrencyInput({
       </span>
       <Input
         ref={inputRef}
-        type={focused ? 'number' : 'text'}
-        value={focused ? displayValue : displayValue}
+        type="text"
+        inputMode="decimal"
+        value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onWheel={(e) => (e.target as HTMLInputElement).blur()}
         placeholder={placeholder}
         className={cn('pl-7', className)}
       />
