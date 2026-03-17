@@ -271,7 +271,7 @@ export function DashboardPage() {
   const livingExpenseLabel = isEstimateMode
     ? 'Living Expenses (estimate)'
     : usingActuals
-      ? 'Living Expenses (actuals)'
+      ? 'Living Expenses (3m avg)'
       : 'Living Expenses (budget)'
 
   const projectionData = projectNetWealth(

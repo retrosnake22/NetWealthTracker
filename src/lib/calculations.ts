@@ -315,7 +315,9 @@ function filterLivingBudgets(budgets: ExpenseBudget[]): ExpenseBudget[] {
 /**
  * Get the effective monthly living expense amount based on user settings.
  * - 'budget' source: sum of living expense budget entries only
- * - 'actuals' source: sum of actuals for current month (falls back to budget if none)
+ * - 'actuals' source: rolling average of the last 3 completed months of actuals.
+ *   Excludes the current (incomplete) month. Excludes months with $0 total.
+ *   Falls back to budget if no qualifying months exist.
  */
 function getEffectiveMonthlyExpenses(
   budgets: ExpenseBudget[],
@@ -331,7 +333,7 @@ function getEffectiveMonthlyExpenses(
     return { total: budgetTotal, usingActuals: false }
   }
 
-  // User chose "actuals" — use actuals for current month if any exist
+  // User chose "actuals" — use rolling 3-month average of completed months
   if (!actuals || actuals.length === 0) {
     return { total: budgetTotal, usingActuals: false }
   }
@@ -341,24 +343,28 @@ function getEffectiveMonthlyExpenses(
 
   // Only count actuals whose budgetId belongs to a living expense budget
   const livingBudgetIds = new Set(livingBudgets.map(b => b.id))
-  const actualMap = new Map<string, number>()
+
+  // Group actuals by month, excluding the current incomplete month
+  const monthTotals = new Map<string, number>()
   for (const a of actuals) {
-    if (a.month === currentMonth && livingBudgetIds.has(a.budgetId)) {
-      actualMap.set(a.budgetId, a.actualAmount)
+    if (a.month !== currentMonth && livingBudgetIds.has(a.budgetId)) {
+      monthTotals.set(a.month, (monthTotals.get(a.month) ?? 0) + a.actualAmount)
     }
   }
 
-  if (actualMap.size === 0) {
+  // Sort months descending, take last 3 with non-zero totals
+  const qualifyingMonths = Array.from(monthTotals.entries())
+    .filter(([, total]) => total > 0)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 3)
+
+  if (qualifyingMonths.length === 0) {
     return { total: budgetTotal, usingActuals: false }
   }
 
-  // Sum only living expense actuals
-  let total = 0
-  for (const [, amount] of actualMap) {
-    total += amount
-  }
+  const average = qualifyingMonths.reduce((sum, [, t]) => sum + t, 0) / qualifyingMonths.length
 
-  return { total, usingActuals: true }
+  return { total: Math.round(average), usingActuals: true }
 }
 
 export function calculateDashboardMetrics(
