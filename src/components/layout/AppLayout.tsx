@@ -27,6 +27,9 @@ import {
   GraduationCap,
   Landmark,
   HandCoins,
+  Briefcase,
+  BarChart3,
+  Coins,
   ChevronRight,
   Cloud,
   CloudOff,
@@ -85,7 +88,17 @@ const navSections = [
     label: 'Income Statement',
     theme: 'section-purple',
     items: [
-      { to: '/income', icon: TrendingUp, label: 'Income' },
+      {
+        to: '/income',
+        icon: TrendingUp,
+        label: 'Income',
+        subItems: [
+          { to: '/income?category=salary', category: 'salary', label: 'Salary / Wages', icon: Briefcase },
+          { to: '/income?category=rental', category: 'rental', label: 'Rental Income', icon: Home },
+          { to: '/income?category=dividends', category: 'dividends', label: 'Dividends', icon: BarChart3 },
+          { to: '/income?category=interest', category: 'interest', label: 'Interest', icon: Coins },
+        ],
+      },
       {
         to: '/expenses',
         icon: Receipt,
@@ -170,10 +183,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     }
 
     if (end) return true
-    if (itemPath === '/assets') {
-      return !searchParams.get('category')
-    }
-    if (itemPath === '/liabilities') {
+    if (itemPath === '/assets' || itemPath === '/liabilities' || itemPath === '/income') {
       return !searchParams.get('category')
     }
 

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Pencil, Trash2, TrendingUp, Briefcase, Home, BarChart3, Landmark, Sparkles, HelpCircle, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -126,6 +127,8 @@ const CATEGORY_ORDER: IncomeCategory[] = ['salary', 'rental', 'dividends', 'inte
 
 export function IncomePage() {
   const { incomes, addIncome, updateIncome, removeIncome, assets, properties, userProfile } = useFinanceStore()
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category') as IncomeCategory | null
   const isHousehold = userProfile.profileType === 'household' && userProfile.householdMembers.length > 0
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -152,7 +155,7 @@ export function IncomePage() {
 
   // ── Manual income helpers ───────────────────────────────────────────────────
 
-  const resetForm = () => { setForm({ name: '', category: 'salary', monthlyAmount: '', isActive: true, grossAnnualSalary: '', includesSuper: false, memberId: '' }); setEditId(null) }
+  const resetForm = () => { setForm({ name: '', category: (categoryFilter || 'salary') as IncomeCategory, monthlyAmount: '', isActive: true, grossAnnualSalary: '', includesSuper: false, memberId: '' }); setEditId(null) }
 
   const getMemberName = (memberId?: string) => {
     if (!memberId) return null
@@ -206,9 +209,13 @@ export function IncomePage() {
     setDeleteTarget(null)
   }
 
-  const manualTotal = incomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
-  const grandTotal = manualTotal + autoTotal
-  const manualGrouped = useMemo(() => groupByCategory(incomes), [incomes])
+  const filteredIncomes = useMemo(() => categoryFilter ? incomes.filter(i => i.category === categoryFilter) : incomes, [incomes, categoryFilter])
+  const filteredAutoItems = useMemo(() => categoryFilter ? autoItems.filter(i => i.category === categoryFilter) : autoItems, [autoItems, categoryFilter])
+  const manualTotal = filteredIncomes.filter(i => i.isActive).reduce((s, i) => s + i.monthlyAmount, 0)
+  const filteredAutoTotal = filteredAutoItems.reduce((s, i) => s + i.monthlyAmount, 0)
+  const grandTotal = manualTotal + filteredAutoTotal
+  const manualGrouped = useMemo(() => groupByCategory(filteredIncomes), [filteredIncomes])
+  const filteredAutoGrouped = useMemo(() => groupByCategory(filteredAutoItems), [filteredAutoItems])
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -344,7 +351,7 @@ export function IncomePage() {
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-emerald-700 to-emerald-400 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Auto-Generated</p>
-          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(autoTotal)}</p>
+          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(filteredAutoTotal)}</p>
         </div>
       </div>
 
@@ -408,7 +415,7 @@ export function IncomePage() {
       })()}
 
       {/* ── Auto-Generated Income section (grouped by category) ── */}
-      {autoItems.length > 0 && (
+      {filteredAutoItems.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">Auto-Generated Income</h2>
@@ -416,7 +423,7 @@ export function IncomePage() {
           </div>
 
           {CATEGORY_ORDER.map(cat => {
-            const items = autoGrouped.get(cat)
+            const items = filteredAutoGrouped.get(cat)
             if (!items || items.length === 0) return null
             const Icon = CATEGORY_ICONS[cat]
             const styles = CATEGORY_SECTION_STYLES[cat]
