@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Send, Loader2, RotateCcw, Lightbulb } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { supabase } from '@/lib/supabase'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/format'
 
@@ -150,18 +153,24 @@ export function WhatIfPage() {
       const state = useFinanceStore.getState()
       const financialContext = buildFinancialContext(state)
 
-      const { data, error: fnError } = await supabase.functions.invoke('what-if', {
-        body: { question: question.trim(), financialContext },
+      // Use fetch directly for better error visibility
+      const session = await supabase.auth.getSession()
+      const accessToken = session.data.session?.access_token
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/what-if`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken ?? SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ question: question.trim(), financialContext }),
       })
 
-      // The Supabase client may return both data and error for non-2xx responses
-      if (fnError) {
-        const errorBody = typeof data === 'object' && data?.error ? data.error : fnError.message
-        throw new Error(errorBody)
-      }
+      const data = await res.json()
 
-      if (data?.error) {
-        throw new Error(data.error)
+      if (!res.ok) {
+        throw new Error(data?.error || `Server error ${res.status}: ${res.statusText}`)
       }
 
       const assistantMessage: Message = {
