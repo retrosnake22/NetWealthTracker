@@ -47,8 +47,8 @@ import { NotificationBell } from '@/components/NotificationBell'
 // Badge color config for nav items — { bg, activeBg, color }
 type BadgeColor = { bg: string; activeBg: string; color: string }
 const badge = (r: number, g: number, b: number): BadgeColor => ({
-  bg: `rgba(${r},${g},${b},0.10)`,
-  activeBg: `rgba(${r},${g},${b},0.22)`,
+  bg: `rgba(${r},${g},${b},0.18)`,
+  activeBg: `rgba(${r},${g},${b},0.35)`,
   color: `rgb(${r},${g},${b})`,
 })
 
@@ -231,12 +231,16 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-3 overflow-y-auto min-h-0">
-      {navSections.map((section) => (
-        <div key={section.label} className={`${section.theme} section-card rounded-xl p-2`}>
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-1 overflow-y-auto min-h-0">
+      {navSections.map((section, sectionIdx) => (
+        <div key={section.label} className={`${section.theme}`}>
+          {/* Divider between sections */}
+          {sectionIdx > 0 && (
+            <div className="h-px bg-border/30 mx-2 my-2" />
+          )}
           {/* Section header */}
-          <div className="px-2 mb-1.5 pt-1">
-            <p className="section-label text-xs font-bold uppercase tracking-wide">
+          <div className="px-3 mb-1 pt-1">
+            <p className="section-label text-[10px] font-semibold uppercase tracking-widest">
               {section.label}
             </p>
           </div>
@@ -269,12 +273,12 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     )}
                     {/* Colored icon badge */}
                     <span
-                      className="flex items-center justify-center h-7 w-7 rounded-lg shrink-0 transition-colors"
+                      className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors"
                       style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
                     >
                       <item.icon
                         className="h-4 w-4 transition-colors"
-                        style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.7 }}
+                        style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.8 }}
                       />
                     </span>
                     <span className="truncate flex-1">{item.label}</span>
@@ -305,8 +309,8 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                               style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
                             >
                               <sub.icon
-                                className="h-3.5 w-3.5 transition-colors"
-                                style={{ color: subBadge.color, opacity: subActive ? 1 : 0.7 }}
+                                className="h-3 w-3 transition-colors"
+                                style={{ color: subBadge.color, opacity: subActive ? 1 : 0.8 }}
                               />
                             </span>
                             {sub.label}
