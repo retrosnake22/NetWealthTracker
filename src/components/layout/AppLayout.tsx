@@ -93,7 +93,7 @@ const navSections = [
     ],
   },
   {
-    label: 'Balance Sheet',
+    label: 'Assets',
     theme: 'section-emerald',
     items: [
       {
@@ -109,6 +109,12 @@ const navSections = [
           { to: '/assets?category=other', category: 'other', label: 'Other', icon: Package },
         ],
       },
+    ],
+  },
+  {
+    label: 'Liabilities',
+    theme: 'section-rose',
+    items: [
       {
         to: '/liabilities',
         icon: CreditCard,
@@ -125,7 +131,7 @@ const navSections = [
     ],
   },
   {
-    label: 'Cash Flow',
+    label: 'Income',
     theme: 'section-purple',
     items: [
       {
@@ -139,6 +145,12 @@ const navSections = [
           { to: '/income?category=interest', category: 'interest', label: 'Interest', icon: Coins },
         ],
       },
+    ],
+  },
+  {
+    label: 'Expenses',
+    theme: 'section-amber',
+    items: [
       {
         to: '/expenses',
         icon: Receipt,
@@ -152,7 +164,7 @@ const navSections = [
   },
   {
     label: 'Planning',
-    theme: 'section-amber',
+    theme: 'section-cyan',
     items: [
       { to: '/projections', icon: LineChart, label: 'Projections' },
     ],
@@ -231,97 +243,96 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-1 overflow-y-auto min-h-0">
-      {navSections.map((section, sectionIdx) => (
-        <div key={section.label} className={`${section.theme}`}>
-          {/* Divider between sections */}
-          {sectionIdx > 0 && (
-            <div className="h-px bg-border/30 mx-2 my-2" />
-          )}
-          {/* Section header */}
-          <div className="px-3 mb-1 pt-1">
-            <p className="section-label text-[10px] font-semibold uppercase tracking-widest">
-              {section.label}
-            </p>
-          </div>
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-2 overflow-y-auto min-h-0">
+      {navSections.map((section) => (
+        <div key={section.label} className={section.theme}>
+          {/* Section card with gradient band */}
+          <div className="section-card">
+            {/* Section header */}
+            <div className="px-2 mb-1 pt-1">
+              <p className="section-label text-[10px] font-bold uppercase tracking-widest">
+                {section.label}
+              </p>
+            </div>
 
-          {/* Nav items */}
-          <div className="space-y-0.5">
-            {section.items.map((item) => {
-              const subItems = 'subItems' in item ? (item as any).subItems : undefined
-              const hasSubItems = subItems && subItems.length > 0
-              const parentActive = hasSubItems
-                ? location.pathname.startsWith(item.to)
-                : isItemActive(item.to, 'end' in item ? (item as any).end : false)
-              const parentBadge = badgeColors[item.to] || badgeColors['/']
+            {/* Nav items */}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const subItems = 'subItems' in item ? (item as any).subItems : undefined
+                const hasSubItems = subItems && subItems.length > 0
+                const parentActive = hasSubItems
+                  ? location.pathname.startsWith(item.to)
+                  : isItemActive(item.to, 'end' in item ? (item as any).end : false)
+                const parentBadge = badgeColors[item.to] || badgeColors['/']
 
-              return (
-                <div key={item.to}>
-                  {/* Parent nav item */}
-                  <NavLink
-                    to={item.to}
-                    end={'end' in item ? (item as any).end : undefined}
-                    onClick={onNavigate}
-                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      parentActive
-                        ? 'section-active'
-                        : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                    }`}
-                  >
-                    {parentActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full section-indicator" />
-                    )}
-                    {/* Colored icon badge */}
-                    <span
-                      className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors"
-                      style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
+                return (
+                  <div key={item.to}>
+                    {/* Parent nav item */}
+                    <NavLink
+                      to={item.to}
+                      end={'end' in item ? (item as any).end : undefined}
+                      onClick={onNavigate}
+                      className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        parentActive
+                          ? 'section-active'
+                          : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
+                      }`}
                     >
-                      <item.icon
-                        className="h-4 w-4 transition-colors"
-                        style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.8 }}
-                      />
-                    </span>
-                    <span className="truncate flex-1">{item.label}</span>
-                    {hasSubItems && (
-                      <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 opacity-50' : 'text-muted-foreground/30'}`} />
-                    )}
-                  </NavLink>
+                      {parentActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full section-indicator" />
+                      )}
+                      {/* Colored icon badge */}
+                      <span
+                        className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors"
+                        style={{ backgroundColor: parentActive ? parentBadge.activeBg : parentBadge.bg }}
+                      >
+                        <item.icon
+                          className="h-4 w-4 transition-colors"
+                          style={{ color: parentBadge.color, opacity: parentActive ? 1 : 0.8 }}
+                        />
+                      </span>
+                      <span className="truncate flex-1">{item.label}</span>
+                      {hasSubItems && (
+                        <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 opacity-50' : 'text-muted-foreground/30'}`} />
+                      )}
+                    </NavLink>
 
-                  {/* Always-visible subcategories with colored icon badges */}
-                  {hasSubItems && (
-                    <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
-                      {subItems.map((sub: any) => {
-                        const subActive = isItemActive(sub.to)
-                        const subBadge = badgeColors[sub.category] || badgeColors['other']
-                        return (
-                          <Link
-                            key={sub.to}
-                            to={sub.to}
-                            onClick={onNavigate}
-                            className={`group relative flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                              subActive
-                                ? 'section-active'
-                                : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                            }`}
-                          >
-                            <span
-                              className="flex items-center justify-center h-6 w-6 rounded-md shrink-0 transition-colors"
-                              style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
+                    {/* Always-visible subcategories with colored icon badges */}
+                    {hasSubItems && (
+                      <div className="pl-4 pr-1 pb-0.5 space-y-0.5 mt-0.5">
+                        {subItems.map((sub: any) => {
+                          const subActive = isItemActive(sub.to)
+                          const subBadge = badgeColors[sub.category] || badgeColors['other']
+                          return (
+                            <Link
+                              key={sub.to}
+                              to={sub.to}
+                              onClick={onNavigate}
+                              className={`group relative flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                subActive
+                                  ? 'section-active'
+                                  : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
+                              }`}
                             >
-                              <sub.icon
-                                className="h-3 w-3 transition-colors"
-                                style={{ color: subBadge.color, opacity: subActive ? 1 : 0.8 }}
-                              />
-                            </span>
-                            {sub.label}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                              <span
+                                className="flex items-center justify-center h-6 w-6 rounded-md shrink-0 transition-colors"
+                                style={{ backgroundColor: subActive ? subBadge.activeBg : subBadge.bg }}
+                              >
+                                <sub.icon
+                                  className="h-3 w-3 transition-colors"
+                                  style={{ color: subBadge.color, opacity: subActive ? 1 : 0.8 }}
+                                />
+                              </span>
+                              {sub.label}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       ))}
