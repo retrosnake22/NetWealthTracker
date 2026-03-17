@@ -1,10 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Send, Loader2, RotateCcw, Lightbulb } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { supabase } from '@/lib/supabase'
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/format'
 
@@ -157,12 +154,12 @@ export function WhatIfPage() {
       const session = await supabase.auth.getSession()
       const accessToken = session.data.session?.access_token
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/what-if`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/what-if`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken ?? SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${accessToken ?? supabaseAnonKey}`,
+          'apikey': supabaseAnonKey,
         },
         body: JSON.stringify({ question: question.trim(), financialContext }),
       })
