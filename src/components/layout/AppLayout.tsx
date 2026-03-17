@@ -129,6 +129,7 @@ const navSections: NavSection[] = [
     theme: 's-cyan',
     items: [
       { to: '/projections', emoji: '📉', label: 'Projections' },
+      { to: '/what-if', emoji: '✨', label: 'What if...?' },
     ],
   },
 ]
@@ -144,6 +145,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/expenses/fixed': { title: 'Fixed Expenses', subtitle: 'Property and committed costs' },
   '/expenses/living': { title: 'Living Expenses', subtitle: 'Budget and track daily spending' },
   '/projections': { title: 'Projections', subtitle: 'Model your future wealth' },
+  '/what-if': { title: 'What if...?', subtitle: 'AI-powered financial scenarios' },
 }
 
 // ─── User profile hook ───

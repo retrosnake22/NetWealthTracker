@@ -11,6 +11,7 @@ import { IncomePage } from '@/pages/IncomePage'
 import { FixedExpensesPage } from '@/pages/FixedExpensesPage'
 import { LivingExpensesPage } from '@/pages/LivingExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
+import { WhatIfPage } from '@/pages/WhatIfPage'
 import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
@@ -166,6 +167,7 @@ function App() {
           <Route path="/expenses/fixed" element={<FixedExpensesPage />} />
           <Route path="/expenses/living" element={<LivingExpensesPage />} />
           <Route path="/projections" element={<ProjectionsPage />} />
+          <Route path="/what-if" element={<WhatIfPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
