@@ -330,7 +330,7 @@
       border-right: 1px solid rgba(99,130,191,0.12);
     }
     .dark .sidebar-container { background: #0D1425; }
-    :root .sidebar-container { background: #ffffff; border-right-color: #e5e7eb; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    :root:not(.dark) .sidebar-container { background: #ffffff; border-right-color: #e5e7eb; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
 
     /* Section card — mockup: .section-card */
     .section-card {
@@ -340,7 +340,7 @@
       padding: 6px;
     }
     .dark .section-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(99,130,191,0.08); }
-    :root .section-card { background: #f9fafb; border: 1px solid #f0f0f0; }
+    :root:not(.dark) .section-card { background: #f9fafb; border: 1px solid #f0f0f0; }
 
     /* Left gradient accent — mockup: .section-card::before */
     .section-card::before {
@@ -366,22 +366,22 @@
     .dark .s-purple .section-header-label { color: #a78bfa; }
     .dark .s-amber .section-header-label { color: #fbbf24; }
     .dark .s-cyan .section-header-label { color: #22d3ee; }
-    :root .s-blue .section-header-label { color: #2563eb; }
-    :root .s-emerald .section-header-label { color: #059669; }
-    :root .s-rose .section-header-label { color: #e11d48; }
-    :root .s-purple .section-header-label { color: #7c3aed; }
-    :root .s-amber .section-header-label { color: #d97706; }
-    :root .s-cyan .section-header-label { color: #0891b2; }
+    :root:not(.dark) .s-blue .section-header-label { color: #2563eb; }
+    :root:not(.dark) .s-emerald .section-header-label { color: #059669; }
+    :root:not(.dark) .s-rose .section-header-label { color: #e11d48; }
+    :root:not(.dark) .s-purple .section-header-label { color: #7c3aed; }
+    :root:not(.dark) .s-amber .section-header-label { color: #d97706; }
+    :root:not(.dark) .s-cyan .section-header-label { color: #0891b2; }
 
     /* Count badge — mockup: .section-count */
     .dark .section-count { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); }
-    :root .section-count { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.3); }
+    :root:not(.dark) .section-count { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.3); }
 
     /* Nav items — mockup: .nav-item */
     .dark .nav-item { color: rgba(255,255,255,0.65); }
-    :root .nav-item { color: #4b5563; }
+    :root:not(.dark) .nav-item { color: #4b5563; }
     .dark .nav-item:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.9); }
-    :root .nav-item:hover { background: rgba(0,0,0,0.03); color: #111827; }
+    :root:not(.dark) .nav-item:hover { background: rgba(0,0,0,0.03); color: #111827; }
 
     /* Icon badge — mockup: .icon-badge */
     .s-blue .icon-badge { background: rgba(59,130,246,0.12); }
@@ -390,12 +390,12 @@
     .s-purple .icon-badge { background: rgba(139,92,246,0.12); }
     .s-amber .icon-badge { background: rgba(245,158,11,0.12); }
     .s-cyan .icon-badge { background: rgba(6,182,212,0.12); }
-    :root .s-blue .icon-badge { background: rgba(59,130,246,0.08); }
-    :root .s-emerald .icon-badge { background: rgba(16,185,129,0.08); }
-    :root .s-rose .icon-badge { background: rgba(244,63,94,0.08); }
-    :root .s-purple .icon-badge { background: rgba(139,92,246,0.08); }
-    :root .s-amber .icon-badge { background: rgba(245,158,11,0.08); }
-    :root .s-cyan .icon-badge { background: rgba(6,182,212,0.08); }
+    :root:not(.dark) .s-blue .icon-badge { background: rgba(59,130,246,0.08); }
+    :root:not(.dark) .s-emerald .icon-badge { background: rgba(16,185,129,0.08); }
+    :root:not(.dark) .s-rose .icon-badge { background: rgba(244,63,94,0.08); }
+    :root:not(.dark) .s-purple .icon-badge { background: rgba(139,92,246,0.08); }
+    :root:not(.dark) .s-amber .icon-badge { background: rgba(245,158,11,0.08); }
+    :root:not(.dark) .s-cyan .icon-badge { background: rgba(6,182,212,0.08); }
 
     /* Active nav item — mockup: .nav-item.active */
     .dark .s-blue .nav-item.active { background: rgba(59,130,246,0.15); color: #93bbfd; }
@@ -404,12 +404,12 @@
     .dark .s-purple .nav-item.active { background: rgba(139,92,246,0.15); color: #c4b5fd; }
     .dark .s-amber .nav-item.active { background: rgba(245,158,11,0.15); color: #fde68a; }
     .dark .s-cyan .nav-item.active { background: rgba(6,182,212,0.15); color: #67e8f9; }
-    :root .s-blue .nav-item.active { background: rgba(59,130,246,0.1); color: #1e40af; }
-    :root .s-emerald .nav-item.active { background: rgba(16,185,129,0.1); color: #065f46; }
-    :root .s-rose .nav-item.active { background: rgba(244,63,94,0.1); color: #9f1239; }
-    :root .s-purple .nav-item.active { background: rgba(139,92,246,0.1); color: #5b21b6; }
-    :root .s-amber .nav-item.active { background: rgba(245,158,11,0.1); color: #92400e; }
-    :root .s-cyan .nav-item.active { background: rgba(6,182,212,0.1); color: #155e75; }
+    :root:not(.dark) .s-blue .nav-item.active { background: rgba(59,130,246,0.1); color: #1e40af; }
+    :root:not(.dark) .s-emerald .nav-item.active { background: rgba(16,185,129,0.1); color: #065f46; }
+    :root:not(.dark) .s-rose .nav-item.active { background: rgba(244,63,94,0.1); color: #9f1239; }
+    :root:not(.dark) .s-purple .nav-item.active { background: rgba(139,92,246,0.1); color: #5b21b6; }
+    :root:not(.dark) .s-amber .nav-item.active { background: rgba(245,158,11,0.1); color: #92400e; }
+    :root:not(.dark) .s-cyan .nav-item.active { background: rgba(6,182,212,0.1); color: #155e75; }
 
     /* Active icon badge glow — mockup: .nav-item.active .icon-badge */
     .nav-item.active .icon-badge { box-shadow: 0 0 12px rgba(255,255,255,0.05); }
@@ -422,9 +422,9 @@
 
     /* Sub items — mockup: .sub-item */
     .dark .sub-item { color: rgba(255,255,255,0.4); }
-    :root .sub-item { color: #9ca3af; }
+    :root:not(.dark) .sub-item { color: #9ca3af; }
     .dark .sub-item:hover { color: rgba(255,255,255,0.7); }
-    :root .sub-item:hover { color: #374151; }
+    :root:not(.dark) .sub-item:hover { color: #374151; }
 
     /* Active sub item — mockup: .sub-item.active */
     .dark .s-emerald .sub-item.active { color: #6ee7b7; }
@@ -433,26 +433,26 @@
     .dark .s-purple .sub-item.active { color: #c4b5fd; }
     .dark .s-amber .sub-item.active { color: #fde68a; }
     .dark .s-cyan .sub-item.active { color: #67e8f9; }
-    :root .s-emerald .sub-item.active { color: #059669; }
-    :root .s-rose .sub-item.active { color: #e11d48; }
-    :root .s-blue .sub-item.active { color: #1e40af; }
-    :root .s-purple .sub-item.active { color: #7c3aed; }
-    :root .s-amber .sub-item.active { color: #d97706; }
-    :root .s-cyan .sub-item.active { color: #0891b2; }
+    :root:not(.dark) .s-emerald .sub-item.active { color: #059669; }
+    :root:not(.dark) .s-rose .sub-item.active { color: #e11d48; }
+    :root:not(.dark) .s-blue .sub-item.active { color: #1e40af; }
+    :root:not(.dark) .s-purple .sub-item.active { color: #7c3aed; }
+    :root:not(.dark) .s-amber .sub-item.active { color: #d97706; }
+    :root:not(.dark) .s-cyan .sub-item.active { color: #0891b2; }
 
     /* Footer — mockup: .footer */
     .sidebar-footer { border-top: 1px solid rgba(99,130,191,0.06); }
-    :root .sidebar-footer { border-top-color: #f3f4f6; }
+    :root:not(.dark) .sidebar-footer { border-top-color: #f3f4f6; }
 
     /* User card — mockup: .user-card */
     .dark .user-card-sidebar { background: rgba(255,255,255,0.025); }
-    :root .user-card-sidebar { background: #f9fafb; }
+    :root:not(.dark) .user-card-sidebar { background: #f9fafb; }
 
     /* User avatar — mockup: .user-avatar */
     .dark .user-avatar-sidebar { background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.05)); border: 1px solid rgba(96,165,250,0.2); color: #60a5fa; }
-    :root .user-avatar-sidebar { background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.03)); border: 1px solid rgba(37,99,235,0.15); color: #2563eb; }
+    :root:not(.dark) .user-avatar-sidebar { background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.03)); border: 1px solid rgba(37,99,235,0.15); color: #2563eb; }
 
     /* User name */
     .dark .user-name-sidebar { color: #f1f3f8; }
-    :root .user-name-sidebar { color: #111827; }
+    :root:not(.dark) .user-name-sidebar { color: #111827; }
 }
