@@ -320,17 +320,24 @@
     }
 
     /* ─── Sidebar Section Styles — Option B: Grouped Cards with Gradient Accents ─── */
+    /* Matches mockup HTML exactly: sidebar-option-b---grouped-cards-with-gradient-accents.html */
 
     /* Section card container */
     .section-card {
       position: relative;
       overflow: hidden;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(99, 130, 191, 0.10);
-      background: rgba(255, 255, 255, 0.03);
-      padding: 0.375rem;
-      margin-bottom: 0.125rem;
+      border-radius: 12px;
+      padding: 6px;
     }
+    .dark .section-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(99, 130, 191, 0.08);
+    }
+    :root .section-card {
+      background: #f9fafb;
+      border: 1px solid #f0f0f0;
+    }
+
     /* Gradient LEFT border accent */
     .section-card::before {
       content: '';
@@ -339,138 +346,119 @@
       top: 8px;
       bottom: 8px;
       width: 3px;
-      border-radius: 0 4px 4px 0;
+      border-radius: 0 3px 3px 0;
     }
 
-    /* Light mode card base */
-    :root .section-card {
-      border-color: rgba(0, 0, 0, 0.06);
-      background: rgba(0, 0, 0, 0.02);
-    }
+    /* ─── Nav item base styles ─── */
+    .dark .nav-item-default { color: rgba(255, 255, 255, 0.65); }
+    :root .nav-item-default { color: #4b5563; }
+    .dark .nav-item-default:hover,
+    .dark .hover\:nav-item-hover:hover { background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.9); }
+    :root .nav-item-default:hover,
+    :root .hover\:nav-item-hover:hover { background: rgba(0, 0, 0, 0.03); color: #111827; }
 
-    /* Sub-item icons — inherit section color */
-    .section-sub-icon {
-      color: currentColor;
-      opacity: 0.65;
+    /* ─── Sub-item base styles ─── */
+    .dark .sub-item-default { color: rgba(255, 255, 255, 0.4); }
+    :root .sub-item-default { color: #9ca3af; }
+    .dark .sub-item-default:hover,
+    .dark .hover\:sub-item-hover:hover { color: rgba(255, 255, 255, 0.7); }
+    :root .sub-item-default:hover,
+    :root .hover\:sub-item-hover:hover { color: #374151; }
+
+    /* ─── Count badge — neutral/muted (NOT section-colored) ─── */
+    .section-count {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
     }
-    .section-active .section-sub-icon {
-      opacity: 1;
-    }
+    .dark .section-count { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.3); }
+    :root .section-count { background: rgba(0, 0, 0, 0.04); color: rgba(0, 0, 0, 0.3); }
 
     /* ─── Section color themes ─── */
 
     /* Blue — Overview */
-    .section-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #93c5fd); }
-    .section-blue .section-label { color: #60a5fa; }
-    .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .section-blue .section-active {
-      background: rgba(59, 130, 246, 0.18) !important;
-      color: #93bbfc !important;
-    }
-    .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.25); color: #93bbfc; }
-    .section-blue .section-count { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
-    .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.08); }
+    .section-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+    .dark .section-blue .section-label { color: #60a5fa; }
+    .dark .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.12); }
+    .dark .section-blue .section-active { background: rgba(59, 130, 246, 0.15) !important; color: #93bbfd !important; }
+    .dark .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.25); }
+    .dark .section-blue .sub-item-active { color: #93bbfd; }
 
     /* Emerald — Assets */
     .section-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
-    .section-emerald .section-label { color: #34d399; }
-    .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .section-emerald .section-active {
-      background: rgba(16, 185, 129, 0.18) !important;
-      color: #6ee7b7 !important;
-    }
-    .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
-    .section-emerald .section-count { background: rgba(16, 185, 129, 0.12); color: #34d399; }
-    .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.08); }
+    .dark .section-emerald .section-label { color: #34d399; }
+    .dark .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.12); }
+    .dark .section-emerald .section-active { background: rgba(16, 185, 129, 0.15) !important; color: #6ee7b7 !important; }
+    .dark .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.25); }
+    .dark .section-emerald .sub-item-active { color: #6ee7b7; }
 
     /* Rose — Liabilities */
     .section-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
-    .section-rose .section-label { color: #fb7185; }
-    .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
-    .section-rose .section-active {
-      background: rgba(244, 63, 94, 0.18) !important;
-      color: #fda4af !important;
-    }
-    .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.25); color: #fda4af; }
-    .section-rose .section-count { background: rgba(244, 63, 94, 0.12); color: #fb7185; }
-    .section-rose .hover\:section-hover:hover { background: rgba(244, 63, 94, 0.08); }
+    .dark .section-rose .section-label { color: #fb7185; }
+    .dark .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.12); }
+    .dark .section-rose .section-active { background: rgba(244, 63, 94, 0.15) !important; color: #fda4af !important; }
+    .dark .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.25); }
+    .dark .section-rose .sub-item-active { color: #fda4af; }
 
     /* Purple — Income */
     .section-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
-    .section-purple .section-label { color: #a78bfa; }
-    .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-    .section-purple .section-active {
-      background: rgba(139, 92, 246, 0.18) !important;
-      color: #c4b5fd !important;
-    }
-    .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.25); color: #c4b5fd; }
-    .section-purple .section-count { background: rgba(139, 92, 246, 0.12); color: #a78bfa; }
-    .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.08); }
+    .dark .section-purple .section-label { color: #a78bfa; }
+    .dark .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.12); }
+    .dark .section-purple .section-active { background: rgba(139, 92, 246, 0.15) !important; color: #c4b5fd !important; }
+    .dark .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.25); }
+    .dark .section-purple .sub-item-active { color: #c4b5fd; }
 
     /* Amber — Expenses */
     .section-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
-    .section-amber .section-label { color: #fbbf24; }
-    .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .section-amber .section-active {
-      background: rgba(245, 158, 11, 0.18) !important;
-      color: #fcd34d !important;
-    }
-    .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
-    .section-amber .section-count { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-    .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.08); }
+    .dark .section-amber .section-label { color: #fbbf24; }
+    .dark .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.12); }
+    .dark .section-amber .section-active { background: rgba(245, 158, 11, 0.15) !important; color: #fde68a !important; }
+    .dark .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.25); }
+    .dark .section-amber .sub-item-active { color: #fde68a; }
 
     /* Cyan — Planning */
     .section-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
-    .section-cyan .section-label { color: #22d3ee; }
-    .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
-    .section-cyan .section-active {
-      background: rgba(6, 182, 212, 0.18) !important;
-      color: #67e8f9 !important;
-    }
-    .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.25); color: #67e8f9; }
-    .section-cyan .section-count { background: rgba(6, 182, 212, 0.12); color: #22d3ee; }
-    .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.08); }
+    .dark .section-cyan .section-label { color: #22d3ee; }
+    .dark .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.12); }
+    .dark .section-cyan .section-active { background: rgba(6, 182, 212, 0.15) !important; color: #67e8f9 !important; }
+    .dark .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.25); }
+    .dark .section-cyan .sub-item-active { color: #67e8f9; }
 
     /* ─── Light mode overrides ─── */
     :root .section-blue .section-label { color: #2563eb; }
-    :root .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
-    :root .section-blue .section-active { background: rgba(59, 130, 246, 0.12) !important; color: #1e40af !important; }
-    :root .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.18); color: #1e40af; }
-    :root .section-blue .section-count { background: rgba(59, 130, 246, 0.08); color: #2563eb; }
-    :root .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.06); }
+    :root .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.08); }
+    :root .section-blue .section-active { background: rgba(59, 130, 246, 0.1) !important; color: #1e40af !important; }
+    :root .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.18); }
+    :root .section-blue .sub-item-active { color: #1e40af; }
 
     :root .section-emerald .section-label { color: #059669; }
-    :root .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.10); color: #059669; }
-    :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.12) !important; color: #065f46 !important; }
-    :root .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.18); color: #065f46; }
-    :root .section-emerald .section-count { background: rgba(16, 185, 129, 0.08); color: #059669; }
-    :root .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.06); }
+    :root .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.08); }
+    :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.1) !important; color: #065f46 !important; }
+    :root .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.18); }
+    :root .section-emerald .sub-item-active { color: #059669; }
 
     :root .section-rose .section-label { color: #e11d48; }
-    :root .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.10); color: #e11d48; }
-    :root .section-rose .section-active { background: rgba(244, 63, 94, 0.12) !important; color: #9f1239 !important; }
-    :root .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.18); color: #9f1239; }
-    :root .section-rose .section-count { background: rgba(244, 63, 94, 0.08); color: #e11d48; }
-    :root .section-rose .hover\:section-hover:hover { background: rgba(251, 113, 133, 0.06); }
+    :root .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.08); }
+    :root .section-rose .section-active { background: rgba(244, 63, 94, 0.1) !important; color: #9f1239 !important; }
+    :root .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.18); }
+    :root .section-rose .sub-item-active { color: #e11d48; }
 
     :root .section-purple .section-label { color: #7c3aed; }
-    :root .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
-    :root .section-purple .section-active { background: rgba(139, 92, 246, 0.12) !important; color: #5b21b6 !important; }
-    :root .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.18); color: #5b21b6; }
-    :root .section-purple .section-count { background: rgba(139, 92, 246, 0.08); color: #7c3aed; }
-    :root .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.06); }
+    :root .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.08); }
+    :root .section-purple .section-active { background: rgba(139, 92, 246, 0.1) !important; color: #5b21b6 !important; }
+    :root .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.18); }
+    :root .section-purple .sub-item-active { color: #7c3aed; }
 
     :root .section-amber .section-label { color: #d97706; }
-    :root .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.10); color: #d97706; }
-    :root .section-amber .section-active { background: rgba(245, 158, 11, 0.12) !important; color: #92400e !important; }
-    :root .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.18); color: #92400e; }
-    :root .section-amber .section-count { background: rgba(245, 158, 11, 0.08); color: #d97706; }
-    :root .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.06); }
+    :root .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.08); }
+    :root .section-amber .section-active { background: rgba(245, 158, 11, 0.1) !important; color: #92400e !important; }
+    :root .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.18); }
+    :root .section-amber .sub-item-active { color: #d97706; }
 
     :root .section-cyan .section-label { color: #0891b2; }
-    :root .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.10); color: #0891b2; }
-    :root .section-cyan .section-active { background: rgba(6, 182, 212, 0.12) !important; color: #155e75 !important; }
-    :root .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.18); color: #155e75; }
-    :root .section-cyan .section-count { background: rgba(6, 182, 212, 0.08); color: #0891b2; }
-    :root .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.06); }
+    :root .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.08); }
+    :root .section-cyan .section-active { background: rgba(6, 182, 212, 0.1) !important; color: #155e75 !important; }
+    :root .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.18); }
+    :root .section-cyan .sub-item-active { color: #0891b2; }
 }

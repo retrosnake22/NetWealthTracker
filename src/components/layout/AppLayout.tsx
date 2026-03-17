@@ -3,13 +3,6 @@ import { NavLink, Outlet, useLocation, useSearchParams, Link } from 'react-route
 import { supabase } from '@/lib/supabase'
 import { syncController, onSyncStatus } from '@/lib/syncEngine'
 import {
-  LayoutDashboard,
-  Wallet,
-  Home,
-  TrendingUp,
-  Receipt,
-  LineChart,
-  CreditCard,
   Menu,
   LogOut,
   Moon,
@@ -17,19 +10,7 @@ import {
   Monitor,
   ArrowUpRight,
   Sparkles,
-  PiggyBank,
-  Target,
-  Car,
-  Package,
   Trash2,
-  Building2,
-  ShoppingCart,
-  GraduationCap,
-  Landmark,
-  HandCoins,
-  Briefcase,
-  BarChart3,
-  Coins,
   Cloud,
   CloudOff,
   Loader2,
@@ -48,7 +29,7 @@ const navSections = [
     label: 'Overview',
     theme: 'section-blue',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+      { to: '/', emoji: '📊', label: 'Dashboard', end: true },
     ],
   },
   {
@@ -57,15 +38,15 @@ const navSections = [
     items: [
       {
         to: '/assets',
-        icon: Wallet,
+        emoji: '💰',
         label: 'All Assets',
         subItems: [
-          { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', icon: PiggyBank },
-          { to: '/assets?category=stocks', category: 'stocks', label: 'Shares / Stocks', icon: TrendingUp },
-          { to: '/assets?category=super', category: 'super', label: 'Superannuation', icon: Target },
-          { to: '/assets?category=vehicles', category: 'vehicles', label: 'Vehicles', icon: Car },
-          { to: '/assets?category=property', category: 'property', label: 'Property', icon: Home },
-          { to: '/assets?category=other', category: 'other', label: 'Other', icon: Package },
+          { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', emoji: '🏦' },
+          { to: '/assets?category=stocks', category: 'stocks', label: 'Shares / Stocks', emoji: '📈' },
+          { to: '/assets?category=super', category: 'super', label: 'Superannuation', emoji: '🎯' },
+          { to: '/assets?category=vehicles', category: 'vehicles', label: 'Vehicles', emoji: '🚗' },
+          { to: '/assets?category=property', category: 'property', label: 'Property', emoji: '🏠' },
+          { to: '/assets?category=other', category: 'other', label: 'Other', emoji: '📦' },
         ],
       },
     ],
@@ -76,15 +57,15 @@ const navSections = [
     items: [
       {
         to: '/liabilities',
-        icon: CreditCard,
+        emoji: '💳',
         label: 'All Liabilities',
         subItems: [
-          { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', icon: Landmark },
-          { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', icon: Car },
-          { to: '/liabilities?category=personal_loan', category: 'personal_loan', label: 'Personal Loans', icon: HandCoins },
-          { to: '/liabilities?category=credit_card', category: 'credit_card', label: 'Credit Cards', icon: CreditCard },
-          { to: '/liabilities?category=hecs', category: 'hecs', label: 'HECS / Student', icon: GraduationCap },
-          { to: '/liabilities?category=other', category: 'other', label: 'Other', icon: Package },
+          { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', emoji: '🏛' },
+          { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', emoji: '🚗' },
+          { to: '/liabilities?category=personal_loan', category: 'personal_loan', label: 'Personal Loans', emoji: '🤝' },
+          { to: '/liabilities?category=credit_card', category: 'credit_card', label: 'Credit Cards', emoji: '💳' },
+          { to: '/liabilities?category=hecs', category: 'hecs', label: 'HECS / Student', emoji: '🎓' },
+          { to: '/liabilities?category=other', category: 'other', label: 'Other', emoji: '📦' },
         ],
       },
     ],
@@ -95,13 +76,13 @@ const navSections = [
     items: [
       {
         to: '/income',
-        icon: TrendingUp,
+        emoji: '📈',
         label: 'All Income',
         subItems: [
-          { to: '/income?category=salary', category: 'salary', label: 'Salary / Wages', icon: Briefcase },
-          { to: '/income?category=rental', category: 'rental', label: 'Rental Income', icon: Home },
-          { to: '/income?category=dividends', category: 'dividends', label: 'Dividends', icon: BarChart3 },
-          { to: '/income?category=interest', category: 'interest', label: 'Interest', icon: Coins },
+          { to: '/income?category=salary', category: 'salary', label: 'Salary / Wages', emoji: '💼' },
+          { to: '/income?category=rental', category: 'rental', label: 'Rental Income', emoji: '🏠' },
+          { to: '/income?category=dividends', category: 'dividends', label: 'Dividends', emoji: '📊' },
+          { to: '/income?category=interest', category: 'interest', label: 'Interest', emoji: '🪙' },
         ],
       },
     ],
@@ -112,11 +93,11 @@ const navSections = [
     items: [
       {
         to: '/expenses',
-        icon: Receipt,
+        emoji: '🧾',
         label: 'All Expenses',
         subItems: [
-          { to: '/expenses/fixed', category: 'fixed', label: 'Fixed Expenses', icon: Building2 },
-          { to: '/expenses/living', category: 'living', label: 'Living Expenses', icon: ShoppingCart },
+          { to: '/expenses/fixed', category: 'fixed', label: 'Fixed Expenses', emoji: '🏢' },
+          { to: '/expenses/living', category: 'living', label: 'Living Expenses', emoji: '🛒' },
         ],
       },
     ],
@@ -125,7 +106,7 @@ const navSections = [
     label: 'Planning',
     theme: 'section-cyan',
     items: [
-      { to: '/projections', icon: LineChart, label: 'Projections' },
+      { to: '/projections', emoji: '📉', label: 'Projections' },
     ],
   },
 ]
@@ -165,11 +146,11 @@ function useFirstName() {
 function BrandLogo() {
   return (
     <div className="flex items-center gap-3 px-2">
-      <div className="h-10 w-10 rounded-full gradient-sapphire glow-sapphire flex items-center justify-center shrink-0">
-        <ArrowUpRight className="h-5 w-5 text-white" />
+      <div className="h-[38px] w-[38px] rounded-xl gradient-sapphire glow-sapphire flex items-center justify-center shrink-0">
+        <ArrowUpRight className="h-4 w-4 text-white" />
       </div>
       <div>
-        <h1 className="text-base font-bold tracking-tight text-foreground">NWT</h1>
+        <h1 className="text-base font-extrabold tracking-tight text-foreground" style={{ letterSpacing: '-0.5px' }}>NWT</h1>
         <p className="text-[10px] text-muted-foreground leading-none">Net Wealth Tracker</p>
       </div>
     </div>
@@ -201,107 +182,88 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     return true
   }
 
-  // Check if a section is expanded (current route matches any item in it)
-  const isSectionExpanded = (section: typeof navSections[0]) => {
-    return section.items.some((item) => {
-      const [itemPath] = item.to.split('?')
-      if (location.pathname === itemPath || location.pathname.startsWith(itemPath + '/')) return true
-      if ('subItems' in item && (item as any).subItems) {
-        return (item as any).subItems.some((sub: any) => {
-          const [subPath] = sub.to.split('?')
-          return location.pathname === subPath || location.pathname.startsWith(subPath)
-        })
-      }
-      return false
-    })
-  }
-
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-1.5 overflow-y-auto min-h-0">
-      {navSections.map((section) => {
-        const expanded = isSectionExpanded(section)
+    <nav className="flex-1 px-3 py-1 pb-6 space-y-2 overflow-y-auto min-h-0">
+      {navSections.map((section) => (
+        <div key={section.label} className={section.theme}>
+          {/* Section card */}
+          <div className="section-card">
+            {/* Section header row */}
+            <div className="flex items-center gap-2.5 px-3 pt-2 pb-1">
+              <span className="section-label text-[10px] font-bold uppercase tracking-wider flex-1">
+                {section.label}
+              </span>
+              {/* Count badge — neutral/muted */}
+              {section.items[0] && 'subItems' in section.items[0] && (section.items[0] as any).subItems && (
+                <span className="section-count">
+                  {(section.items[0] as any).subItems.length}
+                </span>
+              )}
+            </div>
 
-        return (
-          <div key={section.label} className={section.theme}>
-            {/* Section card */}
-            <div className="section-card">
-              {/* Section header label */}
-              <div className="px-3 mb-1 pt-2">
-                <div className="flex items-center justify-between">
-                  <p className="section-label text-[10px] font-bold uppercase tracking-widest">
-                    {section.label}
-                  </p>
-                  {/* Count badge for sections with sub-items */}
-                  {section.items[0] && 'subItems' in section.items[0] && (section.items[0] as any).subItems && (
-                    <span className="section-count text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none">
-                      {(section.items[0] as any).subItems.length}
+            {/* Nav items */}
+            {section.items.map((item) => {
+              const subItems = 'subItems' in item ? (item as any).subItems : undefined
+              const hasSubItems = subItems && subItems.length > 0
+              const parentActive = hasSubItems
+                ? location.pathname.startsWith(item.to)
+                : isItemActive(item.to, 'end' in item ? (item as any).end : false)
+
+              return (
+                <div key={item.to}>
+                  {/* Parent nav item */}
+                  <NavLink
+                    to={item.to}
+                    end={'end' in item ? (item as any).end : undefined}
+                    onClick={onNavigate}
+                    className={`nav-item group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                      parentActive
+                        ? 'section-active font-semibold'
+                        : 'nav-item-default hover:nav-item-hover'
+                    }`}
+                  >
+                    {/* Translucent icon badge — rounded-lg, 30×30 */}
+                    <span className="section-icon-badge flex items-center justify-center h-[30px] w-[30px] rounded-lg shrink-0 text-sm">
+                      {'emoji' in item ? (item as any).emoji : ''}
                     </span>
+                    <span className="truncate flex-1">{item.label}</span>
+                    {/* Chevron for items with sub-items */}
+                    {hasSubItems && (
+                      <span className="text-[11px] opacity-30 ml-auto">›</span>
+                    )}
+                  </NavLink>
+
+                  {/* Sub-items — always visible */}
+                  {hasSubItems && (
+                    <div className="sub-items-container" style={{ padding: '2px 6px 4px 42px' }}>
+                      {subItems.map((sub: any) => {
+                        const subActive = isItemActive(sub.to)
+                        return (
+                          <Link
+                            key={sub.to}
+                            to={sub.to}
+                            onClick={onNavigate}
+                            className={`flex items-center gap-2 px-2.5 py-[5px] rounded-md text-xs transition-all duration-150 ${
+                              subActive
+                                ? 'sub-item-active font-semibold'
+                                : 'sub-item-default hover:sub-item-hover font-medium'
+                            }`}
+                          >
+                            <span className="text-[11px] w-3.5 flex items-center justify-center shrink-0">
+                              {sub.emoji}
+                            </span>
+                            {sub.label}
+                          </Link>
+                        )
+                      })}
+                    </div>
                   )}
                 </div>
-              </div>
-
-              {/* Nav items */}
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const subItems = 'subItems' in item ? (item as any).subItems : undefined
-                  const hasSubItems = subItems && subItems.length > 0
-                  const parentActive = hasSubItems
-                    ? location.pathname.startsWith(item.to)
-                    : isItemActive(item.to, 'end' in item ? (item as any).end : false)
-
-                  return (
-                    <div key={item.to}>
-                      {/* Parent nav item */}
-                      <NavLink
-                        to={item.to}
-                        end={'end' in item ? (item as any).end : undefined}
-                        onClick={onNavigate}
-                        className={`group flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          parentActive
-                            ? 'section-active'
-                            : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                        }`}
-                      >
-                        {/* Circular translucent icon badge */}
-                        <span className="section-icon-badge flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors">
-                          <item.icon className="h-4 w-4" />
-                        </span>
-                        <span className="truncate flex-1">{item.label}</span>
-                      </NavLink>
-
-                      {/* Sub-items — always visible */}
-                      {hasSubItems && (
-                        <div className="pl-4 pr-1 pb-1 space-y-0.5 mt-0.5">
-                          {subItems.map((sub: any) => {
-                            const subActive = isItemActive(sub.to)
-                            return (
-                              <Link
-                                key={sub.to}
-                                to={sub.to}
-                                onClick={onNavigate}
-                                className={`group flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                                  subActive
-                                    ? 'section-active'
-                                    : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                                }`}
-                              >
-                                <span className="section-sub-icon flex items-center justify-center h-5 w-5 rounded-md shrink-0">
-                                  <sub.icon className="h-3 w-3" />
-                                </span>
-                                {sub.label}
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+              )
+            })}
           </div>
-        )
-      })}
+        </div>
+      ))}
     </nav>
   )
 }
