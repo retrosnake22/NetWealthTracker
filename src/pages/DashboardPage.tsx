@@ -764,7 +764,7 @@ export function DashboardPage() {
   return (
     <>
       {showBudgetBanner && (
-        <div className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-4 flex items-start gap-3">
+        <div className="rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-4 flex items-start gap-3" style={{ filter: 'saturate(0.7)' }}>
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-sm text-slate-800 dark:text-white">Complete Your Setup</h3>
@@ -790,7 +790,9 @@ export function DashboardPage() {
           <div className="space-y-6">
             {widgetOrder.map(id => (
               <SortableWidget key={id} id={id}>
-                {widgets[id]}
+                {id === 'hero' ? widgets[id] : (
+                  <div style={{ filter: 'saturate(0.7)' }}>{widgets[id]}</div>
+                )}
               </SortableWidget>
             ))}
           </div>
