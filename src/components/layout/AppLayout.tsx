@@ -237,7 +237,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-1.5 overflow-y-auto min-h-0">
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-3 overflow-y-auto min-h-0">
       {navSections.map((section) => (
         <div key={section.label} className={section.theme}>
           {/* Section card */}
