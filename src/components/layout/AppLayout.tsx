@@ -30,7 +30,6 @@ import {
   Briefcase,
   BarChart3,
   Coins,
-  ChevronRight,
   Cloud,
   CloudOff,
   Loader2,
@@ -42,41 +41,7 @@ import { useThemeMode } from '@/hooks/useThemeMode'
 import type { ThemeMode } from '@/hooks/useThemeMode'
 import { NotificationBell } from '@/components/NotificationBell'
 
-// ─── Nav structure with sections ───
-
-// Badge color config — solid opaque backgrounds with white icons
-type BadgeColor = { bg: string; activeBg: string }
-const badgeColors: Record<string, BadgeColor> = {
-  // Parents — solid opaque
-  '/':            { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
-  '/assets':      { bg: '#10b981', activeBg: '#059669' },   // emerald
-  '/liabilities': { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  '/income':      { bg: '#8b5cf6', activeBg: '#7c3aed' },   // violet
-  '/expenses':    { bg: '#f59e0b', activeBg: '#d97706' },   // amber
-  '/projections': { bg: '#06b6d4', activeBg: '#0891b2' },   // cyan
-  // Asset sub-items
-  'cash':         { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
-  'stocks':       { bg: '#22c55e', activeBg: '#16a34a' },   // green
-  'super':        { bg: '#f97316', activeBg: '#ea580c' },   // orange
-  'vehicles':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  'property':     { bg: '#a855f7', activeBg: '#9333ea' },   // purple
-  // Liability sub-items
-  'mortgage':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  'car_loan':     { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  'personal_loan': { bg: '#f59e0b', activeBg: '#d97706' },  // amber
-  'credit_card':  { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  'hecs':         { bg: '#3b82f6', activeBg: '#2563eb' },   // blue
-  // Income sub-items
-  'salary':       { bg: '#6366f1', activeBg: '#4f46e5' },   // indigo
-  'rental':       { bg: '#a855f7', activeBg: '#9333ea' },   // purple
-  'dividends':    { bg: '#22c55e', activeBg: '#16a34a' },   // green
-  'interest':     { bg: '#eab308', activeBg: '#ca8a04' },   // yellow
-  // Expense sub-items
-  'fixed':        { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-  'living':       { bg: '#f97316', activeBg: '#ea580c' },   // orange
-  // Catch-all
-  'other':        { bg: '#6b7280', activeBg: '#4b5563' },   // gray
-}
+// ─── Nav structure — Option B: Grouped Cards with Gradient Accents ───
 
 const navSections = [
   {
@@ -93,7 +58,7 @@ const navSections = [
       {
         to: '/assets',
         icon: Wallet,
-        label: 'Assets',
+        label: 'All Assets',
         subItems: [
           { to: '/assets?category=cash', category: 'cash', label: 'Cash & Savings', icon: PiggyBank },
           { to: '/assets?category=stocks', category: 'stocks', label: 'Shares / Stocks', icon: TrendingUp },
@@ -112,7 +77,7 @@ const navSections = [
       {
         to: '/liabilities',
         icon: CreditCard,
-        label: 'Liabilities',
+        label: 'All Liabilities',
         subItems: [
           { to: '/liabilities?category=mortgage', category: 'mortgage', label: 'Mortgages', icon: Landmark },
           { to: '/liabilities?category=car_loan', category: 'car_loan', label: 'Car Loans', icon: Car },
@@ -131,7 +96,7 @@ const navSections = [
       {
         to: '/income',
         icon: TrendingUp,
-        label: 'Income',
+        label: 'All Income',
         subItems: [
           { to: '/income?category=salary', category: 'salary', label: 'Salary / Wages', icon: Briefcase },
           { to: '/income?category=rental', category: 'rental', label: 'Rental Income', icon: Home },
@@ -148,7 +113,7 @@ const navSections = [
       {
         to: '/expenses',
         icon: Receipt,
-        label: 'Expenses',
+        label: 'All Expenses',
         subItems: [
           { to: '/expenses/fixed', category: 'fixed', label: 'Fixed Expenses', icon: Building2 },
           { to: '/expenses/living', category: 'living', label: 'Living Expenses', icon: ShoppingCart },
@@ -200,7 +165,7 @@ function useFirstName() {
 function BrandLogo() {
   return (
     <div className="flex items-center gap-3 px-2">
-      <div className="h-9 w-9 rounded-xl gradient-sapphire glow-sapphire flex items-center justify-center">
+      <div className="h-10 w-10 rounded-full gradient-sapphire glow-sapphire flex items-center justify-center shrink-0">
         <ArrowUpRight className="h-5 w-5 text-white" />
       </div>
       <div>
@@ -236,88 +201,107 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     return true
   }
 
+  // Check if a section is expanded (current route matches any item in it)
+  const isSectionExpanded = (section: typeof navSections[0]) => {
+    return section.items.some((item) => {
+      const [itemPath] = item.to.split('?')
+      if (location.pathname === itemPath || location.pathname.startsWith(itemPath + '/')) return true
+      if ('subItems' in item && (item as any).subItems) {
+        return (item as any).subItems.some((sub: any) => {
+          const [subPath] = sub.to.split('?')
+          return location.pathname === subPath || location.pathname.startsWith(subPath)
+        })
+      }
+      return false
+    })
+  }
+
   return (
-    <nav className="flex-1 px-3 py-2 pb-6 space-y-2 overflow-y-auto min-h-0">
-      {navSections.map((section) => (
-        <div key={section.label} className={section.theme}>
-          {/* Section card */}
-          <div className="section-card">
-            {/* Section header */}
-            <div className="px-2.5 mb-1 pt-1.5">
-              <p className="section-label text-[10px] font-bold uppercase tracking-widest">
-                {section.label}
-              </p>
-            </div>
+    <nav className="flex-1 px-3 py-2 pb-6 space-y-1.5 overflow-y-auto min-h-0">
+      {navSections.map((section) => {
+        const expanded = isSectionExpanded(section)
 
-            {/* Nav items */}
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const subItems = 'subItems' in item ? (item as any).subItems : undefined
-                const hasSubItems = subItems && subItems.length > 0
-                const parentActive = hasSubItems
-                  ? location.pathname.startsWith(item.to)
-                  : isItemActive(item.to, 'end' in item ? (item as any).end : false)
+        return (
+          <div key={section.label} className={section.theme}>
+            {/* Section card */}
+            <div className="section-card">
+              {/* Section header label */}
+              <div className="px-3 mb-1 pt-2">
+                <div className="flex items-center justify-between">
+                  <p className="section-label text-[10px] font-bold uppercase tracking-widest">
+                    {section.label}
+                  </p>
+                  {/* Count badge for sections with sub-items */}
+                  {section.items[0] && 'subItems' in section.items[0] && (section.items[0] as any).subItems && (
+                    <span className="section-count text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none">
+                      {(section.items[0] as any).subItems.length}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                return (
-                  <div key={item.to}>
-                    {/* Parent nav item */}
-                    <NavLink
-                      to={item.to}
-                      end={'end' in item ? (item as any).end : undefined}
-                      onClick={onNavigate}
-                      className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        parentActive
-                          ? 'section-active'
-                          : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                      }`}
-                    >
-                      {/* Translucent tinted badge */}
-                      <span className="section-icon-badge flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors">
-                        <item.icon className="h-4 w-4" />
-                      </span>
-                      <span className="truncate flex-1">{item.label}</span>
-                      {hasSubItems && (
-                        <span className="section-count text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none">
-                          {subItems.length}
+              {/* Nav items */}
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const subItems = 'subItems' in item ? (item as any).subItems : undefined
+                  const hasSubItems = subItems && subItems.length > 0
+                  const parentActive = hasSubItems
+                    ? location.pathname.startsWith(item.to)
+                    : isItemActive(item.to, 'end' in item ? (item as any).end : false)
+
+                  return (
+                    <div key={item.to}>
+                      {/* Parent nav item */}
+                      <NavLink
+                        to={item.to}
+                        end={'end' in item ? (item as any).end : undefined}
+                        onClick={onNavigate}
+                        className={`group flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          parentActive
+                            ? 'section-active'
+                            : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
+                        }`}
+                      >
+                        {/* Circular translucent icon badge */}
+                        <span className="section-icon-badge flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-colors">
+                          <item.icon className="h-4 w-4" />
                         </span>
-                      )}
-                      {hasSubItems && (
-                        <ChevronRight className={`h-3 w-3 transition-transform ${parentActive ? 'rotate-90 opacity-50' : 'text-muted-foreground/30'}`} />
-                      )}
-                    </NavLink>
+                        <span className="truncate flex-1">{item.label}</span>
+                      </NavLink>
 
-                    {/* Sub-items with translucent badges */}
-                    {hasSubItems && (
-                      <div className="pl-5 pr-1 pb-0.5 space-y-0.5 mt-0.5">
-                        {subItems.map((sub: any) => {
-                          const subActive = isItemActive(sub.to)
-                          return (
-                            <Link
-                              key={sub.to}
-                              to={sub.to}
-                              onClick={onNavigate}
-                              className={`group flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                subActive
-                                  ? 'section-active'
-                                  : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
-                              }`}
-                            >
-                              <span className="section-icon-badge flex items-center justify-center h-5 w-5 rounded-md shrink-0 transition-colors">
-                                <sub.icon className="h-2.5 w-2.5" />
-                              </span>
-                              {sub.label}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                      {/* Sub-items — only shown when section is expanded */}
+                      {hasSubItems && expanded && (
+                        <div className="pl-4 pr-1 pb-1 space-y-0.5 mt-0.5">
+                          {subItems.map((sub: any) => {
+                            const subActive = isItemActive(sub.to)
+                            return (
+                              <Link
+                                key={sub.to}
+                                to={sub.to}
+                                onClick={onNavigate}
+                                className={`group flex items-center gap-2.5 pl-3 pr-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                                  subActive
+                                    ? 'section-active'
+                                    : 'text-muted-foreground hover:section-hover hover:translate-x-0.5'
+                                }`}
+                              >
+                                <span className="section-sub-icon flex items-center justify-center h-5 w-5 rounded-md shrink-0">
+                                  <sub.icon className="h-3 w-3" />
+                                </span>
+                                {sub.label}
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </nav>
   )
 }

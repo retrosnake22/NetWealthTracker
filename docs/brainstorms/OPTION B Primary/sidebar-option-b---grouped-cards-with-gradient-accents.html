@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    display: flex;
+    gap: 40px;
+    padding: 30px;
+    background: #1a1a2e;
+    min-height: 100vh;
+    justify-content: center;
+  }
+
+  .sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mode-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #a78bfa;
+    background: rgba(167,139,250,0.1);
+    padding: 4px 16px;
+    border-radius: 20px;
+  }
+
+  .sidebar {
+    width: 260px;
+    height: 700px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .dark .sidebar {
+    background: #0D1425;
+    border: 1px solid rgba(99,130,191,0.12);
+  }
+  .light .sidebar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  /* ─── BRAND ─── */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 20px 12px;
+  }
+  .brand-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    font-size: 16px; color: white;
+  }
+  .brand-text h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+  .dark .brand-text h1 { color: #f1f3f8; }
+  .light .brand-text h1 { color: #0a1628; }
+  .brand-text p { font-size: 10px; color: #5a6e94; }
+
+  /* ─── NAV AREA ─── */
+  .nav-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ─── OPTION B: ELEVATED CARDS WITH GRADIENT LEFT BORDER ─── */
+  /* Each category is a distinct card with a subtle gradient left accent,
+     elevated with shadow. Clean interior, no nested card-in-card. 
+     Icon badges use a soft translucent tint matching the category color. */
+
+  .section-card {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    padding: 6px;
+  }
+  .dark .section-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(99,130,191,0.08);
+  }
+  .light .section-card {
+    background: #f9fafb;
+    border: 1px solid #f0f0f0;
+  }
+
+  /* Left gradient accent */
+  .section-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+  }
+  .s-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+  .s-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
+  .s-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
+  .s-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
+  .s-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
+  .s-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
+
+  /* Section header row */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 4px 12px;
+  }
+
+  .section-header-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    flex: 1;
+  }
+  .dark .s-blue .section-header-label { color: #60a5fa; }
+  .dark .s-emerald .section-header-label { color: #34d399; }
+  .dark .s-rose .section-header-label { color: #fb7185; }
+  .dark .s-purple .section-header-label { color: #a78bfa; }
+  .dark .s-amber .section-header-label { color: #fbbf24; }
+  .dark .s-cyan .section-header-label { color: #22d3ee; }
+  .light .s-blue .section-header-label { color: #2563eb; }
+  .light .s-emerald .section-header-label { color: #059669; }
+  .light .s-rose .section-header-label { color: #e11d48; }
+  .light .s-purple .section-header-label { color: #7c3aed; }
+  .light .s-amber .section-header-label { color: #d97706; }
+  .light .s-cyan .section-header-label { color: #0891b2; }
+
+  .section-count {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .dark .section-count { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); }
+  .light .section-count { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.3); }
+
+  /* Nav items */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .dark .nav-item { color: rgba(255,255,255,0.65); }
+  .light .nav-item { color: #4b5563; }
+  .dark .nav-item:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.9); }
+  .light .nav-item:hover { background: rgba(0,0,0,0.03); color: #111827; }
+
+  /* Translucent icon badge */
+  .icon-badge {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .s-blue .icon-badge { background: rgba(59,130,246,0.12); }
+  .s-emerald .icon-badge { background: rgba(16,185,129,0.12); }
+  .s-rose .icon-badge { background: rgba(244,63,94,0.12); }
+  .s-purple .icon-badge { background: rgba(139,92,246,0.12); }
+  .s-amber .icon-badge { background: rgba(245,158,11,0.12); }
+  .s-cyan .icon-badge { background: rgba(6,182,212,0.12); }
+
+  .light .s-blue .icon-badge { background: rgba(59,130,246,0.08); }
+  .light .s-emerald .icon-badge { background: rgba(16,185,129,0.08); }
+  .light .s-rose .icon-badge { background: rgba(244,63,94,0.08); }
+  .light .s-purple .icon-badge { background: rgba(139,92,246,0.08); }
+  .light .s-amber .icon-badge { background: rgba(245,158,11,0.08); }
+  .light .s-cyan .icon-badge { background: rgba(6,182,212,0.08); }
+
+  /* Active state */
+  .nav-item.active { font-weight: 600; }
+  .dark .s-blue .nav-item.active { background: rgba(59,130,246,0.15); color: #93bbfd; }
+  .dark .s-emerald .nav-item.active { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+  .dark .s-rose .nav-item.active { background: rgba(244,63,94,0.15); color: #fda4af; }
+  .dark .s-purple .nav-item.active { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+  .dark .s-amber .nav-item.active { background: rgba(245,158,11,0.15); color: #fde68a; }
+  .dark .s-cyan .nav-item.active { background: rgba(6,182,212,0.15); color: #67e8f9; }
+
+  .light .s-blue .nav-item.active { background: rgba(59,130,246,0.1); color: #1e40af; }
+  .light .s-emerald .nav-item.active { background: rgba(16,185,129,0.1); color: #065f46; }
+  .light .s-rose .nav-item.active { background: rgba(244,63,94,0.1); color: #9f1239; }
+  .light .s-purple .nav-item.active { background: rgba(139,92,246,0.1); color: #5b21b6; }
+  .light .s-amber .nav-item.active { background: rgba(245,158,11,0.1); color: #92400e; }
+  .light .s-cyan .nav-item.active { background: rgba(6,182,212,0.1); color: #155e75; }
+
+  .nav-item.active .icon-badge {
+    box-shadow: 0 0 12px rgba(255,255,255,0.05);
+  }
+  .s-blue .nav-item.active .icon-badge { background: rgba(59,130,246,0.25); }
+  .s-emerald .nav-item.active .icon-badge { background: rgba(16,185,129,0.25); }
+  .s-rose .nav-item.active .icon-badge { background: rgba(244,63,94,0.25); }
+  .s-purple .nav-item.active .icon-badge { background: rgba(139,92,246,0.25); }
+  .s-amber .nav-item.active .icon-badge { background: rgba(245,158,11,0.25); }
+  .s-cyan .nav-item.active .icon-badge { background: rgba(6,182,212,0.25); }
+
+  .chevron {
+    margin-left: auto;
+    font-size: 11px;
+    opacity: 0.3;
+  }
+
+  /* Sub items */
+  .sub-items {
+    padding: 2px 6px 4px 42px;
+  }
+  .sub-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .dark .sub-item { color: rgba(255,255,255,0.4); }
+  .light .sub-item { color: #9ca3af; }
+  .dark .sub-item:hover { color: rgba(255,255,255,0.7); }
+  .light .sub-item:hover { color: #374151; }
+
+  .sub-icon {
+    font-size: 11px;
+    width: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sub-item.active { font-weight: 600; }
+  .dark .s-emerald .sub-item.active { color: #6ee7b7; }
+  .dark .s-rose .sub-item.active { color: #fda4af; }
+  .light .s-emerald .sub-item.active { color: #059669; }
+  .light .s-rose .sub-item.active { color: #e11d48; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    padding: 12px;
+    border-top: 1px solid rgba(99,130,191,0.06);
+  }
+  .light .footer { border-top-color: #f3f4f6; }
+
+  .sync-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 12px;
+    font-size: 10px; font-weight: 500; color: #34d399;
+  }
+  .sync-dot { width: 5px; height: 5px; border-radius: 50%; background: #34d399; }
+
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-top: 6px;
+  }
+  .dark .user-card { background: rgba(255,255,255,0.025); }
+  .light .user-card { background: #f9fafb; }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.05));
+    border: 1px solid rgba(96,165,250,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #60a5fa;
+  }
+  .light .user-avatar { color: #2563eb; background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.03)); border-color: rgba(37,99,235,0.15); }
+
+  .user-name { font-size: 12px; font-weight: 600; }
+  .dark .user-name { color: #f1f3f8; }
+  .light .user-name { color: #111827; }
+  .user-email { font-size: 10px; color: #5a6e94; }
+
+  .design-tag {
+    text-align: center;
+    padding: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #5a6e94;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════ DARK ════ -->
+<div class="sidebar-wrapper">
+  <div class="mode-label">Dark Mode</div>
+  <div class="dark">
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">↗</div>
+        <div class="brand-text">
+          <h1>NWT</h1>
+          <p>Net Wealth Tracker</p>
+        </div>
+      </div>
+
+      <div class="nav-area">
+        <div class="s-blue">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Overview</span>
+            </div>
+            <div class="nav-item active">
+              <span class="icon-badge">📊</span>
+              Dashboard
+            </div>
+          </div>
+        </div>
+
+        <div class="s-emerald">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Assets</span>
+              <span class="section-count">6</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">💰</span>
+              All Assets
+              <span class="chevron">›</span>
+            </div>
+            <div class="sub-items">
+              <div class="sub-item"><span class="sub-icon">🏦</span> Cash & Savings</div>
+              <div class="sub-item active"><span class="sub-icon">📈</span> Shares / Stocks</div>
+              <div class="sub-item"><span class="sub-icon">🎯</span> Superannuation</div>
+              <div class="sub-item"><span class="sub-icon">🚗</span> Vehicles</div>
+              <div class="sub-item"><span class="sub-icon">🏠</span> Property</div>
+              <div class="sub-item"><span class="sub-icon">📦</span> Other</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-rose">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Liabilities</span>
+              <span class="section-count">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">💳</span>
+              All Liabilities
+              <span class="chevron">›</span>
+            </div>
+            <div class="sub-items">
+              <div class="sub-item"><span class="sub-icon">🏛</span> Mortgages</div>
+              <div class="sub-item"><span class="sub-icon">🚗</span> Car Loans</div>
+              <div class="sub-item"><span class="sub-icon">🤝</span> Personal Loans</div>
+              <div class="sub-item"><span class="sub-icon">💳</span> Credit Cards</div>
+              <div class="sub-item"><span class="sub-icon">🎓</span> HECS / Student</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-purple">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Income</span>
+              <span class="section-count">4</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">📈</span>
+              All Income
+              <span class="chevron">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-amber">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Expenses</span>
+              <span class="section-count">2</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">🧾</span>
+              All Expenses
+              <span class="chevron">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-cyan">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Planning</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">📉</span>
+              Projections
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="sync-row">
+          <span class="sync-dot"></span> Saved 2:34 PM
+        </div>
+        <div class="user-card">
+          <div class="user-avatar">J</div>
+          <div>
+            <div class="user-name">John</div>
+            <div class="user-email">john@email.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-tag">Option B — Gradient Cards</div>
+</div>
+
+<!-- ════ LIGHT ════ -->
+<div class="sidebar-wrapper">
+  <div class="mode-label">Light Mode</div>
+  <div class="light">
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">↗</div>
+        <div class="brand-text">
+          <h1>NWT</h1>
+          <p>Net Wealth Tracker</p>
+        </div>
+      </div>
+
+      <div class="nav-area">
+        <div class="s-blue">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Overview</span>
+            </div>
+            <div class="nav-item active">
+              <span class="icon-badge">📊</span>
+              Dashboard
+            </div>
+          </div>
+        </div>
+
+        <div class="s-emerald">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Assets</span>
+              <span class="section-count">6</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">💰</span>
+              All Assets
+              <span class="chevron">›</span>
+            </div>
+            <div class="sub-items">
+              <div class="sub-item"><span class="sub-icon">🏦</span> Cash & Savings</div>
+              <div class="sub-item active"><span class="sub-icon">📈</span> Shares / Stocks</div>
+              <div class="sub-item"><span class="sub-icon">🎯</span> Superannuation</div>
+              <div class="sub-item"><span class="sub-icon">🚗</span> Vehicles</div>
+              <div class="sub-item"><span class="sub-icon">🏠</span> Property</div>
+              <div class="sub-item"><span class="sub-icon">📦</span> Other</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-rose">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Liabilities</span>
+              <span class="section-count">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">💳</span>
+              All Liabilities
+              <span class="chevron">›</span>
+            </div>
+            <div class="sub-items">
+              <div class="sub-item"><span class="sub-icon">🏛</span> Mortgages</div>
+              <div class="sub-item"><span class="sub-icon">🚗</span> Car Loans</div>
+              <div class="sub-item"><span class="sub-icon">🤝</span> Personal Loans</div>
+              <div class="sub-item"><span class="sub-icon">💳</span> Credit Cards</div>
+              <div class="sub-item"><span class="sub-icon">🎓</span> HECS / Student</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-purple">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Income</span>
+              <span class="section-count">4</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">📈</span>
+              All Income
+              <span class="chevron">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-amber">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Expenses</span>
+              <span class="section-count">2</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">🧾</span>
+              All Expenses
+              <span class="chevron">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-cyan">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="section-header-label">Planning</span>
+            </div>
+            <div class="nav-item">
+              <span class="icon-badge">📉</span>
+              Projections
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="sync-row">
+          <span class="sync-dot"></span> Saved 2:34 PM
+        </div>
+        <div class="user-card">
+          <div class="user-avatar">J</div>
+          <div>
+            <div class="user-name">John</div>
+            <div class="user-email">john@email.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-tag">Option B — Gradient Cards</div>
+</div>
+
+</body>
+</html>

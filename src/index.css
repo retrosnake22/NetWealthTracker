@@ -207,249 +207,270 @@
 /* ─── Custom utility classes ─── */
 
 @layer utilities {
-  /* Glow effects — sapphire blue */
-  .glow-sapphire {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.12), 0 0 60px rgba(59, 130, 246, 0.04);
-  }
-  .dark .glow-sapphire {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.20), 0 0 80px rgba(59, 130, 246, 0.08);
-  }
+    /* Glow effects — sapphire blue */
+    .glow-sapphire {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.12), 0 0 60px rgba(59, 130, 246, 0.04);
+    }
+    .dark .glow-sapphire {
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.20), 0 0 80px rgba(59, 130, 246, 0.08);
+    }
 
-  /* Sapphire gradient */
-  .gradient-sapphire {
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-  }
-  .dark .gradient-sapphire {
-    background: linear-gradient(135deg, #2563eb, #60a5fa);
-  }
+    /* Sapphire gradient */
+    .gradient-sapphire {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+    }
+    .dark .gradient-sapphire {
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
+    }
 
-  /* Card hover lift */
-  .card-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  }
-  .dark .card-hover:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  }
+    /* Card hover lift */
+    .card-hover {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+    .dark .card-hover:hover {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
 
-  /* Pulse dot animation */
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-  .pulse-dot {
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
+    /* Pulse dot animation */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .pulse-dot {
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
 
-  /* Subtle shimmer for hero */
-  @keyframes shimmer {
-    0% { opacity: 0.4; }
-    50% { opacity: 0.7; }
-    100% { opacity: 0.4; }
-  }
-  .shimmer {
-    animation: shimmer 4s ease-in-out infinite;
-  }
+    /* Subtle shimmer for hero */
+    @keyframes shimmer {
+      0% { opacity: 0.4; }
+      50% { opacity: 0.7; }
+      100% { opacity: 0.4; }
+    }
+    .shimmer {
+      animation: shimmer 4s ease-in-out infinite;
+    }
 
-  /* Tabular numbers everywhere for financial data */
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+    /* Tabular numbers everywhere for financial data */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
 
-  /* Progress bar fill */
-  .progress-fill {
-    transition: width 0.6s ease-out;
-  }
+    /* Progress bar fill */
+    .progress-fill {
+      transition: width 0.6s ease-out;
+    }
 
-  /* ─── Staggered fade-up animations ─── */
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-up {
-    animation: fade-up 0.5s ease-out forwards;
-    opacity: 0;
-  }
-  .animate-delay-1 { animation-delay: 0.05s; }
-  .animate-delay-2 { animation-delay: 0.1s; }
-  .animate-delay-3 { animation-delay: 0.15s; }
-  .animate-delay-4 { animation-delay: 0.2s; }
-  .animate-delay-5 { animation-delay: 0.25s; }
-  .animate-delay-6 { animation-delay: 0.3s; }
+    /* ─── Staggered fade-up animations ─── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fade-up 0.5s ease-out forwards;
+      opacity: 0;
+    }
+    .animate-delay-1 { animation-delay: 0.05s; }
+    .animate-delay-2 { animation-delay: 0.1s; }
+    .animate-delay-3 { animation-delay: 0.15s; }
+    .animate-delay-4 { animation-delay: 0.2s; }
+    .animate-delay-5 { animation-delay: 0.25s; }
+    .animate-delay-6 { animation-delay: 0.3s; }
 
-  /* ─── Left accent bar ─── */
-  .card-accent-left {
-    position: relative;
-  }
-  .card-accent-left::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 12px;
-    bottom: 12px;
-    width: 3px;
-    border-radius: 0 4px 4px 0;
-    background: var(--accent-color, var(--primary));
-  }
+    /* ─── Left accent bar ─── */
+    .card-accent-left {
+      position: relative;
+    }
+    .card-accent-left::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 12px;
+      bottom: 12px;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+      background: var(--accent-color, var(--primary));
+    }
 
-  /* ─── Gradient top border — sapphire to gold to teal ─── */
-  .card-gradient-top {
-    position: relative;
-    overflow: hidden;
-  }
-  .card-gradient-top::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #f59e0b, #14b8a6);
-  }
+    /* ─── Gradient top border — sapphire to gold to teal ─── */
+    .card-gradient-top {
+      position: relative;
+      overflow: hidden;
+    }
+    .card-gradient-top::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #f59e0b, #14b8a6);
+    }
 
-  /* ─── Number count animation ─── */
-  @keyframes count-up {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-count {
-    animation: count-up 0.6s ease-out;
-  }
+    /* ─── Number count animation ─── */
+    @keyframes count-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-count {
+      animation: count-up 0.6s ease-out;
+    }
 
-  /* ─── Sidebar Section Styles — Option B: Grouped Cards with Gradient Accents ─── */
+    /* ─── Sidebar Section Styles — Option B: Grouped Cards with Gradient Accents ─── */
 
-  /* Section card container */
-  .section-card {
-    position: relative;
-    overflow: hidden;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(99, 130, 191, 0.12);
-    background: rgba(255, 255, 255, 0.03);
-    padding: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-  /* Gradient LEFT border accent */
-  .section-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 10px;
-    bottom: 10px;
-    width: 3px;
-    border-radius: 0 4px 4px 0;
-  }
+    /* Section card container */
+    .section-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(99, 130, 191, 0.10);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.375rem;
+      margin-bottom: 0.125rem;
+    }
+    /* Gradient LEFT border accent */
+    .section-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+    }
 
-  /* Light mode card base */
-  :root .section-card {
-    border-color: rgba(0, 0, 0, 0.06);
-    background: rgba(0, 0, 0, 0.02);
-  }
+    /* Light mode card base */
+    :root .section-card {
+      border-color: rgba(0, 0, 0, 0.06);
+      background: rgba(0, 0, 0, 0.02);
+    }
 
-  /* ─── Section color themes ─── */
+    /* Sub-item icons — inherit section color */
+    .section-sub-icon {
+      color: currentColor;
+      opacity: 0.65;
+    }
+    .section-active .section-sub-icon {
+      opacity: 1;
+    }
 
-  /* Blue — Overview */
-  .section-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #93c5fd); }
-  .section-blue .section-label { color: #60a5fa; }
-  .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-  .section-blue .section-active {
-    background: rgba(59, 130, 246, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-blue .section-count { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-  .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.08); }
+    /* ─── Section color themes ─── */
 
-  /* Emerald — Assets */
-  .section-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
-  .section-emerald .section-label { color: #34d399; }
-  .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-  .section-emerald .section-active {
-    background: rgba(16, 185, 129, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-emerald .section-count { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-  .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.08); }
+    /* Blue — Overview */
+    .section-blue .section-card::before { background: linear-gradient(180deg, #3b82f6, #93c5fd); }
+    .section-blue .section-label { color: #60a5fa; }
+    .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .section-blue .section-active {
+      background: rgba(59, 130, 246, 0.18) !important;
+      color: #93bbfc !important;
+    }
+    .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.25); color: #93bbfc; }
+    .section-blue .section-count { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+    .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.08); }
 
-  /* Rose — Liabilities */
-  .section-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
-  .section-rose .section-label { color: #fb7185; }
-  .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
-  .section-rose .section-active {
-    background: rgba(244, 63, 94, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-rose .section-count { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
-  .section-rose .hover\:section-hover:hover { background: rgba(244, 63, 94, 0.08); }
+    /* Emerald — Assets */
+    .section-emerald .section-card::before { background: linear-gradient(180deg, #10b981, #6ee7b7); }
+    .section-emerald .section-label { color: #34d399; }
+    .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .section-emerald .section-active {
+      background: rgba(16, 185, 129, 0.18) !important;
+      color: #6ee7b7 !important;
+    }
+    .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
+    .section-emerald .section-count { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+    .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.08); }
 
-  /* Purple — Income */
-  .section-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
-  .section-purple .section-label { color: #a78bfa; }
-  .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-  .section-purple .section-active {
-    background: rgba(139, 92, 246, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-purple .section-count { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-  .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.08); }
+    /* Rose — Liabilities */
+    .section-rose .section-card::before { background: linear-gradient(180deg, #f43f5e, #fda4af); }
+    .section-rose .section-label { color: #fb7185; }
+    .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .section-rose .section-active {
+      background: rgba(244, 63, 94, 0.18) !important;
+      color: #fda4af !important;
+    }
+    .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.25); color: #fda4af; }
+    .section-rose .section-count { background: rgba(244, 63, 94, 0.12); color: #fb7185; }
+    .section-rose .hover\:section-hover:hover { background: rgba(244, 63, 94, 0.08); }
 
-  /* Amber — Expenses */
-  .section-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
-  .section-amber .section-label { color: #fbbf24; }
-  .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-  .section-amber .section-active {
-    background: rgba(245, 158, 11, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-amber .section-count { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-  .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.08); }
+    /* Purple — Income */
+    .section-purple .section-card::before { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
+    .section-purple .section-label { color: #a78bfa; }
+    .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .section-purple .section-active {
+      background: rgba(139, 92, 246, 0.18) !important;
+      color: #c4b5fd !important;
+    }
+    .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.25); color: #c4b5fd; }
+    .section-purple .section-count { background: rgba(139, 92, 246, 0.12); color: #a78bfa; }
+    .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.08); }
 
-  /* Cyan — Planning */
-  .section-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
-  .section-cyan .section-label { color: #22d3ee; }
-  .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
-  .section-cyan .section-active {
-    background: rgba(6, 182, 212, 0.18) !important;
-    color: #ffffff !important;
-  }
-  .section-cyan .section-count { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
-  .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.08); }
+    /* Amber — Expenses */
+    .section-amber .section-card::before { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
+    .section-amber .section-label { color: #fbbf24; }
+    .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .section-amber .section-active {
+      background: rgba(245, 158, 11, 0.18) !important;
+      color: #fcd34d !important;
+    }
+    .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
+    .section-amber .section-count { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+    .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.08); }
 
-  /* ─── Light mode overrides ─── */
-  :root .section-blue .section-label { color: #2563eb; }
-  :root .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
-  :root .section-blue .section-active { background: rgba(59, 130, 246, 0.12) !important; color: #1e40af !important; }
-  :root .section-blue .section-count { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
-  :root .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.06); }
+    /* Cyan — Planning */
+    .section-cyan .section-card::before { background: linear-gradient(180deg, #06b6d4, #67e8f9); }
+    .section-cyan .section-label { color: #22d3ee; }
+    .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+    .section-cyan .section-active {
+      background: rgba(6, 182, 212, 0.18) !important;
+      color: #67e8f9 !important;
+    }
+    .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.25); color: #67e8f9; }
+    .section-cyan .section-count { background: rgba(6, 182, 212, 0.12); color: #22d3ee; }
+    .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.08); }
 
-  :root .section-emerald .section-label { color: #059669; }
-  :root .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.10); color: #059669; }
-  :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.12) !important; color: #065f46 !important; }
-  :root .section-emerald .section-count { background: rgba(16, 185, 129, 0.10); color: #059669; }
-  :root .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.06); }
+    /* ─── Light mode overrides ─── */
+    :root .section-blue .section-label { color: #2563eb; }
+    :root .section-blue .section-icon-badge { background: rgba(59, 130, 246, 0.10); color: #2563eb; }
+    :root .section-blue .section-active { background: rgba(59, 130, 246, 0.12) !important; color: #1e40af !important; }
+    :root .section-blue .section-active .section-icon-badge { background: rgba(59, 130, 246, 0.18); color: #1e40af; }
+    :root .section-blue .section-count { background: rgba(59, 130, 246, 0.08); color: #2563eb; }
+    :root .section-blue .hover\:section-hover:hover { background: rgba(59, 130, 246, 0.06); }
 
-  :root .section-rose .section-label { color: #e11d48; }
-  :root .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.10); color: #e11d48; }
-  :root .section-rose .section-active { background: rgba(244, 63, 94, 0.12) !important; color: #9f1239 !important; }
-  :root .section-rose .section-count { background: rgba(244, 63, 94, 0.10); color: #e11d48; }
-  :root .section-rose .hover\:section-hover:hover { background: rgba(251, 113, 133, 0.06); }
+    :root .section-emerald .section-label { color: #059669; }
+    :root .section-emerald .section-icon-badge { background: rgba(16, 185, 129, 0.10); color: #059669; }
+    :root .section-emerald .section-active { background: rgba(16, 185, 129, 0.12) !important; color: #065f46 !important; }
+    :root .section-emerald .section-active .section-icon-badge { background: rgba(16, 185, 129, 0.18); color: #065f46; }
+    :root .section-emerald .section-count { background: rgba(16, 185, 129, 0.08); color: #059669; }
+    :root .section-emerald .hover\:section-hover:hover { background: rgba(16, 185, 129, 0.06); }
 
-  :root .section-purple .section-label { color: #7c3aed; }
-  :root .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
-  :root .section-purple .section-active { background: rgba(139, 92, 246, 0.12) !important; color: #5b21b6 !important; }
-  :root .section-purple .section-count { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
-  :root .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.06); }
+    :root .section-rose .section-label { color: #e11d48; }
+    :root .section-rose .section-icon-badge { background: rgba(244, 63, 94, 0.10); color: #e11d48; }
+    :root .section-rose .section-active { background: rgba(244, 63, 94, 0.12) !important; color: #9f1239 !important; }
+    :root .section-rose .section-active .section-icon-badge { background: rgba(244, 63, 94, 0.18); color: #9f1239; }
+    :root .section-rose .section-count { background: rgba(244, 63, 94, 0.08); color: #e11d48; }
+    :root .section-rose .hover\:section-hover:hover { background: rgba(251, 113, 133, 0.06); }
 
-  :root .section-amber .section-label { color: #d97706; }
-  :root .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.10); color: #d97706; }
-  :root .section-amber .section-active { background: rgba(245, 158, 11, 0.12) !important; color: #92400e !important; }
-  :root .section-amber .section-count { background: rgba(245, 158, 11, 0.10); color: #d97706; }
-  :root .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.06); }
+    :root .section-purple .section-label { color: #7c3aed; }
+    :root .section-purple .section-icon-badge { background: rgba(139, 92, 246, 0.10); color: #7c3aed; }
+    :root .section-purple .section-active { background: rgba(139, 92, 246, 0.12) !important; color: #5b21b6 !important; }
+    :root .section-purple .section-active .section-icon-badge { background: rgba(139, 92, 246, 0.18); color: #5b21b6; }
+    :root .section-purple .section-count { background: rgba(139, 92, 246, 0.08); color: #7c3aed; }
+    :root .section-purple .hover\:section-hover:hover { background: rgba(139, 92, 246, 0.06); }
 
-  :root .section-cyan .section-label { color: #0891b2; }
-  :root .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.10); color: #0891b2; }
-  :root .section-cyan .section-active { background: rgba(6, 182, 212, 0.12) !important; color: #155e75 !important; }
-  :root .section-cyan .section-count { background: rgba(6, 182, 212, 0.10); color: #0891b2; }
-  :root .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.06); }
+    :root .section-amber .section-label { color: #d97706; }
+    :root .section-amber .section-icon-badge { background: rgba(245, 158, 11, 0.10); color: #d97706; }
+    :root .section-amber .section-active { background: rgba(245, 158, 11, 0.12) !important; color: #92400e !important; }
+    :root .section-amber .section-active .section-icon-badge { background: rgba(245, 158, 11, 0.18); color: #92400e; }
+    :root .section-amber .section-count { background: rgba(245, 158, 11, 0.08); color: #d97706; }
+    :root .section-amber .hover\:section-hover:hover { background: rgba(245, 158, 11, 0.06); }
+
+    :root .section-cyan .section-label { color: #0891b2; }
+    :root .section-cyan .section-icon-badge { background: rgba(6, 182, 212, 0.10); color: #0891b2; }
+    :root .section-cyan .section-active { background: rgba(6, 182, 212, 0.12) !important; color: #155e75 !important; }
+    :root .section-cyan .section-active .section-icon-badge { background: rgba(6, 182, 212, 0.18); color: #155e75; }
+    :root .section-cyan .section-count { background: rgba(6, 182, 212, 0.08); color: #0891b2; }
+    :root .section-cyan .hover\:section-hover:hover { background: rgba(6, 182, 212, 0.06); }
 }
