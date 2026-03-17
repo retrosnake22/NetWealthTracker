@@ -27,7 +27,6 @@ import {
   GraduationCap,
   Landmark,
   HandCoins,
-  TrendingDown,
   ChevronRight,
   Cloud,
   CloudOff,
@@ -36,8 +35,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useFinanceStore } from '@/stores/useFinanceStore'
-import { calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities, calculateMonthlyIncome, calculateMonthlyExpenses } from '@/lib/calculations'
-import { formatCurrency } from '@/lib/format'
 import { useThemeMode } from '@/hooks/useThemeMode'
 import type { ThemeMode } from '@/hooks/useThemeMode'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -264,68 +261,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-function NetWealthMini() {
-  const { assets, properties, liabilities, incomes, expenseBudgets } = useFinanceStore()
-  const netWealth = calculateNetWealth(assets, properties, liabilities)
-  const totalAssets = calculateTotalAssets(assets, properties)
-  const totalLiabilities = calculateTotalLiabilities(liabilities)
-  const monthlySurplus = calculateMonthlyIncome(incomes) - calculateMonthlyExpenses(expenseBudgets)
-
-  // Calculate asset/liability ratio for the mini bar
-  const total = totalAssets + totalLiabilities
-  const assetPercent = total > 0 ? (totalAssets / total) * 100 : 50
-
-  return (
-    <div className="mx-3 mb-3 rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-3.5 pb-1">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Net Wealth</p>
-          {monthlySurplus !== 0 && (
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-              monthlySurplus > 0 
-                ? 'bg-emerald-500/10 text-emerald-400' 
-                : 'bg-red-500/10 text-red-400'
-            }`}>
-              {monthlySurplus > 0 ? '+' : ''}{formatCurrency(monthlySurplus)}/mo
-            </span>
-          )}
-        </div>
-        <p className={`text-xl font-bold tabular-nums tracking-tight ${netWealth >= 0 ? 'text-foreground' : 'text-red-500'}`}>
-          {formatCurrency(netWealth)}
-        </p>
-      </div>
-
-      {/* Asset/Liability mini bar */}
-      <div className="px-4 py-2.5">
-        <div className="flex h-1.5 rounded-full overflow-hidden bg-muted/50">
-          <div 
-            className="bg-blue-500 rounded-l-full transition-all duration-500"
-            style={{ width: `${assetPercent}%` }}
-          />
-          <div 
-            className="bg-red-400 rounded-r-full transition-all duration-500"
-            style={{ width: `${100 - assetPercent}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="flex items-center border-t border-border/30">
-        <div className="flex-1 px-4 py-2.5 flex items-center gap-1.5">
-          <TrendingUp className="h-3 w-3 text-blue-400" />
-          <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(totalAssets)}</span>
-        </div>
-        <div className="w-px h-6 bg-border/30" />
-        <div className="flex-1 px-4 py-2.5 flex items-center gap-1.5 justify-end">
-          <TrendingDown className="h-3 w-3 text-red-400" />
-          <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(totalLiabilities)}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function UserAvatar({ name }: { name: string }) {
   const initials = useMemo(() => {
     if (!name) return '?'
@@ -422,22 +357,22 @@ function SidebarFooter() {
   return (
     <div className="px-3 pb-4 space-y-1">
       {/* Cloud sync status */}
-				<div className="flex items-center gap-2 px-3 py-1.5 mb-1">
-					{syncStatus === 'saving' ? (
-						<Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
-					) : syncStatus === 'saved' ? (
-						<Cloud className="h-3.5 w-3.5 text-emerald-400" />
-					) : syncStatus === 'error' ? (
-						<CloudOff className="h-3.5 w-3.5 text-red-400" />
-					) : (
-						<Cloud className="h-3.5 w-3.5 text-muted-foreground/50" />
-					)}
-					<span className={`text-[10px] font-medium ${syncStatus === 'saving' ? 'text-blue-400' : syncStatus === 'saved' ? 'text-emerald-400' : syncStatus === 'error' ? 'text-red-400' : 'text-muted-foreground/50'}`}>
-						{syncStatus === 'saving' ? 'Syncing...' : syncStatus === 'saved' ? `Saved ${lastSaved ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : syncStatus === 'error' ? 'Sync failed' : 'Connected'}
-					</span>
-				</div>
+      <div className="flex items-center gap-2 px-3 py-1.5 mb-1">
+        {syncStatus === 'saving' ? (
+          <Loader2 className="h-3.5 w-3.5 text-blue-400 animate-spin" />
+        ) : syncStatus === 'saved' ? (
+          <Cloud className="h-3.5 w-3.5 text-emerald-400" />
+        ) : syncStatus === 'error' ? (
+          <CloudOff className="h-3.5 w-3.5 text-red-400" />
+        ) : (
+          <Cloud className="h-3.5 w-3.5 text-muted-foreground/50" />
+        )}
+        <span className={`text-[10px] font-medium ${syncStatus === 'saving' ? 'text-blue-400' : syncStatus === 'saved' ? 'text-emerald-400' : syncStatus === 'error' ? 'text-red-400' : 'text-muted-foreground/50'}`}>
+          {syncStatus === 'saving' ? 'Syncing...' : syncStatus === 'saved' ? `Saved ${lastSaved ? new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : syncStatus === 'error' ? 'Sync failed' : 'Connected'}
+        </span>
+      </div>
 
-				{/* User profile card */}
+      {/* User profile card */}
       {email && (
         <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-lg bg-muted/30">
           <UserAvatar name={displayName} />
@@ -514,7 +449,6 @@ function DesktopSidebar() {
         </div>
         <SidebarNav />
         <div className="shrink-0">
-          <NetWealthMini />
           <SidebarFooter />
         </div>
       </div>
@@ -610,7 +544,6 @@ function MobileHeader() {
                   <BrandLogo />
                 </div>
                 <SidebarNav onNavigate={() => setOpen(false)} />
-                <NetWealthMini />
                 <SidebarFooter />
               </div>
             </div>
