@@ -821,7 +821,7 @@ export default function AssetsPage() {
 								const mortgage = findMortgage(p)
 								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
 								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
-								const pnl = (mortgage || (p.weeklyRent ?? 0) > 0) ? calculatePropertyPnL(p, mortgage, offsetBalance) : null
+								const pnl = calculatePropertyPnL(p, mortgage, offsetBalance)
 								const monthlyCost = pnl ? pnl.netCashflowPA / 12 : 0
 								const yearlyCost = pnl ? pnl.netCashflowPA : 0
 								return (
@@ -852,11 +852,9 @@ export default function AssetsPage() {
 													</span>
 												)}
 												<span className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCurrency(p.currentValue)}</span>
-												{isInvestment && (
-													<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
-														{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-													</Button>
-												)}
+												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title={isInvestment ? "P&L Breakdown" : "Holding Costs"}>
+													{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+												</Button>
 												<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditProperty(p)}>
 													<Pencil className="h-3.5 w-3.5" />
 												</Button>
@@ -877,7 +875,7 @@ export default function AssetsPage() {
 												</Button>
 											</div>
 										</div>
-										{isInvestment && isExpanded && (
+										{isExpanded && (
 											<div className="mt-3 ml-9">
 												<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
 											</div>
