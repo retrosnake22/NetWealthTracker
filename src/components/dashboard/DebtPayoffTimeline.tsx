@@ -171,8 +171,10 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
   }, [liabilities, properties, cashAssets])
 
   const totalBalance = payoffData.reduce((s, d) => s + d.balance, 0)
+  const totalOffset = payoffData.reduce((s, d) => s + d.offsetBalance, 0)
   const totalMonthlyPmt = payoffData.reduce((s, d) => s + d.monthlyPmt, 0)
   const totalInterest = payoffData.reduce((s, d) => s + (d.totalInterest ?? 0), 0)
+  const hasAnyOffset = payoffData.some(d => d.offsetBalance > 0)
 
   // Find max payoff months for the timeline bar scale
   const maxMonths = Math.max(...payoffData.map(d => d.payoffMonths ?? 0), 1)
@@ -277,6 +279,9 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
             <tr className="border-b border-slate-200 dark:border-white/10">
               <th className="text-left py-2 font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Debt</th>
               <th className="text-right py-2 font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Balance</th>
+              {hasAnyOffset && (
+                <th className="text-right py-2 font-semibold text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 hidden sm:table-cell">Offset</th>
+              )}
               <th className="text-right py-2 font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden sm:table-cell">Rate</th>
               <th className="text-right py-2 font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Monthly</th>
               <th className="text-right py-2 font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden sm:table-cell">Total Interest</th>
@@ -292,14 +297,18 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
                     <div className="text-[10px] text-slate-400 dark:text-slate-500">{debt.linkedProperty}</div>
                   )}
                 </td>
-                <td className="py-2.5 text-right tabular-nums">
-                  <div className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(debt.balance)}</div>
-                  {debt.offsetBalance > 0 && (
-                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                      −{formatCurrency(debt.offsetBalance)} offset
-                    </div>
-                  )}
+                <td className="py-2.5 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-200">
+                  {formatCurrency(debt.balance)}
                 </td>
+                {hasAnyOffset && (
+                  <td className="py-2.5 text-right tabular-nums hidden sm:table-cell">
+                    {debt.offsetBalance > 0 ? (
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(debt.offsetBalance)}</span>
+                    ) : (
+                      <span className="text-slate-300 dark:text-slate-600">—</span>
+                    )}
+                  </td>
+                )}
                 <td className="py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-300 hidden sm:table-cell">
                   {(debt.rate * 100).toFixed(2)}%
                 </td>
@@ -334,6 +343,9 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
             <tr className="border-t-2 border-slate-200 dark:border-white/10">
               <td className="py-2.5 font-bold text-slate-800 dark:text-white">Total</td>
               <td className="py-2.5 text-right tabular-nums font-bold text-slate-800 dark:text-white">{formatCurrency(totalBalance)}</td>
+              {hasAnyOffset && (
+                <td className="py-2.5 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 hidden sm:table-cell">{formatCurrency(totalOffset)}</td>
+              )}
               <td className="hidden sm:table-cell" />
               <td className="py-2.5 text-right tabular-nums font-bold text-slate-800 dark:text-white">{formatCurrency(totalMonthlyPmt)}</td>
               <td className="py-2.5 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 hidden sm:table-cell">{formatCurrency(totalInterest)}</td>
