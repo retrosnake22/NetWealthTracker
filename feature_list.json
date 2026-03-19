@@ -165,13 +165,15 @@
       "title": "Add CSV and PDF Export for Financial Snapshot",
       "description": "Allow users to export their financial snapshot as a PDF report or CSV file, useful for sharing with a financial advisor or mortgage broker.",
       "type": "feature",
-      "status": "todo",
+      "status": "done",
       "priority": "P3",
       "brainstormSource": {
         "sessionId": "session-1773891327812-1bem6f7"
       },
       "createdAt": "2026-03-19T10:32:43.985Z",
-      "updatedAt": "2026-03-19T10:32:43.985Z"
+      "updatedAt": "2026-03-19T11:52:43.694Z",
+      "passes": true,
+      "last_tested": "2026-03-19T11:52:43.694Z"
     },
     {
       "id": "add-recurring-transaction-tracking-mmxc02j53me8",

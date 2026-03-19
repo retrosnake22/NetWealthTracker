@@ -1,12 +1,13 @@
 // NWT Dashboard
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle, Target, Home, Landmark, TrendingDown, Calendar } from 'lucide-react'
+import { DollarSign, TrendingUp, PiggyBank, BarChart3, ArrowUpRight, ArrowDownRight, GripVertical, AlertTriangle, Target, Home, Landmark, TrendingDown, Calendar, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
 import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/KpiBreakdownDialog'
+import { ExportSnapshotDialog } from '@/components/dashboard/ExportSnapshotDialog'
 import { DebtPayoffTimeline } from '@/components/dashboard/DebtPayoffTimeline'
 import { BudgetVsActualWidget } from '@/components/dashboard/BudgetVsActualWidget'
 import type { CashAsset } from '@/types/models'
@@ -222,6 +223,7 @@ export function DashboardPage() {
   const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
@@ -800,6 +802,16 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+      {/* Export button */}
+      <div className="flex justify-end -mb-2">
+        <button
+          onClick={() => setExportOpen(true)}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export Snapshot
+        </button>
+      </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
           <div className="space-y-6">
@@ -818,6 +830,7 @@ export function DashboardPage() {
         </SortableContext>
       </DndContext>
       <KpiBreakdownDialog open={breakdownOpen} onClose={() => setBreakdownOpen(null)} />
+      <ExportSnapshotDialog open={exportOpen} onClose={() => setExportOpen(false)} />
     </>
   )
 }
