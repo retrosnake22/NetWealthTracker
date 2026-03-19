@@ -12,7 +12,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinanceState } from '@/stores/useFinanceStore'
 import type { Asset, Property, AssetCategory, MortgageType } from '@/types/models'
 import { formatCurrency } from '@/lib/format'
-import { PropertyPnL } from '@/components/properties/PropertyPnL'
+import { PropertyPnL, calculatePropertyPnL } from '@/components/properties/PropertyPnL'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
 	cash: 'Cash & Savings',
@@ -41,6 +41,9 @@ const CATEGORY_COLORS: Record<string, { border: string; badge: string; badgeText
 	other:    { border: 'border-l-slate-400',   badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',    badgeText: '', total: 'text-slate-600', darkTotal: 'dark:text-slate-400' },
 	property: { border: 'border-l-teal-500',    badge: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',     badgeText: '', total: 'text-teal-600', darkTotal: 'dark:text-teal-400' },
 }
+
+/** Format a cashflow value with parentheses for negatives */
+const fmtCashflow = (v: number) => v < 0 ? `(${formatCurrency(Math.abs(v))})` : formatCurrency(v)
 
 // Mortgage calculation helpers (same as wizard)
 function calcMortgageMonthly(balance: number, annualRate: number, type: MortgageType, termYears: number): number {
@@ -818,6 +821,9 @@ export default function AssetsPage() {
 								const mortgage = findMortgage(p)
 								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
 								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
+								const pnl = isInvestment ? calculatePropertyPnL(p, mortgage, offsetBalance) : null
+								const monthlyCost = pnl ? pnl.netCashflowPA / 12 : null
+								const yearlyCost = pnl ? pnl.netCashflowPA : null
 								return (
 									<div key={p.id} className="px-5 py-3 border-b border-slate-50 dark:border-white/[0.04] last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
 										<div className="flex items-center justify-between">
@@ -829,6 +835,18 @@ export default function AssetsPage() {
 														{isInvestment ? 'Investment' : 'Primary Residence'}
 														{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
 														{mortgage && <> · <span className="text-emerald-600 dark:text-emerald-400 font-medium">Equity: {formatCurrency(equity)}</span></>}
+														{pnl && monthlyCost !== null && yearlyCost !== null && (
+															<>
+																{' · '}
+																<span className={monthlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+																	{fmtCashflow(monthlyCost)}/mo
+																</span>
+																{' · '}
+																<span className={yearlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+																	{fmtCashflow(yearlyCost)}/yr
+																</span>
+															</>
+														)}
 													</p>
 												</div>
 											</div>
