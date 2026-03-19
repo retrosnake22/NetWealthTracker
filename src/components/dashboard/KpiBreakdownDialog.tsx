@@ -134,7 +134,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
     'savings-rate': 'Savings Rate Breakdown',
     'debt-ratio': 'Debt Ratio Breakdown',
     'yearly-cashflow': 'Yearly Cashflow Breakdown',
-    'surplus': 'Monthly Surplus Breakdown',
+    'surplus': 'Monthly Net Cashflow Breakdown',
     'neg-gearing': 'Negative Gearing Breakdown',
   }
 
@@ -364,7 +364,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
               )}
 
               <div className="h-3" />
-              <Row label="Annual Surplus" value={formatCurrency(yearlySurplus)} bold color={yearlySurplus >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+              <Row label="Annual Net Cashflow" value={formatCurrency(yearlySurplus)} bold color={yearlySurplus >= 0 ? 'text-emerald-400' : 'text-red-400'} />
               <Row label="Monthly Equivalent" value={formatCurrency(yearlySurplus / 12)} color="text-muted-foreground" />
 
               <div className="h-3" />
@@ -385,7 +385,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
           <div className="space-y-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Formula</p>
             <div className="bg-muted/50 rounded-lg p-3 text-center mb-3">
-              <p className="text-xs text-muted-foreground">Savings Rate = Monthly Surplus ÷ Monthly Income × 100</p>
+              <p className="text-xs text-muted-foreground">Savings Rate = Net Cashflow ÷ Monthly Income × 100</p>
             </div>
 
             <Row label="Monthly Income" value={formatCurrency(monthlyIncome)} />
@@ -393,7 +393,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
             {negGearingPA > 0 && (
               <Row label="Neg. gearing benefit" value={formatCurrency(negGearingPA / 12)} color="text-green-400" />
             )}
-            <Row label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
+            <Row label="Monthly Net Cashflow" value={formatCurrency(monthlyCashflow)} color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
 
             <div className="h-3" />
             <Row label="Savings Rate" value={formatPercent(savingsRate / 100)} bold color={savingsRate >= 0 ? 'text-blue-400' : 'text-red-400'} />
@@ -535,8 +535,8 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
             )}
 
             <div className="h-3" />
-            <Row label="Monthly Surplus" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-green-400' : 'text-red-400'} />
-            <Row label="Annual Surplus" value={formatCurrency(monthlyCashflow * 12)} color="text-muted-foreground" />
+            <Row label="Monthly Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-green-400' : 'text-red-400'} />
+            <Row label="Annual Net Cashflow" value={formatCurrency(monthlyCashflow * 12)} color="text-muted-foreground" />
 
             <NavLink to="/projections" label="Projections" />
           </div>
