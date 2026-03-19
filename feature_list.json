@@ -204,13 +204,15 @@
       "title": "Add Per-Property Equity Growth Chart",
       "description": "On the property detail page, show an equity growth chart over time reflecting property value appreciation minus mortgage amortisation, scoped to the individual property using the existing projection engine.",
       "type": "feature",
-      "status": "todo",
+      "status": "done",
       "priority": "P3",
       "brainstormSource": {
         "sessionId": "session-1773891327812-1bem6f7"
       },
       "createdAt": "2026-03-19T10:32:43.985Z",
-      "updatedAt": "2026-03-19T10:32:43.985Z"
+      "updatedAt": "2026-03-19T11:27:39.953Z",
+      "passes": true,
+      "last_tested": "2026-03-19T11:27:39.953Z"
     },
     {
       "id": "show-negative-gearing-tax-benefit-in-property-p-l-mmxc02j5lrwe",

@@ -13,6 +13,7 @@ import type { FinanceState } from '@/stores/useFinanceStore'
 import type { Asset, Property, AssetCategory, MortgageType } from '@/types/models'
 import { formatCurrency } from '@/lib/format'
 import { PropertyPnL, calculatePropertyPnL } from '@/components/properties/PropertyPnL'
+import { PropertyEquityChart } from '@/components/properties/PropertyEquityChart'
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
 	cash: 'Cash & Savings',
@@ -911,8 +912,9 @@ export default function AssetsPage() {
 											</div>
 										</div>
 										{isExpanded && (
-											<div className="mt-3 ml-9">
+											<div className="mt-3 ml-9 space-y-4">
 												<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
+																				<PropertyEquityChart property={p} mortgage={mortgage} />
 											</div>
 										)}
 									</div>

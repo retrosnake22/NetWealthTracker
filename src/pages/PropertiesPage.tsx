@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Pencil, Building2, Home, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react'
+import { Plus, Trash2, Pencil, Building2, Home, ChevronDown, ChevronUp, BarChart3, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import { PropertyPnL, calculatePropertyPnL } from '@/components/properties/PropertyPnL'
+import { PropertyEquityChart } from '@/components/properties/PropertyEquityChart'
 import type { Property, PropertyType } from '@/types/models'
 
 interface PropertyForm {
@@ -60,6 +61,7 @@ export function PropertiesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null)
   const [form, setForm] = useState<PropertyForm>({ ...emptyForm })
   const [expandedPnL, setExpandedPnL] = useState<Record<string, boolean>>({})
+  const [expandedEquity, setExpandedEquity] = useState<Record<string, boolean>>({})
 
   const resetAndClose = () => {
     setForm({ ...emptyForm })
@@ -218,6 +220,9 @@ export function PropertiesPage() {
   const togglePnL = (id: string) =>
     setExpandedPnL(prev => ({ ...prev, [id]: !prev[id] }))
 
+  const toggleEquity = (id: string) =>
+    setExpandedEquity(prev => ({ ...prev, [id]: !prev[id] }))
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end">
@@ -305,6 +310,7 @@ export function PropertiesPage() {
             const lvr = prop.currentValue > 0 && mortgage ? (mortgage.currentBalance / prop.currentValue) * 100 : 0
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
+            const isEquityExpanded = expandedEquity[prop.id] ?? false
             const pnl = calculatePropertyPnL(prop, mortgage)
             const cashflowPA = isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + (pnl.mortgageRepaymentPA > 0 ? pnl.mortgageRepaymentPA : pnl.interestWithoutOffsetPA))
               const monthlyCost = cashflowPA / 12
@@ -414,22 +420,35 @@ export function PropertiesPage() {
                         </Button>
                       </div>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-border">
+                    <div className="mt-4 pt-3 border-t border-border flex gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-center text-muted-foreground hover:text-foreground"
+                        className="flex-1 justify-center text-muted-foreground hover:text-foreground"
                         onClick={() => togglePnL(prop.id)}
                       >
                         <BarChart3 className="h-4 w-4 mr-2" />
                         {isPnLExpanded ? 'Hide' : 'Show'} {isInvestment ? 'P&L Breakdown' : 'Holding Costs'}
                         {isPnLExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 justify-center text-muted-foreground hover:text-foreground"
+                        onClick={() => toggleEquity(prop.id)}
+                      >
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        {isEquityExpanded ? 'Hide' : 'Show'} Equity Growth
+                        {isEquityExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
                 {isPnLExpanded && (
                   <PropertyPnL property={prop} mortgage={mortgage} />
+                )}
+                {isEquityExpanded && (
+                  <PropertyEquityChart property={prop} mortgage={mortgage} />
                 )}
               </div>
             )
