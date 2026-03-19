@@ -45,6 +45,9 @@ const emptyForm: PropertyForm = {
   insurancePA: '', strataPA: '', propertyManagementPct: '8', landTaxPA: '', maintenanceBudgetPA: '',
 }
 
+/** Format a cashflow value with parentheses for negatives */
+const fmtCost = (v: number) => v < 0 ? `(${formatCurrency(Math.abs(v))})` : formatCurrency(v)
+
 export function PropertiesPage() {
   const {
     properties, liabilities,
@@ -303,13 +306,16 @@ export function PropertiesPage() {
             const lvr = prop.currentValue > 0 && mortgage ? (mortgage.currentBalance / prop.currentValue) * 100 : 0
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
+            const pnl = isInvestment ? calculatePropertyPnL(prop, mortgage) : null
+            const monthlyCost = pnl ? pnl.netCashflowPA / 12 : null
+            const yearlyCost = pnl ? pnl.netCashflowPA : null
             return (
               <div key={prop.id} className="space-y-2">
                 <Card className="card-hover group">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {isInvestment ? <Building2 className="h-5 w-5" /> : <Home className="h-5 w-5" />}
                           <h3 className="text-lg font-semibold">{prop.name}</h3>
                           <Badge className={isInvestment
@@ -318,6 +324,18 @@ export function PropertiesPage() {
                           }>
                             {isInvestment ? 'Investment' : 'Primary'}
                           </Badge>
+                          {pnl && monthlyCost !== null && yearlyCost !== null && (
+                            <>
+                              <span className="text-xs text-muted-foreground">·</span>
+                              <span className={`text-sm font-semibold tabular-nums ${monthlyCost >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {fmtCost(monthlyCost)}<span className="text-xs font-normal text-muted-foreground">/mo</span>
+                              </span>
+                              <span className="text-xs text-muted-foreground">·</span>
+                              <span className={`text-sm font-semibold tabular-nums ${yearlyCost >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {fmtCost(yearlyCost)}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                              </span>
+                            </>
+                          )}
                         </div>
                         {prop.address && <p className="text-sm text-muted-foreground">{prop.address}</p>}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
