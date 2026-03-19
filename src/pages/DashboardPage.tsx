@@ -425,7 +425,7 @@ export function DashboardPage() {
                   <p className="text-lg font-bold tabular-nums text-rose-300 dark:text-rose-400">{formatCurrency(totalLiabilities)}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 dark:text-slate-500">Net Cashflow</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 dark:text-slate-500">Monthly Net Cashflow</span>
                   <p className={`text-lg font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-300 dark:text-emerald-400' : 'text-amber-300 dark:text-amber-400'}`}>
                     {formatCurrency(monthlyCashflow)}
                   </p>
@@ -508,7 +508,7 @@ export function DashboardPage() {
               <div className="pt-3 border-t border-slate-100 dark:border-white/10">
                 {fiAchieved ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Net Cashflow</span>
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Monthly Net Cashflow</span>
                     <span className="text-lg font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">
                       +{formatCurrency(passiveIncome - monthlyExpenses)}
                     </span>
@@ -596,7 +596,7 @@ export function DashboardPage() {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Net Cashflow</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Monthly Net Cashflow</span>
                 <span className={`text-lg font-extrabold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {formatCurrency(monthlyCashflow)}
                 </span>

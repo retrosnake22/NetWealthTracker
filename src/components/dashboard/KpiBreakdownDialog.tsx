@@ -244,7 +244,7 @@ export function KpiBreakdownDialog({ open, onClose }: Props) {
               )}
 
               <div className="h-3" />
-              <Row label="Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
+              <Row label="Monthly Net Cashflow" value={formatCurrency(monthlyCashflow)} bold color={monthlyCashflow >= 0 ? 'text-blue-400' : 'text-red-400'} />
 
               <NavLink to="/income" label="Income" />
             </div>
