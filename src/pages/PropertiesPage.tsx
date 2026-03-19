@@ -101,32 +101,31 @@ export function PropertiesPage() {
 
   const handleSave = () => {
     const existingProp = editingId ? properties.find(p => p.id === editingId) : null
+    // Expense fields apply to ALL property types
+    const expenseFields = {
+      councilRatesPA: parseFloat(form.councilRatesPA) || 0,
+      waterRatesPA: parseFloat(form.waterRatesPA) || 0,
+      insurancePA: parseFloat(form.insurancePA) || 0,
+      strataPA: parseFloat(form.strataPA) || 0,
+      landTaxPA: parseFloat(form.landTaxPA) || 0,
+      maintenanceBudgetPA: parseFloat(form.maintenanceBudgetPA) || 0,
+    }
+
     const propertyData = {
       name: form.name,
       type: form.type,
       address: form.address || undefined,
       currentValue: parseFloat(form.currentValue) || 0,
       growthRatePA: existingProp?.growthRatePA ?? 0.07,
+      ...expenseFields,
       ...(form.type === 'investment' ? {
         weeklyRent: parseFloat(form.weeklyRent) || 0,
         vacancyRatePA: (parseFloat(form.vacancyRate) || 0) / 100,
-        councilRatesPA: parseFloat(form.councilRatesPA) || 0,
-        waterRatesPA: parseFloat(form.waterRatesPA) || 0,
-        insurancePA: parseFloat(form.insurancePA) || 0,
-        strataPA: parseFloat(form.strataPA) || 0,
         propertyManagementPct: (parseFloat(form.propertyManagementPct) || 0) / 100,
-        landTaxPA: parseFloat(form.landTaxPA) || 0,
-        maintenanceBudgetPA: parseFloat(form.maintenanceBudgetPA) || 0,
       } : {
         weeklyRent: undefined,
         vacancyRatePA: undefined,
-        councilRatesPA: undefined,
-        waterRatesPA: undefined,
-        insurancePA: undefined,
-        strataPA: undefined,
         propertyManagementPct: undefined,
-        landTaxPA: undefined,
-        maintenanceBudgetPA: undefined,
       }),
     }
 
@@ -306,9 +305,11 @@ export function PropertiesPage() {
             const lvr = prop.currentValue > 0 && mortgage ? (mortgage.currentBalance / prop.currentValue) * 100 : 0
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
-            const pnl = isInvestment ? calculatePropertyPnL(prop, mortgage) : null
-            const monthlyCost = pnl ? pnl.netCashflowPA / 12 : null
-            const yearlyCost = pnl ? pnl.netCashflowPA : null
+            const pnl = calculatePropertyPnL(prop, mortgage)
+            const monthlyCost = pnl.netCashflowPA / 12
+            const yearlyCost = pnl.netCashflowPA
+            // Only show cashflow badge if there are actual costs (expenses or interest)
+            const hasCosts = pnl.totalExpensesPA > 0 || pnl.interestPA > 0 || pnl.grossRentPA > 0
             return (
               <div key={prop.id} className="space-y-2">
                 <Card className="card-hover group">
@@ -324,7 +325,7 @@ export function PropertiesPage() {
                           }>
                             {isInvestment ? 'Investment' : 'Primary'}
                           </Badge>
-                          {pnl && monthlyCost !== null && yearlyCost !== null && (
+                          {hasCosts && (
                             <>
                               <span className="text-xs text-muted-foreground">·</span>
                               <span className={`text-sm font-semibold tabular-nums ${monthlyCost >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -412,23 +413,21 @@ export function PropertiesPage() {
                         </Button>
                       </div>
                     </div>
-                    {isInvestment && (
-                      <div className="mt-4 pt-3 border-t border-border">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-center text-muted-foreground hover:text-foreground"
-                          onClick={() => togglePnL(prop.id)}
-                        >
-                          <BarChart3 className="h-4 w-4 mr-2" />
-                          {isPnLExpanded ? 'Hide' : 'Show'} P&L Breakdown
-                          {isPnLExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-center text-muted-foreground hover:text-foreground"
+                        onClick={() => togglePnL(prop.id)}
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        {isPnLExpanded ? 'Hide' : 'Show'} {isInvestment ? 'P&L Breakdown' : 'Holding Costs'}
+                        {isPnLExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-                {isInvestment && isPnLExpanded && (
+                {isPnLExpanded && (
                   <PropertyPnL property={prop} mortgage={mortgage} />
                 )}
               </div>
@@ -504,50 +503,57 @@ export function PropertiesPage() {
                 </div>
               )}
 
+              {/* Expense fields — shown for ALL property types */}
+              <Separator />
+              <p className="text-sm font-semibold">
+                {form.type === 'investment' ? 'Investment Details' : 'Property Expenses'}
+              </p>
+
               {form.type === 'investment' && (
-                <>
-                  <Separator />
-                  <p className="text-sm font-semibold">Investment Details</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Weekly Rent (AUD)</Label>
-                      <CurrencyInput value={form.weeklyRent} onChange={v => setForm({...form, weeklyRent: v})} />
-                    </div>
-                    <div>
-                      <Label>Vacancy Rate (% p.a.)</Label>
-                      <Input type="number" step="0.1" value={form.vacancyRate} onChange={e => setForm({...form, vacancyRate: e.target.value})} />
-                    </div>
-                    <div>
-                      <Label>Council Rates (p.a.)</Label>
-                      <CurrencyInput value={form.councilRatesPA} onChange={v => setForm({...form, councilRatesPA: v})} />
-                    </div>
-                    <div>
-                      <Label>Water Rates (p.a.)</Label>
-                      <CurrencyInput value={form.waterRatesPA} onChange={v => setForm({...form, waterRatesPA: v})} />
-                    </div>
-                    <div>
-                      <Label>Insurance (p.a.)</Label>
-                      <CurrencyInput value={form.insurancePA} onChange={v => setForm({...form, insurancePA: v})} />
-                    </div>
-                    <div>
-                      <Label>Strata (p.a.)</Label>
-                      <CurrencyInput value={form.strataPA} onChange={v => setForm({...form, strataPA: v})} />
-                    </div>
-                    <div>
-                      <Label>Management Fee (%)</Label>
-                      <Input type="number" step="0.1" value={form.propertyManagementPct} onChange={e => setForm({...form, propertyManagementPct: e.target.value})} />
-                    </div>
-                    <div>
-                      <Label>Land Tax (p.a.)</Label>
-                      <CurrencyInput value={form.landTaxPA} onChange={v => setForm({...form, landTaxPA: v})} />
-                    </div>
-                    <div>
-                      <Label>Maintenance (p.a.)</Label>
-                      <CurrencyInput value={form.maintenanceBudgetPA} onChange={v => setForm({...form, maintenanceBudgetPA: v})} />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Weekly Rent (AUD)</Label>
+                    <CurrencyInput value={form.weeklyRent} onChange={v => setForm({...form, weeklyRent: v})} />
                   </div>
-                </>
+                  <div>
+                    <Label>Vacancy Rate (% p.a.)</Label>
+                    <Input type="number" step="0.1" value={form.vacancyRate} onChange={e => setForm({...form, vacancyRate: e.target.value})} />
+                  </div>
+                </div>
               )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Council Rates (p.a.)</Label>
+                  <CurrencyInput value={form.councilRatesPA} onChange={v => setForm({...form, councilRatesPA: v})} />
+                </div>
+                <div>
+                  <Label>Water Rates (p.a.)</Label>
+                  <CurrencyInput value={form.waterRatesPA} onChange={v => setForm({...form, waterRatesPA: v})} />
+                </div>
+                <div>
+                  <Label>Insurance (p.a.)</Label>
+                  <CurrencyInput value={form.insurancePA} onChange={v => setForm({...form, insurancePA: v})} />
+                </div>
+                <div>
+                  <Label>Strata (p.a.)</Label>
+                  <CurrencyInput value={form.strataPA} onChange={v => setForm({...form, strataPA: v})} />
+                </div>
+                {form.type === 'investment' && (
+                  <div>
+                    <Label>Management Fee (%)</Label>
+                    <Input type="number" step="0.1" value={form.propertyManagementPct} onChange={e => setForm({...form, propertyManagementPct: e.target.value})} />
+                  </div>
+                )}
+                <div>
+                  <Label>Land Tax (p.a.)</Label>
+                  <CurrencyInput value={form.landTaxPA} onChange={v => setForm({...form, landTaxPA: v})} />
+                </div>
+                <div>
+                  <Label>Maintenance (p.a.)</Label>
+                  <CurrencyInput value={form.maintenanceBudgetPA} onChange={v => setForm({...form, maintenanceBudgetPA: v})} />
+                </div>
+              </div>
             </div>
           </ScrollArea>
           <DialogFooter>
