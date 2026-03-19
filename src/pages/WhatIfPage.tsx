@@ -5,6 +5,7 @@ import { supabase, supabaseUrl, supabaseAnonKey } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/format'
 import { generateId } from '@/lib/format'
+import { calculateDashboardMetrics } from '@/lib/calculations'
 
 const EXAMPLE_QUESTIONS = [
   'What if I sold one of my investment properties and used the equity to pay down my mortgage?',
@@ -93,6 +94,26 @@ Budget Mode: ${userProfile.budgetMode}`)
       sections.push(`\nActual expenses ${month}: ${formatCurrency(total)}`)
     }
   }
+
+  // === MONTHLY CASHFLOW (the real picture) ===
+  // Use the same calculation as the dashboard so the AI has accurate numbers
+  const metrics = calculateDashboardMetrics(
+    incomes, expenseBudgets, properties, liabilities, assets,
+    expenseActuals, userProfile.budgetMode, userProfile.estimatedMonthlyExpenses,
+    userProfile.expenseCalcSource,
+  )
+
+  sections.push(`\n=== MONTHLY CASHFLOW (CRITICAL — USE THESE NUMBERS) ===
+Monthly Income: ${formatCurrency(metrics.monthlyIncome)} (salary: ${formatCurrency(metrics.baseIncome)}, rental: ${formatCurrency(metrics.rentalIncome)}, interest: ${formatCurrency(metrics.interestIncome)}, dividends: ${formatCurrency(metrics.dividendIncome)})
+Monthly Living Expenses: ${formatCurrency(metrics.baseExpenses)}
+Monthly Loan Repayments: ${formatCurrency(metrics.mortgageExpenses)} (all mortgages, personal loans, car loans)
+Monthly Property Running Costs: ${formatCurrency(metrics.propertyRunningCosts)} (council, water, insurance, strata, land tax, maintenance, property mgmt)
+TOTAL Monthly Expenses: ${formatCurrency(metrics.monthlyExpenses)}
+Monthly Negative Gearing Tax Benefit: ${formatCurrency(metrics.negGearingBenefitPA / 12)}
+MONTHLY NET CASHFLOW: ${formatCurrency(metrics.monthlyCashflow)}
+Annual Net Cashflow: ${formatCurrency(metrics.monthlyCashflow * 12)}
+Savings Rate: ${metrics.savingsRate.toFixed(1)}%
+${metrics.monthlyCashflow < 0 ? `\n⚠️ THIS USER IS IN NEGATIVE CASHFLOW — they spend more than they earn each month. Do NOT suggest they can afford additional expenses unless they reduce existing ones first.` : ''}`)
 
   // Projection settings
   sections.push(`\n=== PROJECTION SETTINGS ===
