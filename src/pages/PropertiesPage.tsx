@@ -306,11 +306,11 @@ export function PropertiesPage() {
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
             const pnl = calculatePropertyPnL(prop, mortgage)
-            const cashflowPA = isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)
+            const cashflowPA = isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + (pnl.mortgageRepaymentPA > 0 ? pnl.mortgageRepaymentPA : pnl.interestWithoutOffsetPA))
               const monthlyCost = cashflowPA / 12
             const yearlyCost = cashflowPA
             // Only show cashflow badge if there are actual costs (expenses or interest)
-            const hasCosts = pnl.totalExpensesPA > 0 || pnl.interestPA > 0 || pnl.grossRentPA > 0
+            const hasCosts = pnl.totalExpensesPA > 0 || pnl.interestPA > 0 || pnl.mortgageRepaymentPA > 0 || pnl.grossRentPA > 0
             return (
               <div key={prop.id} className="space-y-2">
                 <Card className="card-hover group">

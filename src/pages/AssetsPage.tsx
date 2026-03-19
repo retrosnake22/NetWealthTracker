@@ -822,7 +822,7 @@ export default function AssetsPage() {
 								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
 								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
 								const pnl = calculatePropertyPnL(p, mortgage, offsetBalance)
-								const cashflowPA = pnl ? (isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)) : 0
+								const cashflowPA = pnl ? (isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + (pnl.mortgageRepaymentPA > 0 ? pnl.mortgageRepaymentPA : pnl.interestWithoutOffsetPA))) : 0
 								const monthlyCost = cashflowPA / 12
 								const yearlyCost = cashflowPA
 								return (

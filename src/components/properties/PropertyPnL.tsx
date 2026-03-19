@@ -30,6 +30,7 @@ export interface PnLResult {
   interestWithoutOffsetPA: number
   interestSavingPA: number
   offsetBalance: number
+  mortgageRepaymentPA: number
   netCashflowPA: number
   netCashflowWeekly: number
   grossYield: number
@@ -68,6 +69,15 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability, o
   const interestPA = mortgage ? effectiveMortgageBalance * mortgage.interestRatePA : 0
   const interestSavingPA = interestWithoutOffsetPA - interestPA
 
+  // Mortgage repayment (actual payment amount — P&I or IO)
+  let mortgageRepaymentPA = 0
+  if (mortgage && mortgage.minimumRepayment > 0) {
+    const freqMultiplier = mortgage.repaymentFrequency === 'weekly' ? 52
+      : mortgage.repaymentFrequency === 'fortnightly' ? 26
+      : 12 // monthly
+    mortgageRepaymentPA = mortgage.minimumRepayment * freqMultiplier
+  }
+
   // Net cashflow = net rental income minus financing costs
   const netCashflowPA = netRentalIncomePA - interestPA
   const netCashflowWeekly = netCashflowPA / 52
@@ -87,7 +97,7 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability, o
     managementFeePA, councilRatesPA, waterRatesPA, insurancePA,
     strataPA, landTaxPA, maintenancePA, totalExpensesPA,
     netRentalIncomePA, interestPA, interestWithoutOffsetPA, interestSavingPA,
-    offsetBalance,
+    offsetBalance, mortgageRepaymentPA,
     netCashflowPA, netCashflowWeekly,
     grossYield, netYield,
     deductibleLossPA, marginalTaxRate, taxBenefitPA,
@@ -157,11 +167,11 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
   const pnl = calculatePropertyPnL(property, mortgage, offsetBalance, grossSalary)
   const isInvestment = property.type === 'investment'
 
-  // For primary residence: use FULL mortgage interest (offset doesn't reduce your payment)
+  // For primary residence: use mortgage PAYMENT (what you actually pay) + expenses
   // For investment: use net cashflow (rent - expenses - interest after offset)
   const displayCashflowPA = isInvestment
     ? pnl.netCashflowPA
-    : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)
+    : -(pnl.totalExpensesPA + (pnl.mortgageRepaymentPA > 0 ? pnl.mortgageRepaymentPA : pnl.interestWithoutOffsetPA))
 
   const cashflowIcon = displayCashflowPA > 0
     ? <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -258,14 +268,15 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
           </>
         )}
 
-        {(pnl.interestPA > 0 || pnl.interestSavingPA > 0) && (
-          <>
-            <Separator />
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
-              {isInvestment ? (
-                // Investment: show offset breakdown if applicable
-                pnl.offsetBalance > 0 ? (
+        {/* Financing section */}
+        {isInvestment ? (
+          // Investment: show interest with offset breakdown
+          (pnl.interestPA > 0 || pnl.interestSavingPA > 0) && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
+                {pnl.offsetBalance > 0 ? (
                   <>
                     <PnLRow label="Mortgage Interest (before offset)" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
                     <PnLRow label="Less Offset Saving" amountPA={pnl.interestSavingPA} indent muted color="text-emerald-400" />
@@ -273,13 +284,25 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
                   </>
                 ) : (
                   <PnLRow label="Mortgage Interest" amountPA={-pnl.interestPA} indent muted />
-                )
-              ) : (
-                // Primary residence: show full mortgage interest (offset doesn't reduce payment)
-                <PnLRow label="Mortgage Interest" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
-              )}
-            </div>
-          </>
+                )}
+              </div>
+            </>
+          )
+        ) : (
+          // Primary residence: show mortgage payment (what you actually pay)
+          (pnl.mortgageRepaymentPA > 0 || pnl.interestWithoutOffsetPA > 0) && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
+                {pnl.mortgageRepaymentPA > 0 ? (
+                  <PnLRow label="Mortgage Payment" amountPA={-pnl.mortgageRepaymentPA} indent muted />
+                ) : (
+                  <PnLRow label="Mortgage Interest" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
+                )}
+              </div>
+            </>
+          )
         )}
 
         {isInvestment && pnl.taxBenefitPA > 0 && (
