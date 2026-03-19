@@ -157,17 +157,20 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
   const pnl = calculatePropertyPnL(property, mortgage, offsetBalance, grossSalary)
   const isInvestment = property.type === 'investment'
 
-  // For primary residence: total holding cost = expenses + interest (no income)
-  const totalHoldingCostPA = pnl.totalExpensesPA + pnl.interestPA
+  // For primary residence: use FULL mortgage interest (offset doesn't reduce your payment)
+  // For investment: use net cashflow (rent - expenses - interest after offset)
+  const displayCashflowPA = isInvestment
+    ? pnl.netCashflowPA
+    : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)
 
-  const cashflowIcon = pnl.netCashflowPA > 0
+  const cashflowIcon = displayCashflowPA > 0
     ? <TrendingUp className="h-4 w-4 text-emerald-400" />
-    : pnl.netCashflowPA < 0
+    : displayCashflowPA < 0
     ? <TrendingDown className="h-4 w-4 text-red-400" />
     : <Minus className="h-4 w-4 text-muted-foreground" />
 
-  const monthlyCashflow = pnl.netCashflowPA / 12
-  const yearlyCashflow = pnl.netCashflowPA
+  const monthlyCashflow = displayCashflowPA / 12
+  const yearlyCashflow = displayCashflowPA
 
   return (
     <Card className="border-dashed">
@@ -260,14 +263,20 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
             <Separator />
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
-              {pnl.offsetBalance > 0 ? (
-                <>
-                  <PnLRow label="Mortgage Interest (before offset)" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
-                  <PnLRow label="Less Offset Saving" amountPA={pnl.interestSavingPA} indent muted color="text-emerald-400" />
-                  <PnLRow label="Net Mortgage Interest" amountPA={-pnl.interestPA} bold />
-                </>
+              {isInvestment ? (
+                // Investment: show offset breakdown if applicable
+                pnl.offsetBalance > 0 ? (
+                  <>
+                    <PnLRow label="Mortgage Interest (before offset)" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
+                    <PnLRow label="Less Offset Saving" amountPA={pnl.interestSavingPA} indent muted color="text-emerald-400" />
+                    <PnLRow label="Net Mortgage Interest" amountPA={-pnl.interestPA} bold />
+                  </>
+                ) : (
+                  <PnLRow label="Mortgage Interest" amountPA={-pnl.interestPA} indent muted />
+                )
               ) : (
-                <PnLRow label="Mortgage Interest" amountPA={-pnl.interestPA} indent muted />
+                // Primary residence: show full mortgage interest (offset doesn't reduce payment)
+                <PnLRow label="Mortgage Interest" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
               )}
             </div>
           </>
@@ -298,14 +307,14 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
         {/* Bottom line */}
         <div className="flex items-center justify-between pt-1">
           <div>
-            <p className={`text-lg font-bold tabular-nums ${pnl.netCashflowPA >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {fmtAmt(pnl.netCashflowPA)}
+            <p className={`text-lg font-bold tabular-nums ${displayCashflowPA >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {fmtAmt(displayCashflowPA)}
               <span className="text-sm font-normal text-muted-foreground ml-1">
                 /yr {isInvestment ? '' : 'total holding cost'}
               </span>
             </p>
             <p className="text-sm text-muted-foreground">
-              {fmtAmt(pnl.netCashflowPA / 12)}/mo · {fmtAmt(pnl.netCashflowWeekly)}/wk
+              {fmtAmt(displayCashflowPA / 12)}/mo · {fmtAmt(displayCashflowPA / 52)}/wk
             </p>
             {isInvestment && pnl.taxBenefitPA > 0 && (
               <div className="mt-2 pt-2 border-t border-dashed border-border">

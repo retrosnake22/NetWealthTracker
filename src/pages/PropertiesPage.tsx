@@ -306,8 +306,9 @@ export function PropertiesPage() {
             const isInvestment = prop.type === 'investment'
             const isPnLExpanded = expandedPnL[prop.id] ?? false
             const pnl = calculatePropertyPnL(prop, mortgage)
-            const monthlyCost = pnl.netCashflowPA / 12
-            const yearlyCost = pnl.netCashflowPA
+            const cashflowPA = isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)
+              const monthlyCost = cashflowPA / 12
+            const yearlyCost = cashflowPA
             // Only show cashflow badge if there are actual costs (expenses or interest)
             const hasCosts = pnl.totalExpensesPA > 0 || pnl.interestPA > 0 || pnl.grossRentPA > 0
             return (

@@ -822,8 +822,9 @@ export default function AssetsPage() {
 								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
 								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
 								const pnl = calculatePropertyPnL(p, mortgage, offsetBalance)
-								const monthlyCost = pnl ? pnl.netCashflowPA / 12 : 0
-								const yearlyCost = pnl ? pnl.netCashflowPA : 0
+								const cashflowPA = pnl ? (isInvestment ? pnl.netCashflowPA : -(pnl.totalExpensesPA + pnl.interestWithoutOffsetPA)) : 0
+								const monthlyCost = cashflowPA / 12
+								const yearlyCost = cashflowPA
 								return (
 									<div key={p.id} className="px-5 py-3 border-b border-slate-50 dark:border-white/[0.04] last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
 										<div className="flex items-center justify-between">
