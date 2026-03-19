@@ -95,21 +95,60 @@ export function calculatePropertyPnL(property: Property, mortgage?: Liability, o
   }
 }
 
-function PnLRow({ label, amount, indent, bold, muted, color }: {
+/** Format a currency value with parentheses for negatives */
+function fmtAmt(amount: number): string {
+  if (amount < 0) return `(${formatCurrency(Math.abs(amount))})`
+  return formatCurrency(amount)
+}
+
+/** Column header row */
+function ColumnHeaders() {
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 mb-1">
+      <span />
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Monthly</span>
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Quarterly</span>
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Yearly</span>
+    </div>
+  )
+}
+
+function PnLRow({ label, amountPA, indent, bold, muted, color }: {
   label: string
-  amount: number
+  amountPA: number
   indent?: boolean
   bold?: boolean
   muted?: boolean
   color?: string
 }) {
-  const isNegative = amount < 0
+  const monthly = amountPA / 12
+  const quarterly = amountPA / 4
+  const yearly = amountPA
+  const colorClass = (val: number) => color ? color : val < 0 ? 'text-red-400' : bold ? '' : 'text-foreground'
+
   return (
-    <div className={`flex items-center justify-between py-1 ${indent ? 'pl-4' : ''} ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
+    <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
       <span>{label}</span>
-      <span className={`tabular-nums ${color ? color : isNegative ? 'text-red-400' : bold ? '' : 'text-foreground'}`}>
-        {isNegative ? `(${formatCurrency(Math.abs(amount))})` : formatCurrency(amount)}
-      </span>
+      <span className={`tabular-nums text-right w-20 ${colorClass(monthly)}`}>{fmtAmt(monthly)}</span>
+      <span className={`tabular-nums text-right w-20 ${colorClass(quarterly)}`}>{fmtAmt(quarterly)}</span>
+      <span className={`tabular-nums text-right w-20 ${colorClass(yearly)}`}>{fmtAmt(yearly)}</span>
+    </div>
+  )
+}
+
+/** Special row for percentage values — only shows in yearly column */
+function PercentRow({ label, value, indent, muted }: {
+  label: string
+  value: number
+  indent?: boolean
+  muted?: boolean
+}) {
+  return (
+    <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
+      <span>{label}</span>
+      <span className="w-20" />
+      <span className="w-20" />
+      <span className="tabular-nums text-right w-20">{(value * 100).toFixed(0)}%</span>
     </div>
   )
 }
@@ -128,40 +167,61 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     : 'bg-red-500/10 text-red-400 border-red-500/20'
 
+  const monthlyCashflow = pnl.netCashflowPA / 12
+  const yearlyCashflow = pnl.netCashflowPA
+
   return (
     <Card className="border-dashed">
       <CardContent className="p-5 space-y-3">
-        <div className="flex items-center justify-between">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             {cashflowIcon}
-            <h4 className="font-semibold text-sm">Annual P&L</h4>
+            <h4 className="font-semibold text-sm">Property P&L</h4>
             <Badge className={cashflowColor}>{cashflowLabel} Cashflow</Badge>
           </div>
-          <div className="text-right">
-            <span className="text-xs text-muted-foreground mr-2">Net Yield</span>
-            <span className={`font-bold tabular-nums ${pnl.netYield >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatPercent(pnl.netYield)}
-            </span>
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground mr-1">Monthly</span>
+              <span className={`font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {fmtAmt(monthlyCashflow)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground mr-1">Yearly</span>
+              <span className={`font-bold tabular-nums ${yearlyCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {fmtAmt(yearlyCashflow)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground mr-1">Net Yield</span>
+              <span className={`font-bold tabular-nums ${pnl.netYield >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatPercent(pnl.netYield)}
+              </span>
+            </div>
           </div>
         </div>
 
         <Separator />
 
+        {/* Column headers */}
+        <ColumnHeaders />
+
         {/* Rental Income */}
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Rental Income</p>
-          <PnLRow label="Gross Rental Income" amount={pnl.grossRentPA} />
+          <PnLRow label="Gross Rental Income" amountPA={pnl.grossRentPA} />
           {pnl.vacancyLossPA > 0 && (
-            <PnLRow label="Less Vacancy" amount={-pnl.vacancyLossPA} indent muted />
+            <PnLRow label="Less Vacancy" amountPA={-pnl.vacancyLossPA} indent muted />
           )}
-          {pnl.managementFeePA > 0 && <PnLRow label="Less Property Management" amount={-pnl.managementFeePA} indent muted />}
-          {pnl.councilRatesPA > 0 && <PnLRow label="Less Council Rates" amount={-pnl.councilRatesPA} indent muted />}
-          {pnl.waterRatesPA > 0 && <PnLRow label="Less Water Rates" amount={-pnl.waterRatesPA} indent muted />}
-          {pnl.insurancePA > 0 && <PnLRow label="Less Insurance" amount={-pnl.insurancePA} indent muted />}
-          {pnl.strataPA > 0 && <PnLRow label="Less Strata" amount={-pnl.strataPA} indent muted />}
-          {pnl.landTaxPA > 0 && <PnLRow label="Less Land Tax" amount={-pnl.landTaxPA} indent muted />}
-          {pnl.maintenancePA > 0 && <PnLRow label="Less Maintenance" amount={-pnl.maintenancePA} indent muted />}
-          <PnLRow label="Net Rental Income" amount={pnl.netRentalIncomePA} bold />
+          {pnl.managementFeePA > 0 && <PnLRow label="Less Property Management" amountPA={-pnl.managementFeePA} indent muted />}
+          {pnl.councilRatesPA > 0 && <PnLRow label="Less Council Rates" amountPA={-pnl.councilRatesPA} indent muted />}
+          {pnl.waterRatesPA > 0 && <PnLRow label="Less Water Rates" amountPA={-pnl.waterRatesPA} indent muted />}
+          {pnl.insurancePA > 0 && <PnLRow label="Less Insurance" amountPA={-pnl.insurancePA} indent muted />}
+          {pnl.strataPA > 0 && <PnLRow label="Less Strata" amountPA={-pnl.strataPA} indent muted />}
+          {pnl.landTaxPA > 0 && <PnLRow label="Less Land Tax" amountPA={-pnl.landTaxPA} indent muted />}
+          {pnl.maintenancePA > 0 && <PnLRow label="Less Maintenance" amountPA={-pnl.maintenancePA} indent muted />}
+          <PnLRow label="Net Rental Income" amountPA={pnl.netRentalIncomePA} bold />
         </div>
 
         {(pnl.interestPA > 0 || pnl.interestSavingPA > 0) && (
@@ -171,12 +231,12 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Financing</p>
               {pnl.offsetBalance > 0 ? (
                 <>
-                  <PnLRow label="Mortgage Interest (before offset)" amount={-pnl.interestWithoutOffsetPA} indent muted />
-                  <PnLRow label="Less Offset Saving" amount={pnl.interestSavingPA} indent muted color="text-emerald-400" />
-                  <PnLRow label="Net Mortgage Interest" amount={-pnl.interestPA} bold />
+                  <PnLRow label="Mortgage Interest (before offset)" amountPA={-pnl.interestWithoutOffsetPA} indent muted />
+                  <PnLRow label="Less Offset Saving" amountPA={pnl.interestSavingPA} indent muted color="text-emerald-400" />
+                  <PnLRow label="Net Mortgage Interest" amountPA={-pnl.interestPA} bold />
                 </>
               ) : (
-                <PnLRow label="Mortgage Interest" amount={-pnl.interestPA} indent muted />
+                <PnLRow label="Mortgage Interest" amountPA={-pnl.interestPA} indent muted />
               )}
             </div>
           </>
@@ -192,12 +252,9 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
                   Negative Gearing Tax Benefit
                 </span>
               </p>
-              <PnLRow label="Deductible Loss" amount={-pnl.deductibleLossPA} indent muted />
-              <div className="flex items-center justify-between py-1 pl-4 text-muted-foreground text-sm">
-                <span>Marginal Tax Rate</span>
-                <span className="tabular-nums">{(pnl.marginalTaxRate * 100).toFixed(0)}%</span>
-              </div>
-              <PnLRow label="Annual Tax Benefit" amount={pnl.taxBenefitPA} bold color="text-emerald-400" />
+              <PnLRow label="Deductible Loss" amountPA={-pnl.deductibleLossPA} indent muted />
+              <PercentRow label="Marginal Tax Rate" value={pnl.marginalTaxRate} indent muted />
+              <PnLRow label="Annual Tax Benefit" amountPA={pnl.taxBenefitPA} bold color="text-emerald-400" />
               <p className="text-xs text-muted-foreground mt-1 pl-4">
                 Tax refund of {formatCurrency(pnl.taxBenefitPA / 12)}/month reduces real cost of holding
               </p>
@@ -211,20 +268,20 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
         <div className="flex items-center justify-between pt-1">
           <div>
             <p className={`text-lg font-bold tabular-nums ${pnl.netCashflowPA >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {pnl.netCashflowPA < 0 ? `(${formatCurrency(Math.abs(pnl.netCashflowPA))})` : formatCurrency(pnl.netCashflowPA)}
+              {fmtAmt(pnl.netCashflowPA)}
               <span className="text-sm font-normal text-muted-foreground ml-1">/yr</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              {pnl.netCashflowWeekly < 0 ? `(${formatCurrency(Math.abs(pnl.netCashflowWeekly))})` : formatCurrency(pnl.netCashflowWeekly)}/wk
+              {fmtAmt(pnl.netCashflowPA / 12)}/mo · {fmtAmt(pnl.netCashflowWeekly)}/wk
             </p>
             {pnl.taxBenefitPA > 0 && (
               <div className="mt-2 pt-2 border-t border-dashed border-border">
                 <p className={`text-base font-bold tabular-nums ${pnl.afterTaxCashflowPA >= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {pnl.afterTaxCashflowPA < 0 ? `(${formatCurrency(Math.abs(pnl.afterTaxCashflowPA))})` : formatCurrency(pnl.afterTaxCashflowPA)}
+                  {fmtAmt(pnl.afterTaxCashflowPA)}
                   <span className="text-sm font-normal text-muted-foreground ml-1">/yr after tax</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {pnl.afterTaxCashflowWeekly < 0 ? `(${formatCurrency(Math.abs(pnl.afterTaxCashflowWeekly))})` : formatCurrency(pnl.afterTaxCashflowWeekly)}/wk after tax
+                  {fmtAmt(pnl.afterTaxCashflowPA / 12)}/mo after tax · {fmtAmt(pnl.afterTaxCashflowWeekly)}/wk after tax
                 </p>
               </div>
             )}
