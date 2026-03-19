@@ -1,5 +1,6 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "project": "NWT",
   "features": [
     {
       "id": "code-review-improvements",
@@ -17,7 +18,8 @@
         "Fixed type safety: removed `as any` casts in AssetsPage",
         "Created LiabilitiesPage with full CRUD (mortgages, loans, credit cards, HECS)",
         "Added Liabilities nav item to sidebar and route to App.tsx"
-      ]
+      ],
+      "type": "feature"
     },
     {
       "id": "wizard-theme-expenses-update",
@@ -36,7 +38,203 @@
         "Added Accounting Fees under Financial category",
         "Added custom expense button to create user-defined expense types",
         "Removed number input spinners globally via CSS"
-      ]
+      ],
+      "type": "feature"
+    },
+    {
+      "id": "add-budget-vs-actual-expense-tracking-widget-to-dashboard-mmxc02j5u3b2",
+      "title": "Add Budget vs Actual Expense Tracking Widget to Dashboard",
+      "description": "Integrate the existing ExpenseActualsView component into the dashboard as a widget showing budget vs actual spending by category for the current month, with traffic light indicators (green/yellow/red).",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P1",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-debt-payoff-timeline-dashboard-widget-mmxc02j5mnkx",
+      "title": "Add Debt Payoff Timeline Dashboard Widget",
+      "description": "Add a dashboard card showing estimated payoff dates for each liability based on current repayments, with a visual timeline bar chart and a detail table highlighting which debts cost the most in interest.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P1",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "show-actual-cash-outflow-p-i-on-investment-property-p-l-mmxc02j5xkre",
+      "title": "Show Actual Cash Outflow (P+I) on Investment Property P&L",
+      "description": "Add a 'Cash Outflow' summary line to investment property P&L views showing the real principal + interest payment amount alongside the tax-deductible interest figure.",
+      "type": "fix",
+      "status": "todo",
+      "priority": "P1",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-multi-period-columns-monthly-quarterly-yearly-to-property-p-l-mmxc02j5tdoj",
+      "title": "Add Multi-Period Columns (Monthly/Quarterly/Yearly) to Property P&L",
+      "description": "Update the Property P&L view to display figures across three columns — monthly, quarterly, and yearly — for all income, expense, and tax benefit line items.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-net-worth-history-trend-tracking-mmxc02j5ue00",
+      "title": "Add Net Worth History Trend Tracking",
+      "description": "Snapshot net wealth monthly (or on-demand) and store it in Supabase, then display a historical trend chart on the dashboard showing actual tracked progress over time.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-cashflow-waterfall-chart-to-dashboard-mmxc02j5hl1s",
+      "title": "Add Cashflow Waterfall Chart to Dashboard",
+      "description": "Implement a visual waterfall chart showing Income → minus living expenses → minus loan repayments → minus property costs → Net Cashflow, using Recharts which is already in the project.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-named-scenario-snapshots-and-side-by-side-scenario-comparison-mmxc02j5vdx8",
+      "title": "Add Named Scenario Snapshots and Side-by-Side Scenario Comparison",
+      "description": "Allow users to save What-If scenarios as named snapshots and compare two scenarios side-by-side (e.g., 'Current' vs 'Sell property + pay down debt').",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-income-tax-estimate-display-using-existing-austax-module-mmxc02j5c8fp",
+      "title": "Add Income Tax Estimate Display Using Existing ausTax Module",
+      "description": "Surface an estimated annual tax liability based on salary + rental income minus deductions using the existing ausTax.ts module, and show after-tax income on the dashboard.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "fix-mobile-responsive-layout-for-property-p-l-multi-column-grid-mmxc02j59l4l",
+      "title": "Fix Mobile Responsive Layout for Property P&L Multi-Column Grid",
+      "description": "Audit and fix the responsive layout for the property P&L monthly/quarterly/yearly column grid, implementing collapsible columns or horizontal scroll to prevent overflow on mobile.",
+      "type": "fix",
+      "status": "todo",
+      "priority": "P3",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-csv-and-pdf-export-for-financial-snapshot-mmxc02j5erem",
+      "title": "Add CSV and PDF Export for Financial Snapshot",
+      "description": "Allow users to export their financial snapshot as a PDF report or CSV file, useful for sharing with a financial advisor or mortgage broker.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P3",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-recurring-transaction-tracking-mmxc02j53me8",
+      "title": "Add Recurring Transaction Tracking",
+      "description": "Track actual income received and expenses paid per month beyond budgets, auto-populating from expected recurring items and letting the user confirm or adjust each entry.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P3",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-financial-goal-setting-and-milestone-progress-tracking-mmxc02j5xjv5",
+      "title": "Add Financial Goal Setting and Milestone Progress Tracking",
+      "description": "Allow users to set financial goals (e.g., reduce debt to $X by date, reach positive cashflow, net worth target) and display progress bars with estimated achievement dates on the dashboard.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P3",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-per-property-equity-growth-chart-mmxc02j5bmhj",
+      "title": "Add Per-Property Equity Growth Chart",
+      "description": "On the property detail page, show an equity growth chart over time reflecting property value appreciation minus mortgage amortisation, scoped to the individual property using the existing projection engine.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P3",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "show-negative-gearing-tax-benefit-in-property-p-l-mmxc02j5lrwe",
+      "title": "Show Negative Gearing Tax Benefit in Property P&L",
+      "description": "Display the negative gearing tax benefit section in the Property P&L, including deductible loss, marginal tax rate, annual tax benefit, and an after-tax cashflow summary line.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
+    },
+    {
+      "id": "add-interest-only-loan-indicators-to-debt-views-mmxc02j5agw3",
+      "title": "Add Interest-Only Loan Indicators to Debt Views",
+      "description": "Badge and visually distinguish interest-only loans in the debt payoff timeline and debt tables, showing 'IO — ∞' for payoff date and noting no principal reduction.",
+      "type": "feature",
+      "status": "todo",
+      "priority": "P2",
+      "brainstormSource": {
+        "sessionId": "session-1773891327812-1bem6f7"
+      },
+      "createdAt": "2026-03-19T10:32:43.985Z",
+      "updatedAt": "2026-03-19T10:32:43.985Z"
     }
   ]
 }

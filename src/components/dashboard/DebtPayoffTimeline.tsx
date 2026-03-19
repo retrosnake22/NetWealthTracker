@@ -20,6 +20,8 @@ interface PayoffInfo {
   name: string
   linkedProperty?: string
   balance: number
+  offsetBalance: number
+  effectiveBalance: number
   rate: number
   monthlyPmt: number
   mortgageType: string
@@ -38,11 +40,17 @@ function calculatePayoff(l: Liability, properties: Property[], offsets: CashAsse
     ? properties.find(p => p.id === l.linkedPropertyId)?.name
     : undefined
 
-  // Calculate effective balance after offset
-  const offsetBal = (l.offsetAccountIds ?? []).reduce((sum, id) => {
+  // Calculate effective balance after offset/redraw
+  // Check both directions: liability.offsetAccountIds → asset, AND asset.linkedMortgageId → liability
+  const offsetByIds = (l.offsetAccountIds ?? []).reduce((sum, id) => {
     const oa = offsets.find(a => a.id === id)
     return sum + (oa?.currentValue ?? 0)
   }, 0)
+  const linkedIds = new Set(l.offsetAccountIds ?? [])
+  const offsetByLink = offsets
+    .filter(a => a.linkedMortgageId === l.id && !linkedIds.has(a.id))
+    .reduce((sum, a) => sum + (a.currentValue ?? 0), 0)
+  const offsetBal = offsetByIds + offsetByLink
   const effectiveBalance = Math.max(l.currentBalance - offsetBal, 0)
 
   if (isIO || monthly <= 0) {
@@ -54,6 +62,8 @@ function calculatePayoff(l: Liability, properties: Property[], offsets: CashAsse
       name: l.name,
       linkedProperty: linkedProp,
       balance: l.currentBalance,
+      offsetBalance: offsetBal,
+      effectiveBalance,
       rate: l.interestRatePA,
       monthlyPmt: monthly,
       mortgageType: isIO ? 'Interest Only' : 'N/A',
@@ -83,6 +93,8 @@ function calculatePayoff(l: Liability, properties: Property[], offsets: CashAsse
           name: l.name,
           linkedProperty: linkedProp,
           balance: l.currentBalance,
+          offsetBalance: offsetBal,
+          effectiveBalance,
           rate: l.interestRatePA,
           monthlyPmt: monthly,
           mortgageType: 'P&I',
@@ -110,6 +122,8 @@ function calculatePayoff(l: Liability, properties: Property[], offsets: CashAsse
     name: l.name,
     linkedProperty: linkedProp,
     balance: l.currentBalance,
+    offsetBalance: offsetBal,
+    effectiveBalance,
     rate: l.interestRatePA,
     monthlyPmt: monthly,
     mortgageType: 'P&I',
@@ -246,7 +260,7 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
                   </div>
                   <div className="w-20 sm:w-24 text-right shrink-0">
                     <span className="text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300">
-                      {formatCurrency(debt.balance)}
+                      {formatCurrency(debt.effectiveBalance)}
                     </span>
                   </div>
                 </div>
@@ -278,8 +292,13 @@ export function DebtPayoffTimeline({ liabilities, properties, cashAssets }: Debt
                     <div className="text-[10px] text-slate-400 dark:text-slate-500">{debt.linkedProperty}</div>
                   )}
                 </td>
-                <td className="py-2.5 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-200">
-                  {formatCurrency(debt.balance)}
+                <td className="py-2.5 text-right tabular-nums">
+                  <div className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(debt.balance)}</div>
+                  {debt.offsetBalance > 0 && (
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      −{formatCurrency(debt.offsetBalance)} offset
+                    </div>
+                  )}
                 </td>
                 <td className="py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-300 hidden sm:table-cell">
                   {(debt.rate * 100).toFixed(2)}%
