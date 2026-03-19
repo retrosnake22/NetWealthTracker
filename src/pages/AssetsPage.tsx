@@ -804,15 +804,49 @@ export default function AssetsPage() {
 			{/* Properties */}
 			{showProperties && properties.length > 0 && (() => {
 				const colors = CATEGORY_COLORS.property
+				// Compute portfolio-level totals for the header
+				const totalPropertyEquity = properties.reduce((sum, p) => {
+					const m = findMortgage(p)
+					return sum + p.currentValue - (m?.currentBalance ?? 0)
+				}, 0)
+				const totalCashflowPA = properties.reduce((sum, p) => {
+					const inv = p.type === 'investment'
+					const m = findMortgage(p)
+					const ob = m ? getOffsetBalance(m.id) : 0
+					const r = calculatePropertyPnL(p, m, ob)
+					if (!r) return sum
+					const cf = inv ? r.netCashflowPA : -(r.totalExpensesPA + (r.mortgageRepaymentPA > 0 ? r.mortgageRepaymentPA : r.interestWithoutOffsetPA))
+					return sum + cf
+				}, 0)
+				const totalCashflowMo = totalCashflowPA / 12
 				return (
 					<div className={`rounded-xl bg-white dark:bg-white/[0.04] shadow-sm dark:shadow-none border-l-4 ${colors.border} overflow-hidden`}>
 						<div className="flex items-center justify-between px-5 py-4">
 							<div className="flex items-center gap-2.5">
 								<span className="text-[22px]">🏠</span>
-								<span className="font-bold text-[15px] text-slate-900 dark:text-white">Properties</span>
-								<span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors.badge}`}>{properties.length}</span>
+								<div>
+									<div className="flex items-center gap-2">
+										<span className="font-bold text-[15px] text-slate-900 dark:text-white">Properties</span>
+										<span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors.badge}`}>{properties.length}</span>
+									</div>
+									<p className="text-xs text-muted-foreground mt-0.5">
+										Total Equity: <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrency(totalPropertyEquity)}</span>
+									</p>
+								</div>
 							</div>
-							<span className={`font-extrabold text-lg tabular-nums ${colors.total} ${colors.darkTotal}`}>{formatCurrency(totalProperties)}</span>
+							<div className="text-right">
+								<span className={`font-extrabold text-lg tabular-nums ${colors.total} ${colors.darkTotal}`}>{formatCurrency(totalProperties)}</span>
+								<p className="text-xs tabular-nums mt-0.5">
+									<span className="text-muted-foreground">Cashflow </span>
+									<span className={totalCashflowMo >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+										{fmtCashflow(totalCashflowMo)}/mo
+									</span>
+									<span className="text-muted-foreground"> · </span>
+									<span className={totalCashflowPA >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+										{fmtCashflow(totalCashflowPA)}/yr
+									</span>
+								</p>
+							</div>
 						</div>
 						<div className="border-t border-slate-100 dark:border-white/[0.06]">
 							{properties.map(p => {
