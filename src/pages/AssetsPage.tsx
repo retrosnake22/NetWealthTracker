@@ -822,8 +822,8 @@ export default function AssetsPage() {
 								const offsetBalance = mortgage ? getOffsetBalance(mortgage.id) : 0
 								const equity = p.currentValue - (mortgage?.currentBalance ?? 0)
 								const pnl = (mortgage || (p.weeklyRent ?? 0) > 0) ? calculatePropertyPnL(p, mortgage, offsetBalance) : null
-								const monthlyCost = pnl ? pnl.netCashflowPA / 12 : null
-								const yearlyCost = pnl ? pnl.netCashflowPA : null
+								const monthlyCost = pnl ? pnl.netCashflowPA / 12 : 0
+								const yearlyCost = pnl ? pnl.netCashflowPA : 0
 								return (
 									<div key={p.id} className="px-5 py-3 border-b border-slate-50 dark:border-white/[0.04] last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
 										<div className="flex items-center justify-between">
@@ -835,35 +835,23 @@ export default function AssetsPage() {
 														{isInvestment ? 'Investment' : 'Primary Residence'}
 														{(p.weeklyRent ?? 0) > 0 && ` · ${p.weeklyRent}/wk rent`}
 														{mortgage && <> · <span className="text-emerald-600 dark:text-emerald-400 font-medium">Equity: {formatCurrency(equity)}</span></>}
-														{/* Cashflow moved to right side */}{false && pnl && monthlyCost !== null && yearlyCost !== null && (
-															<>
-																{' · '}
-																<span className={monthlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
-																	{fmtCashflow(monthlyCost)}/mo
-																</span>
-																{' · '}
-																<span className={yearlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
-																	{fmtCashflow(yearlyCost)}/yr
-																</span>
-															</>
-														)}
 													</p>
 												</div>
 											</div>
 											<div className="flex items-center gap-2">
-												{pnl && monthlyCost !== null && yearlyCost !== null && (
-											<span className="text-xs tabular-nums mr-3">
-												<span className="text-muted-foreground">Cashflow </span>
-												<span className={monthlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
-													{fmtCashflow(monthlyCost)}/mo
-												</span>
-												<span className="text-muted-foreground"> · </span>
-												<span className={yearlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
-													{fmtCashflow(yearlyCost)}/yr
-												</span>
-											</span>
-										)}
-										<span className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCurrency(p.currentValue)}</span>
+												{pnl && (
+													<span className="text-xs tabular-nums mr-3">
+														<span className="text-muted-foreground">Cashflow </span>
+														<span className={monthlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+															{fmtCashflow(monthlyCost)}/mo
+														</span>
+														<span className="text-muted-foreground"> · </span>
+														<span className={yearlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
+															{fmtCashflow(yearlyCost)}/yr
+														</span>
+													</span>
+												)}
+												<span className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatCurrency(p.currentValue)}</span>
 												{isInvestment && (
 													<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePnL(p.id)} title="P&L Breakdown">
 														{isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
