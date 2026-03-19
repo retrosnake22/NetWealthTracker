@@ -8,6 +8,7 @@ import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
 import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/KpiBreakdownDialog'
 import { DebtPayoffTimeline } from '@/components/dashboard/DebtPayoffTimeline'
+import { BudgetVsActualWidget } from '@/components/dashboard/BudgetVsActualWidget'
 import type { CashAsset } from '@/types/models'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
@@ -37,7 +38,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'expenses-chart', 'debt-timeline', 'charts']
+const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'budget-vs-actual', 'expenses-chart', 'debt-timeline', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -686,6 +687,10 @@ export function DashboardPage() {
         {/* Bottom accent */}
         <div className="h-1 w-full bg-indigo-500" />
       </div>
+    ),
+
+    'budget-vs-actual': (
+      <BudgetVsActualWidget />
     ),
 
     'expenses-chart': (
