@@ -7,6 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { WealthChart } from '@/components/dashboard/WealthChart'
 import { AssetBreakdown } from '@/components/dashboard/AssetBreakdown'
 import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/KpiBreakdownDialog'
+import { DebtPayoffTimeline } from '@/components/dashboard/DebtPayoffTimeline'
+import type { CashAsset } from '@/types/models'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
@@ -35,7 +37,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'expenses-chart', 'charts']
+const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'expenses-chart', 'debt-timeline', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -741,6 +743,14 @@ export function DashboardPage() {
       </div>
     ),
 
+    'debt-timeline': liabilities.length > 0 ? (
+      <DebtPayoffTimeline
+        liabilities={liabilities}
+        properties={properties}
+        cashAssets={assets.filter((a): a is CashAsset => a.category === 'cash')}
+      />
+    ) : null,
+
     charts: (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2 h-full">
@@ -788,13 +798,17 @@ export function DashboardPage() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
           <div className="space-y-6">
-            {widgetOrder.map(id => (
-              <SortableWidget key={id} id={id}>
-                {id === 'hero' ? widgets[id] : (
-                  <div style={{ filter: 'saturate(0.7)' }}>{widgets[id]}</div>
-                )}
-              </SortableWidget>
-            ))}
+            {widgetOrder.map(id => {
+              const w = widgets[id]
+              if (!w) return null
+              return (
+                <SortableWidget key={id} id={id}>
+                  {id === 'hero' ? w : (
+                    <div style={{ filter: 'saturate(0.7)' }}>{w}</div>
+                  )}
+                </SortableWidget>
+              )
+            })}
           </div>
         </SortableContext>
       </DndContext>
