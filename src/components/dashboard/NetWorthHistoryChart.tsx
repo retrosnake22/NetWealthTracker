@@ -95,13 +95,13 @@ export function NetWorthHistoryChart({ snapshots, onTakeSnapshot, onDeleteSnapsh
                   width={55}
                 />
                 <Tooltip
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: number | string | undefined, name: string) => {
                     const labels: Record<string, string> = {
                       netWealth: 'Net Wealth',
                       totalAssets: 'Assets',
                       totalLiabilities: 'Liabilities',
                     }
-                    return [formatCurrency(value), labels[name] || name]
+                    return [formatCurrency(Number(value ?? 0)), labels[name] || name]
                   }}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',

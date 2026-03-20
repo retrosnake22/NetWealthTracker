@@ -49,3 +49,55 @@ export function calculateIncomeTax(taxableIncome: number): number {
 
   return Math.round(tax * 100) / 100
 }
+
+const MEDICARE_LEVY_RATE = 0.02
+const SUPER_GUARANTEE_RATE = 0.115 // 11.5% for 2024-25
+
+export interface TaxBreakdownResult {
+  grossSalary: number
+  superAmount: number
+  totalPackage: number
+  taxableIncome: number
+  incomeTax: number
+  medicareLevy: number
+  netAnnual: number
+  netMonthly: number
+  effectiveRate: number
+  marginalRate: number
+}
+
+/**
+ * Full salary tax breakdown including super, medicare levy, and net pay.
+ * @param grossAmount - gross annual salary or total package
+ * @param includesSuper - if true, grossAmount is the total package (salary + super)
+ */
+export function calculateTaxBreakdown(grossAmount: number, includesSuper: boolean): TaxBreakdownResult {
+  const totalPackage = grossAmount
+  const grossSalary = includesSuper
+    ? Math.round((grossAmount / (1 + SUPER_GUARANTEE_RATE)) * 100) / 100
+    : grossAmount
+  const superAmount = includesSuper
+    ? totalPackage - grossSalary
+    : Math.round(grossSalary * SUPER_GUARANTEE_RATE * 100) / 100
+
+  const taxableIncome = grossSalary
+  const incomeTax = calculateIncomeTax(taxableIncome)
+  const medicareLevy = Math.round(taxableIncome * MEDICARE_LEVY_RATE * 100) / 100
+  const netAnnual = grossSalary - incomeTax - medicareLevy
+  const netMonthly = Math.round((netAnnual / 12) * 100) / 100
+  const effectiveRate = grossSalary > 0 ? (incomeTax + medicareLevy) / grossSalary : 0
+  const marginalRate = getMarginalTaxRate(taxableIncome)
+
+  return {
+    grossSalary,
+    superAmount,
+    totalPackage: includesSuper ? totalPackage : grossSalary + superAmount,
+    taxableIncome,
+    incomeTax,
+    medicareLevy,
+    netAnnual,
+    netMonthly,
+    effectiveRate,
+    marginalRate,
+  }
+}
