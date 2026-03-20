@@ -16,6 +16,17 @@ function formatMonth(month: string): string {
   return date.toLocaleString('default', { month: 'short', year: '2-digit' })
 }
 
+const tooltipLabels: Record<string, string> = {
+  netWealth: 'Net Wealth',
+  totalAssets: 'Assets',
+  totalLiabilities: 'Liabilities',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tooltipFormatter = (value: any, name: any): [string, string] => {
+  return [formatCurrency(Number(value ?? 0)), tooltipLabels[String(name)] || String(name)]
+}
+
 export function NetWorthHistoryChart({ snapshots, onTakeSnapshot, onDeleteSnapshot }: NetWorthHistoryChartProps) {
   const [showTable, setShowTable] = useState(false)
   const sorted = [...snapshots].sort((a, b) => a.month.localeCompare(b.month))
@@ -95,14 +106,7 @@ export function NetWorthHistoryChart({ snapshots, onTakeSnapshot, onDeleteSnapsh
                   width={55}
                 />
                 <Tooltip
-                  formatter={(value: number | string | undefined, name: string) => {
-                    const labels: Record<string, string> = {
-                      netWealth: 'Net Wealth',
-                      totalAssets: 'Assets',
-                      totalLiabilities: 'Liabilities',
-                    }
-                    return [formatCurrency(Number(value ?? 0)), labels[name] || name]
-                  }}
+                  formatter={tooltipFormatter}
                   contentStyle={{
                     backgroundColor: 'var(--popover)',
                     border: '1px solid var(--border)',
