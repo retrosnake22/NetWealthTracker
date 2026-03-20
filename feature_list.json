@@ -100,13 +100,15 @@
       "title": "Add Net Worth History Trend Tracking",
       "description": "Snapshot net wealth monthly (or on-demand) and store it in Supabase, then display a historical trend chart on the dashboard showing actual tracked progress over time.",
       "type": "feature",
-      "status": "todo",
+      "status": "done",
       "priority": "P2",
       "brainstormSource": {
         "sessionId": "session-1773891327812-1bem6f7"
       },
       "createdAt": "2026-03-19T10:32:43.985Z",
-      "updatedAt": "2026-03-19T10:32:43.985Z"
+      "updatedAt": "2026-03-19T12:16:28.023Z",
+      "passes": true,
+      "last_tested": "2026-03-19T12:16:28.023Z"
     },
     {
       "id": "add-cashflow-waterfall-chart-to-dashboard-mmxc02j5hl1s",

@@ -5,6 +5,7 @@ import type {
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
   SurplusAllocation, ProjectionSettings, AssetCategory,
   UserProfile, ProfileType, BudgetMode, ExpenseCalcSource,
+  MonthlySnapshot,
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
@@ -32,6 +33,7 @@ export interface FinanceState {
   projectionSettings: ProjectionSettings
   userProfile: UserProfile
   whatIfConversations: WhatIfConversation[]
+  netWorthSnapshots: MonthlySnapshot[]
 
   // Cloud sync
   resetStore: () => void
@@ -90,6 +92,10 @@ export interface FinanceState {
   addWhatIfConversation: (conv: WhatIfConversation) => void
   updateWhatIfConversation: (id: string, updates: Partial<WhatIfConversation>) => void
   removeWhatIfConversation: (id: string) => void
+
+  // Net Worth Snapshots
+  addNetWorthSnapshot: (snapshot: MonthlySnapshot) => void
+  removeNetWorthSnapshot: (month: string) => void
 }
 
 const now = () => new Date().toISOString()
@@ -134,6 +140,7 @@ export const useFinanceStore = create<FinanceState>()(
       projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
       userProfile: { ...DEFAULT_PROFILE },
       whatIfConversations: [],
+      netWorthSnapshots: [],
 
       // Reset store to empty state (used on user switch)
       resetStore: () => set(() => ({
@@ -146,12 +153,13 @@ export const useFinanceStore = create<FinanceState>()(
         projectionSettings: { ...DEFAULT_PROJECTION_SETTINGS },
         userProfile: { ...DEFAULT_PROFILE },
         whatIfConversations: [],
+        netWorthSnapshots: [],
       })),
 
       // Cloud sync — replaces store data with cloud data
       hydrateFromCloud: (data: Record<string, unknown>) => set(() => {
         const hydrated: Record<string, unknown> = {}
-        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile', 'whatIfConversations']
+        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile', 'whatIfConversations', 'netWorthSnapshots']
         for (const key of keys) {
           if (data[key] !== undefined) {
             hydrated[key] = data[key]
@@ -333,6 +341,21 @@ export const useFinanceStore = create<FinanceState>()(
       })),
       removeWhatIfConversation: (id: string) => set((state: FinanceState) => ({
         whatIfConversations: state.whatIfConversations.filter(c => c.id !== id),
+      })),
+
+      // Net Worth Snapshots
+      addNetWorthSnapshot: (snapshot: MonthlySnapshot) => set((state: FinanceState) => {
+        // Replace existing snapshot for same month, or add new
+        const existing = state.netWorthSnapshots.findIndex(s => s.month === snapshot.month)
+        if (existing !== -1) {
+          const updated = [...state.netWorthSnapshots]
+          updated[existing] = snapshot
+          return { netWorthSnapshots: updated }
+        }
+        return { netWorthSnapshots: [...state.netWorthSnapshots, snapshot].sort((a, b) => a.month.localeCompare(b.month)) }
+      }),
+      removeNetWorthSnapshot: (month: string) => set((state: FinanceState) => ({
+        netWorthSnapshots: state.netWorthSnapshots.filter(s => s.month !== month)
       })),
     }),
     {

@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, StockAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource } from '@/types/models'
+import type { Asset, CashAsset, StockAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource, MonthlySnapshot } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -600,4 +600,33 @@ export function projectNetWealth(
   }
 
   return points
+}
+
+// --- Net Worth Snapshot ---
+export function createNetWorthSnapshot(
+  assets: Asset[],
+  properties: Property[],
+  liabilities: Liability[],
+  incomes: IncomeItem[],
+  expenseBudgets: ExpenseBudget[],
+  expenseActuals: ExpenseActual[],
+  budgetMode?: BudgetMode,
+  estimatedMonthlyExpenses?: number,
+  expenseCalcSource?: ExpenseCalcSource,
+): MonthlySnapshot {
+  const now = new Date()
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const totalAssets = calculateTotalAssets(assets, properties)
+  const totalLiabilities = calculateTotalLiabilities(liabilities)
+  const netWealth = totalAssets - totalLiabilities
+  const metrics = calculateDashboardMetrics(incomes, expenseBudgets, properties, liabilities, assets, expenseActuals, budgetMode, estimatedMonthlyExpenses, expenseCalcSource)
+  return {
+    month,
+    totalAssets,
+    totalLiabilities,
+    netWealth,
+    totalIncome: metrics.monthlyIncome,
+    totalExpenses: metrics.monthlyExpenses,
+    cashflow: metrics.monthlyCashflow,
+  }
 }

@@ -10,13 +10,14 @@ import { KpiBreakdownDialog, type BreakdownType } from '@/components/dashboard/K
 import { ExportSnapshotDialog } from '@/components/dashboard/ExportSnapshotDialog'
 import { DebtPayoffTimeline } from '@/components/dashboard/DebtPayoffTimeline'
 import { BudgetVsActualWidget } from '@/components/dashboard/BudgetVsActualWidget'
+import { NetWorthHistoryChart } from '@/components/dashboard/NetWorthHistoryChart'
 import type { CashAsset } from '@/types/models'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
   calculateNetWealth, calculateTotalAssets, calculateTotalLiabilities,
   calculateDebtToAssetRatio, projectNetWealth,
-  calculateDashboardMetrics,
+  calculateDashboardMetrics, createNetWorthSnapshot,
   LIVING_EXPENSE_CATEGORIES,
 } from '@/lib/calculations'
 import {
@@ -39,7 +40,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'budget-vs-actual', 'expenses-chart', 'debt-timeline', 'charts']
+const DEFAULT_ORDER = ['hero', 'net-worth-history', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'budget-vs-actual', 'expenses-chart', 'debt-timeline', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -220,7 +221,7 @@ function ProgressRing({ percent, size = 140, strokeWidth = 10 }: { percent: numb
 }
 
 export function DashboardPage() {
-  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification } = useFinanceStore()
+  const { assets, properties, liabilities, incomes, expenseBudgets, expenseActuals, projectionSettings, userProfile, dismissNotification, netWorthSnapshots, addNetWorthSnapshot, removeNetWorthSnapshot } = useFinanceStore()
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -228,6 +229,31 @@ export function DashboardPage() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
   }, [widgetOrder])
+
+  // Auto-snapshot: take a snapshot on the first dashboard visit each month (if data exists)
+  useEffect(() => {
+    const hasData = assets.length > 0 || properties.length > 0 || liabilities.length > 0
+    if (!hasData) return
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const alreadyHasThisMonth = netWorthSnapshots.some(s => s.month === currentMonth)
+    if (!alreadyHasThisMonth) {
+      const snapshot = createNetWorthSnapshot(
+        assets, properties, liabilities, incomes, expenseBudgets, expenseActuals,
+        userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource
+      )
+      addNetWorthSnapshot(snapshot)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Run only on mount
+
+  const handleTakeSnapshot = () => {
+    const snapshot = createNetWorthSnapshot(
+      assets, properties, liabilities, incomes, expenseBudgets, expenseActuals,
+      userProfile?.budgetMode, userProfile?.estimatedMonthlyExpenses, userProfile?.expenseCalcSource
+    )
+    addNetWorthSnapshot(snapshot)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -440,6 +466,14 @@ export function DashboardPage() {
           </div>
         </div>
       </>
+    ),
+
+    'net-worth-history': (
+      <NetWorthHistoryChart
+        snapshots={netWorthSnapshots}
+        onTakeSnapshot={handleTakeSnapshot}
+        onDeleteSnapshot={removeNetWorthSnapshot}
+      />
     ),
 
     'fi-tracker': (
