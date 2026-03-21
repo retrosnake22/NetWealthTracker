@@ -177,3 +177,19 @@ export interface MonthlySnapshot {
   totalExpenses: number
   cashflow: number
 }
+
+export type GoalType = 'net_worth' | 'debt_reduction' | 'savings_target' | 'positive_cashflow' | 'custom'
+
+export interface FinancialGoal extends BaseEntity {
+  name: string
+  type: GoalType
+  targetValue: number
+  /** ISO date string for target date (optional — if set, used for estimated achievement) */
+  targetDate?: string
+  /** For custom goals, user can manually set a current value; for others, computed dynamically */
+  customCurrentValue?: number
+  /** Whether the goal has been manually marked as achieved */
+  isAchieved?: boolean
+  /** Icon color preference */
+  color?: string
+}

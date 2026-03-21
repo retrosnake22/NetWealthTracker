@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 const DATA_KEYS = [
   'assets', 'properties', 'liabilities', 'incomes',
   'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile',
-  'whatIfConversations',
+  'whatIfConversations', 'netWorthSnapshots', 'financialGoals',
 ] as const
 
 type SyncData = Record<string, unknown>

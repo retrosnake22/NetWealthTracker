@@ -11,7 +11,9 @@ import { ExportSnapshotDialog } from '@/components/dashboard/ExportSnapshotDialo
 import { DebtPayoffTimeline } from '@/components/dashboard/DebtPayoffTimeline'
 import { BudgetVsActualWidget } from '@/components/dashboard/BudgetVsActualWidget'
 import { NetWorthHistoryChart } from '@/components/dashboard/NetWorthHistoryChart'
-import type { CashAsset } from '@/types/models'
+import { GoalsWidget } from '@/components/dashboard/GoalsWidget'
+import { GoalDialog } from '@/components/dashboard/GoalDialog'
+import type { CashAsset, FinancialGoal } from '@/types/models'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
 import {
@@ -40,7 +42,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 const STORAGE_KEY = 'nwt-dashboard-order'
-const DEFAULT_ORDER = ['hero', 'net-worth-history', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'budget-vs-actual', 'expenses-chart', 'debt-timeline', 'charts']
+const DEFAULT_ORDER = ['hero', 'net-worth-history', 'financial-goals', 'fi-tracker', 'cashflow-kpis', 'yearly-cashflow', 'budget-vs-actual', 'expenses-chart', 'debt-timeline', 'charts']
 
 function loadOrder(): string[] {
   try {
@@ -225,6 +227,8 @@ export function DashboardPage() {
   const [widgetOrder, setWidgetOrder] = useState(loadOrder)
   const [breakdownOpen, setBreakdownOpen] = useState<BreakdownType>(null)
   const [exportOpen, setExportOpen] = useState(false)
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
@@ -473,6 +477,19 @@ export function DashboardPage() {
         snapshots={netWorthSnapshots}
         onTakeSnapshot={handleTakeSnapshot}
         onDeleteSnapshot={removeNetWorthSnapshot}
+      />
+    ),
+
+    'financial-goals': (
+      <GoalsWidget
+        onAddGoal={() => {
+          setEditingGoal(null)
+          setGoalDialogOpen(true)
+        }}
+        onEditGoal={(goal) => {
+          setEditingGoal(goal)
+          setGoalDialogOpen(true)
+        }}
       />
     ),
 
@@ -865,6 +882,14 @@ export function DashboardPage() {
       </DndContext>
       <KpiBreakdownDialog open={breakdownOpen} onClose={() => setBreakdownOpen(null)} />
       <ExportSnapshotDialog open={exportOpen} onClose={() => setExportOpen(false)} />
+      <GoalDialog
+        open={goalDialogOpen}
+        onClose={() => {
+          setGoalDialogOpen(false)
+          setEditingGoal(null)
+        }}
+        editGoal={editingGoal}
+      />
     </>
   )
 }

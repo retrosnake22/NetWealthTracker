@@ -5,7 +5,7 @@ import type {
   Property, Liability, IncomeItem, ExpenseBudget, ExpenseActual,
   SurplusAllocation, ProjectionSettings, AssetCategory,
   UserProfile, ProfileType, BudgetMode, ExpenseCalcSource,
-  MonthlySnapshot,
+  MonthlySnapshot, FinancialGoal,
 } from '@/types/models'
 import { generateId } from '@/lib/format'
 
@@ -34,6 +34,7 @@ export interface FinanceState {
   userProfile: UserProfile
   whatIfConversations: WhatIfConversation[]
   netWorthSnapshots: MonthlySnapshot[]
+  financialGoals: FinancialGoal[]
 
   // Cloud sync
   resetStore: () => void
@@ -96,6 +97,11 @@ export interface FinanceState {
   // Net Worth Snapshots
   addNetWorthSnapshot: (snapshot: MonthlySnapshot) => void
   removeNetWorthSnapshot: (month: string) => void
+
+  // Financial Goals
+  addGoal: (goal: Partial<FinancialGoal>) => void
+  updateGoal: (id: string, updates: Partial<FinancialGoal>) => void
+  removeGoal: (id: string) => void
 }
 
 const now = () => new Date().toISOString()
@@ -141,6 +147,7 @@ export const useFinanceStore = create<FinanceState>()(
       userProfile: { ...DEFAULT_PROFILE },
       whatIfConversations: [],
       netWorthSnapshots: [],
+      financialGoals: [],
 
       // Reset store to empty state (used on user switch)
       resetStore: () => set(() => ({
@@ -154,12 +161,13 @@ export const useFinanceStore = create<FinanceState>()(
         userProfile: { ...DEFAULT_PROFILE },
         whatIfConversations: [],
         netWorthSnapshots: [],
+        financialGoals: [],
       })),
 
       // Cloud sync — replaces store data with cloud data
       hydrateFromCloud: (data: Record<string, unknown>) => set(() => {
         const hydrated: Record<string, unknown> = {}
-        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile', 'whatIfConversations', 'netWorthSnapshots']
+        const keys = ['assets', 'properties', 'liabilities', 'incomes', 'expenseBudgets', 'expenseActuals', 'projectionSettings', 'userProfile', 'whatIfConversations', 'netWorthSnapshots', 'financialGoals']
         for (const key of keys) {
           if (data[key] !== undefined) {
             hydrated[key] = data[key]
@@ -356,6 +364,17 @@ export const useFinanceStore = create<FinanceState>()(
       }),
       removeNetWorthSnapshot: (month: string) => set((state: FinanceState) => ({
         netWorthSnapshots: state.netWorthSnapshots.filter(s => s.month !== month)
+      })),
+
+      // Financial Goals
+      addGoal: (goal: Partial<FinancialGoal>) => set((state: FinanceState) => ({
+        financialGoals: [...state.financialGoals, { ...goal, id: generateId(), createdAt: now(), updatedAt: now() } as FinancialGoal]
+      })),
+      updateGoal: (id: string, updates: Partial<FinancialGoal>) => set((state: FinanceState) => ({
+        financialGoals: state.financialGoals.map((g: FinancialGoal) => g.id === id ? { ...g, ...updates, updatedAt: now() } : g)
+      })),
+      removeGoal: (id: string) => set((state: FinanceState) => ({
+        financialGoals: state.financialGoals.filter((g: FinancialGoal) => g.id !== id)
       })),
     }),
     {

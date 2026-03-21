@@ -1,4 +1,4 @@
-import type { Asset, CashAsset, StockAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource, MonthlySnapshot } from '@/types/models'
+import type { Asset, CashAsset, StockAsset, Liability, Property, IncomeItem, ExpenseBudget, ExpenseActual, SurplusAllocation, BudgetMode, ExpenseCalcSource, MonthlySnapshot, FinancialGoal, GoalType } from '@/types/models'
 import { getMarginalTaxRate } from './ausTax'
 
 export function calculatePropertyEquity(property: Property, mortgage?: Liability): number {
@@ -629,4 +629,176 @@ export function createNetWorthSnapshot(
     totalExpenses: metrics.monthlyExpenses,
     cashflow: metrics.monthlyCashflow,
   }
+}
+
+// --- Financial Goal Progress ---
+export interface GoalProgress {
+  goal: FinancialGoal
+  currentValue: number
+  targetValue: number
+  /** 0 to 1 */
+  progressPercent: number
+  /** Whether the goal is achieved (current >= target, or debt target: current <= target) */
+  isAchieved: boolean
+  /** Estimated date of achievement based on current trajectory, null if can't estimate */
+  estimatedDate: Date | null
+  /** Months remaining to achieve, null if can't estimate */
+  monthsRemaining: number | null
+}
+
+/**
+ * Compute the current value for a goal based on its type and current financial data.
+ */
+export function getGoalCurrentValue(
+  goal: FinancialGoal,
+  assets: Asset[],
+  properties: Property[],
+  liabilities: Liability[],
+  monthlyCashflow: number,
+): number {
+  switch (goal.type) {
+    case 'net_worth': {
+      const totalAssets = calculateTotalAssets(assets, properties)
+      const totalLiabilities = calculateTotalLiabilities(liabilities)
+      return totalAssets - totalLiabilities
+    }
+    case 'debt_reduction': {
+      return calculateTotalLiabilities(liabilities)
+    }
+    case 'savings_target': {
+      return assets
+        .filter(a => a.category === 'cash')
+        .reduce((sum, a) => sum + a.currentValue, 0)
+    }
+    case 'positive_cashflow': {
+      return monthlyCashflow
+    }
+    case 'custom': {
+      return goal.customCurrentValue ?? 0
+    }
+    default:
+      return 0
+  }
+}
+
+/**
+ * Calculate progress for a single financial goal.
+ */
+export function calculateGoalProgress(
+  goal: FinancialGoal,
+  assets: Asset[],
+  properties: Property[],
+  liabilities: Liability[],
+  monthlyCashflow: number,
+  monthlySurplus: number,
+): GoalProgress {
+  const currentValue = getGoalCurrentValue(goal, assets, properties, liabilities, monthlyCashflow)
+  const targetValue = goal.targetValue
+
+  // For debt reduction, progress is inverse (we want to go DOWN to target)
+  const isDebtGoal = goal.type === 'debt_reduction'
+  // For positive cashflow, it's a threshold goal
+  const isCashflowGoal = goal.type === 'positive_cashflow'
+
+  let progressPercent: number
+  let isAchieved: boolean
+
+  if (isDebtGoal) {
+    // Starting point is current debt, going down toward target
+    // If current debt is already at or below target, 100%
+    if (currentValue <= targetValue) {
+      progressPercent = 1
+      isAchieved = true
+    } else {
+      // We need to figure out starting point — use a reasonable heuristic
+      // Progress = how much of the gap we've closed
+      // Since we don't track historical starting debt, we base it on % of target achieved
+      // Closer to target = higher progress
+      progressPercent = targetValue > 0
+        ? Math.max(0, Math.min(1, targetValue / currentValue))
+        : currentValue === 0 ? 1 : 0
+      isAchieved = false
+    }
+  } else if (isCashflowGoal) {
+    // Target is a cashflow number (usually 0 for positive cashflow)
+    isAchieved = currentValue >= targetValue
+    progressPercent = targetValue === 0
+      ? (currentValue >= 0 ? 1 : Math.max(0, 1 + currentValue / Math.abs(currentValue + 1000)))
+      : targetValue > 0
+        ? Math.max(0, Math.min(1, currentValue / targetValue))
+        : 1
+  } else {
+    // Net worth, savings, custom — growing toward target
+    if (targetValue <= 0) {
+      progressPercent = currentValue >= targetValue ? 1 : 0
+      isAchieved = currentValue >= targetValue
+    } else {
+      progressPercent = Math.max(0, Math.min(1, currentValue / targetValue))
+      isAchieved = currentValue >= targetValue
+    }
+  }
+
+  // Manual override
+  if (goal.isAchieved) {
+    isAchieved = true
+    progressPercent = 1
+  }
+
+  // Estimate achievement date
+  let estimatedDate: Date | null = null
+  let monthsRemaining: number | null = null
+
+  if (!isAchieved && monthlySurplus > 0) {
+    if (isDebtGoal) {
+      // How many months to pay down from current to target with surplus
+      const debtToReduce = currentValue - targetValue
+      if (debtToReduce > 0) {
+        monthsRemaining = Math.ceil(debtToReduce / monthlySurplus)
+        estimatedDate = new Date()
+        estimatedDate.setMonth(estimatedDate.getMonth() + monthsRemaining)
+      }
+    } else if (isCashflowGoal) {
+      // Can't easily estimate when cashflow will turn positive — it depends on changes
+      estimatedDate = null
+    } else {
+      // Growing toward target
+      const remaining = targetValue - currentValue
+      if (remaining > 0) {
+        monthsRemaining = Math.ceil(remaining / monthlySurplus)
+        estimatedDate = new Date()
+        estimatedDate.setMonth(estimatedDate.getMonth() + monthsRemaining)
+      }
+    }
+  }
+
+  // If user has a target date, use that for display if no estimate
+  if (!estimatedDate && goal.targetDate) {
+    estimatedDate = new Date(goal.targetDate)
+  }
+
+  return {
+    goal,
+    currentValue,
+    targetValue,
+    progressPercent,
+    isAchieved,
+    estimatedDate,
+    monthsRemaining,
+  }
+}
+
+export const GOAL_TYPE_LABELS: Record<GoalType, string> = {
+  net_worth: 'Net Worth Target',
+  debt_reduction: 'Debt Reduction',
+  savings_target: 'Savings Target',
+  positive_cashflow: 'Positive Cashflow',
+  custom: 'Custom Goal',
+}
+
+export const GOAL_TYPE_DESCRIPTIONS: Record<GoalType, string> = {
+  net_worth: 'Reach a target net worth (assets minus liabilities)',
+  debt_reduction: 'Reduce total debt to a target amount',
+  savings_target: 'Grow your cash & savings to a target amount',
+  positive_cashflow: 'Achieve positive monthly cashflow',
+  custom: 'Track progress toward a custom financial target',
 }

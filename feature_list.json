@@ -195,13 +195,15 @@
       "title": "Add Financial Goal Setting and Milestone Progress Tracking",
       "description": "Allow users to set financial goals (e.g., reduce debt to $X by date, reach positive cashflow, net worth target) and display progress bars with estimated achievement dates on the dashboard.",
       "type": "feature",
-      "status": "todo",
+      "status": "done",
       "priority": "P3",
       "brainstormSource": {
         "sessionId": "session-1773891327812-1bem6f7"
       },
       "createdAt": "2026-03-19T10:32:43.985Z",
-      "updatedAt": "2026-03-19T10:32:43.985Z"
+      "updatedAt": "2026-03-21T00:46:00.212Z",
+      "passes": true,
+      "last_tested": "2026-03-21T00:46:00.212Z"
     },
     {
       "id": "add-per-property-equity-growth-chart-mmxc02j5bmhj",
@@ -242,7 +244,30 @@
         "sessionId": "session-1773891327812-1bem6f7"
       },
       "createdAt": "2026-03-19T10:32:43.985Z",
-      "updatedAt": "2026-03-19T10:32:43.985Z"
+      "updatedAt": "2026-03-21T00:46:00.721Z",
+      "docChange": {
+        "targetDocument": "ARCHITECTURE.md",
+        "action": "update",
+        "changeType": "update",
+        "section": "State Management",
+        "reason": "1 store files were modified",
+        "triggerType": "sprint_impact",
+        "triggeringSprint": "sprint-1774052918771",
+        "affectedFiles": [
+          "/Users/johnwanis/Projects/NWT/src/stores/useFinanceStore.ts"
+        ]
+      }
+    },
+    {
+      "id": "update-architecture-md-state-management-mmzlx8uotbks",
+      "title": "Update ARCHITECTURE.md: State Management",
+      "description": "1 store files were modified",
+      "type": "doc_change",
+      "status": "todo",
+      "priority": "P2",
+      "createdAt": "2026-03-21T00:46:00.720Z",
+      "updatedAt": "2026-03-21T00:46:00.720Z",
+      "needsBrainstorm": true
     }
   ]
 }
