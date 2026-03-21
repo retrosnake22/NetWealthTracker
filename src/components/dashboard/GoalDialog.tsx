@@ -20,6 +20,7 @@ import {
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import type { FinancialGoal, GoalType } from '@/types/models'
 import { GOAL_TYPE_LABELS, GOAL_TYPE_DESCRIPTIONS } from '@/lib/calculations'
+import { formatCurrency } from '@/lib/format'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ interface FormState {
   targetDate: string
   customCurrentValue: string
   color: string
+  linkedLiabilityIds: string[]
 }
 
 const EMPTY_FORM: FormState = {
@@ -66,6 +68,7 @@ const EMPTY_FORM: FormState = {
   targetDate: '',
   customCurrentValue: '',
   color: COLOR_PRESETS[0],
+  linkedLiabilityIds: [],
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -80,7 +83,7 @@ function isoToDateInput(iso?: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GoalDialog({ open, onClose, editGoal }: GoalDialogProps) {
-  const { addGoal, updateGoal, removeGoal } = useFinanceStore()
+  const { addGoal, updateGoal, removeGoal, liabilities } = useFinanceStore()
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -106,6 +109,7 @@ export function GoalDialog({ open, onClose, editGoal }: GoalDialogProps) {
               ? String(editGoal.customCurrentValue)
               : '',
           color: editGoal.color ?? COLOR_PRESETS[0],
+          linkedLiabilityIds: editGoal.linkedLiabilityIds ?? [],
         })
       } else {
         setForm(EMPTY_FORM)
@@ -134,6 +138,8 @@ export function GoalDialog({ open, onClose, editGoal }: GoalDialogProps) {
       customCurrentValue: type === 'custom' ? prev.customCurrentValue : '',
       // For positive cashflow, clear any user-entered target value
       targetValue: type === 'positive_cashflow' ? '0' : prev.targetValue,
+      // Clear linked liabilities when switching away from debt_reduction
+      linkedLiabilityIds: type === 'debt_reduction' ? prev.linkedLiabilityIds : [],
     }))
   }
 
@@ -149,6 +155,10 @@ export function GoalDialog({ open, onClose, editGoal }: GoalDialogProps) {
       customCurrentValue:
         isCustom && form.customCurrentValue !== ''
           ? parseFloat(form.customCurrentValue) || 0
+          : undefined,
+      linkedLiabilityIds:
+        form.type === 'debt_reduction' && form.linkedLiabilityIds.length > 0
+          ? form.linkedLiabilityIds
           : undefined,
     }
 
@@ -266,6 +276,67 @@ export function GoalDialog({ open, onClose, editGoal }: GoalDialogProps) {
                   Enter the total debt balance you want to reach (e.g. $0 to eliminate all debt).
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Liability Picker — only for 'debt_reduction' type */}
+          {form.type === 'debt_reduction' && liabilities.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Track Specific Debts{' '}
+                <span className="text-slate-400 dark:text-slate-500 font-normal">(optional)</span>
+              </Label>
+              <div className="rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden">
+                {liabilities.map((liability) => {
+                  const isSelected = form.linkedLiabilityIds.includes(liability.id)
+                  return (
+                    <button
+                      key={liability.id}
+                      type="button"
+                      onClick={() =>
+                        setForm(prev => ({
+                          ...prev,
+                          linkedLiabilityIds: isSelected
+                            ? prev.linkedLiabilityIds.filter(id => id !== liability.id)
+                            : [...prev.linkedLiabilityIds, liability.id],
+                        }))
+                      }
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-sm transition-colors border-b last:border-b-0 border-slate-100 dark:border-white/5 ${
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-500/10'
+                          : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? 'bg-blue-500 border-blue-500'
+                              : 'border-slate-300 dark:border-slate-600'
+                          }`}
+                        >
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`truncate ${isSelected ? 'text-slate-800 dark:text-white font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
+                          {liability.name}
+                        </span>
+                      </div>
+                      <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
+                        {formatCurrency(liability.currentBalance)}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {form.linkedLiabilityIds.length === 0
+                  ? 'No debts selected — goal will track all liabilities combined.'
+                  : `Tracking ${form.linkedLiabilityIds.length} of ${liabilities.length} debts.`}
+              </p>
             </div>
           )}
 

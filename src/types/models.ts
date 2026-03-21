@@ -192,4 +192,6 @@ export interface FinancialGoal extends BaseEntity {
   isAchieved?: boolean
   /** Icon color preference */
   color?: string
+  /** For debt_reduction goals: track only these specific liabilities (all if empty/undefined) */
+  linkedLiabilityIds?: string[]
 }

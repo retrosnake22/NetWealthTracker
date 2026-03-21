@@ -663,6 +663,13 @@ export function getGoalCurrentValue(
       return totalAssets - totalLiabilities
     }
     case 'debt_reduction': {
+      // If specific liabilities are linked, sum only those; otherwise sum all
+      if (goal.linkedLiabilityIds && goal.linkedLiabilityIds.length > 0) {
+        const linkedIds = new Set(goal.linkedLiabilityIds)
+        return liabilities
+          .filter(l => linkedIds.has(l.id))
+          .reduce((sum, l) => sum + l.currentBalance, 0)
+      }
       return calculateTotalLiabilities(liabilities)
     }
     case 'savings_target': {
