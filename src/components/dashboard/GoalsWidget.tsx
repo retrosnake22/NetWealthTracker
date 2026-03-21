@@ -34,7 +34,7 @@ interface GoalsWidgetProps {
 // Goal-type icon map
 // ---------------------------------------------------------------------------
 
-const GOAL_TYPE_ICONS: Record<FinancialGoal['type'], React.ComponentType<{ className?: string }>> = {
+const GOAL_TYPE_ICONS: Record<FinancialGoal['type'], React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   net_worth: TrendingUp,
   debt_reduction: TrendingDown,
   savings_target: PiggyBank,

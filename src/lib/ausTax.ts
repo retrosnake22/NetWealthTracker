@@ -56,3 +56,35 @@ export function calculateIncomeTax(grossIncome: number): number {
 
   return Math.round(tax * 100) / 100
 }
+
+const SUPER_RATE = 0.115 // 11.5% for 2024-25
+const MEDICARE_RATE = 0.02
+
+/**
+ * Full salary tax breakdown: given a gross annual salary (optionally inclusive
+ * of super), returns all the components needed for the pay summary UI.
+ */
+export function calculateTaxBreakdown(grossAnnual: number, includesSuper: boolean) {
+  const totalPackage = grossAnnual
+  const grossSalary = includesSuper
+    ? Math.round((grossAnnual / (1 + SUPER_RATE)) * 100) / 100
+    : grossAnnual
+  const superAmount = includesSuper
+    ? totalPackage - grossSalary
+    : Math.round(grossSalary * SUPER_RATE * 100) / 100
+
+  const incomeTax = calculateIncomeTax(grossSalary)
+  const medicareLevy = Math.round(grossSalary * MEDICARE_RATE * 100) / 100
+  const netAnnual = grossSalary - incomeTax - medicareLevy
+  const netMonthly = Math.round((netAnnual / 12) * 100) / 100
+
+  return {
+    totalPackage: includesSuper ? totalPackage : grossSalary + superAmount,
+    grossSalary,
+    superAmount,
+    incomeTax,
+    medicareLevy,
+    netAnnual,
+    netMonthly,
+  }
+}
