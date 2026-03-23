@@ -336,7 +336,7 @@ export function IncomePage() {
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-green-800 to-green-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Total Monthly Income</p>
-          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-green-400">{formatCurrency(grandTotal)}</p>
+          <p className="text-lg sm:text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-green-400">{formatCurrency(grandTotal)}</p>
           <p className="text-xs opacity-70 dark:opacity-100 dark:text-slate-400 mt-0.5">{formatCurrency(grandTotal * 12)}/year</p>
         </div>
 
@@ -344,14 +344,14 @@ export function IncomePage() {
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-teal-800 to-teal-500 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Manually Entered</p>
-          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(manualTotal)}</p>
+          <p className="text-lg sm:text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(manualTotal)}</p>
         </div>
 
         {/* Auto-Generated */}
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-emerald-700 to-emerald-400 dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className="text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100">Auto-Generated</p>
-          <p className="text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(filteredAutoTotal)}</p>
+          <p className="text-lg sm:text-3xl font-extrabold tabular-nums tracking-tight mt-1 dark:text-white">{formatCurrency(filteredAutoTotal)}</p>
         </div>
       </div>
 
@@ -401,7 +401,7 @@ export function IncomePage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
@@ -525,7 +525,7 @@ export function IncomePage() {
                               </p>
                             )}
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(item.id)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </div>

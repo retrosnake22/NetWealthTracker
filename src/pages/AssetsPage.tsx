@@ -719,24 +719,24 @@ export default function AssetsPage() {
 				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#1e3a5f] to-[#3b82f6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
 					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
 					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Total Assets</p>
-					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>
+					<p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>
 						{formatCurrency(categoryFilter === 'property' ? totalProperties : categoryFilter ? filteredAssets.reduce((s, a) => s + a.currentValue, 0) : totalAssets + totalProperties)}
 					</p>
 				</div>
 				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#5b21b6] to-[#8b5cf6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
 					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
 					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Financial Assets</p>
-					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalAssets)}</p>
+					<p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalAssets)}</p>
 				</div>
 				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#0f766e] to-[#14b8a6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
 					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
 					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Properties</p>
-					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalProperties)}</p>
+					<p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-white'>{formatCurrency(totalProperties)}</p>
 				</div>
 				<div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#065f46] to-[#10b981] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
 					<div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
 					<p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Total Equity</p>
-					<p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-emerald-400'>{formatCurrency(totalEquity)}</p>
+					<p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-emerald-400'>{formatCurrency(totalEquity)}</p>
 				</div>
 			</div>
 
@@ -876,7 +876,7 @@ export default function AssetsPage() {
 											</div>
 											<div className="flex items-center gap-2">
 												{pnl && (
-													<span className="text-xs tabular-nums mr-3">
+													<span className="text-xs tabular-nums mr-3 hidden md:inline">
 														<span className="text-muted-foreground">Cashflow </span>
 														<span className={monthlyCost >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-500 dark:text-red-400 font-medium'}>
 															{fmtCashflow(monthlyCost)}/mo
@@ -912,7 +912,7 @@ export default function AssetsPage() {
 											</div>
 										</div>
 										{isExpanded && (
-											<div className="mt-3 ml-9 space-y-4">
+											<div className="mt-3 ml-0 sm:ml-9 space-y-4">
 												<PropertyPnL property={p} mortgage={mortgage} offsetBalance={offsetBalance} grossSalary={grossSalary} />
 																				<PropertyEquityChart property={p} mortgage={mortgage} />
 											</div>

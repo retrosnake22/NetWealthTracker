@@ -276,7 +276,7 @@ export function ExpensesPage() {
                         {items.map((item, idx) => (
                           <div
                             key={item.key}
-                            className={`flex items-center gap-4 px-5 py-3 pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
+                            className={`flex items-center gap-4 px-5 py-3 pl-6 sm:pl-12 ${idx !== items.length - 1 ? 'border-b border-border/30' : ''}`}
                           >
                             <div className="flex items-center gap-2.5 flex-1 min-w-0">
                               <Badge variant="outline" className={`text-xs ${getCategoryColor(item.category)}`}>
@@ -332,7 +332,7 @@ export function ExpensesPage() {
                           {group.items.map((item, idx) => (
                             <div
                               key={item.id}
-                              className={`flex items-center gap-4 px-5 py-3.5 pl-12 hover:bg-muted/30 transition-colors group ${idx !== group.items.length - 1 ? 'border-b border-border/30' : ''}`}
+                              className={`flex items-center gap-4 px-5 py-3.5 pl-6 sm:pl-12 hover:bg-muted/30 transition-colors group ${idx !== group.items.length - 1 ? 'border-b border-border/30' : ''}`}
                             >
                               <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <span className="text-sm font-medium truncate">{item.label}</span>
@@ -345,7 +345,7 @@ export function ExpensesPage() {
                                   <span className="text-sm font-semibold tabular-nums">{formatCurrency(item.monthlyBudget)}</span>
                                   <span className="text-xs text-muted-foreground ml-0.5">/mo</span>
                                 </div>
-                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item.id)}>
                                     <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                                   </Button>

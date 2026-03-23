@@ -435,17 +435,17 @@ export function LiabilitiesPage() {
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#7f1d1d] to-[#ef4444] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>{activeFilterLabel ? `${activeFilterLabel} Total` : 'Total Liabilities'}</p>
-          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-red-400'>{formatCurrency(total)}</p>
+          <p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-red-400'>{formatCurrency(total)}</p>
         </div>
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#9a3412] to-[#f97316] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Monthly Repayments</p>
-          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-orange-400'>{formatCurrency(monthlyRepayments)}</p>
+          <p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-orange-400'>{formatCurrency(monthlyRepayments)}</p>
         </div>
         <div className="rounded-xl p-5 text-white bg-gradient-to-br from-[#1e3a5f] to-[#3b82f6] dark:bg-none dark:bg-white/[0.06] dark:border dark:border-white/10 dark:backdrop-blur-sm relative overflow-hidden">
           <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 dark:bg-white/5" />
           <p className='text-[13px] font-medium opacity-85 dark:text-slate-400 dark:opacity-100'>Avg Interest Rate</p>
-          <p className='text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>{total > 0 ? formatPercent(weightedRate) : '—'}</p>
+          <p className='text-lg sm:text-[26px] font-extrabold tabular-nums tracking-tight mt-1 dark:text-blue-400'>{total > 0 ? formatPercent(weightedRate) : '—'}</p>
         </div>
       </div>
 
@@ -543,7 +543,7 @@ export function LiabilitiesPage() {
                             </div>
 
                             {/* Action buttons */}
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item.id)}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>

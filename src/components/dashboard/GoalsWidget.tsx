@@ -114,7 +114,7 @@ function GoalRow({
         {/* Edit button */}
         <button
           onClick={onEdit}
-          className="shrink-0 p-1.5 rounded-md text-slate-400 opacity-0 group-hover:opacity-100 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
+          className="shrink-0 p-1.5 rounded-md text-slate-400 sm:opacity-0 sm:group-hover:opacity-100 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
           aria-label={`Edit ${goal.name}`}
         >
           <Pencil className="h-3.5 w-3.5" />
