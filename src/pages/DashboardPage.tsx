@@ -13,6 +13,7 @@ import { BudgetVsActualWidget } from '@/components/dashboard/BudgetVsActualWidge
 import { NetWorthHistoryChart } from '@/components/dashboard/NetWorthHistoryChart'
 import { GoalsWidget } from '@/components/dashboard/GoalsWidget'
 import { GoalDialog } from '@/components/dashboard/GoalDialog'
+import { loadHiddenWidgets } from '@/components/dashboard/DashboardSettingsDialog'
 import type { CashAsset, FinancialGoal } from '@/types/models'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency, formatPercent } from '@/lib/format'
@@ -229,6 +230,22 @@ export function DashboardPage() {
   const [exportOpen, setExportOpen] = useState(false)
   const [goalDialogOpen, setGoalDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null)
+  const [hiddenWidgets, setHiddenWidgets] = useState(() => loadHiddenWidgets())
+
+  // Re-check hidden widgets when localStorage changes (from the settings dialog)
+  useEffect(() => {
+    const onStorage = () => setHiddenWidgets(loadHiddenWidgets())
+    window.addEventListener('storage', onStorage)
+    // Also poll briefly since same-tab localStorage writes don't fire 'storage'
+    const interval = setInterval(() => {
+      setHiddenWidgets(prev => {
+        const next = loadHiddenWidgets()
+        if (prev.size !== next.size || [...prev].some(id => !next.has(id))) return next
+        return prev
+      })
+    }, 500)
+    return () => { window.removeEventListener('storage', onStorage); clearInterval(interval) }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widgetOrder))
@@ -868,7 +885,7 @@ export function DashboardPage() {
           <div className="space-y-6">
             {widgetOrder.map(id => {
               const w = widgets[id]
-              if (!w) return null
+              if (!w || hiddenWidgets.has(id)) return null
               return (
                 <SortableWidget key={id} id={id}>
                   {id === 'hero' ? w : (

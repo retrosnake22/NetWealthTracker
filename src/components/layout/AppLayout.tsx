@@ -14,6 +14,7 @@ import {
   Cloud,
   CloudOff,
   Loader2,
+  Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -21,6 +22,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore'
 import { useThemeMode } from '@/hooks/useThemeMode'
 import type { ThemeMode } from '@/hooks/useThemeMode'
 import { NotificationBell } from '@/components/NotificationBell'
+import { DashboardSettingsDialog } from '@/components/dashboard/DashboardSettingsDialog'
 
 // ─── Nav structure — Option B: Grouped Cards with Gradient Accents ───
 // Matches mockup: sidebar-option-b---grouped-cards-with-gradient-accents.html
@@ -192,7 +194,7 @@ function BrandLogo() {
 }
 
 /* ─── Sidebar Nav — translates mockup .nav-area exactly ─── */
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({ onNavigate, onOpenDashboardSettings }: { onNavigate?: () => void; onOpenDashboardSettings?: () => void }) {
   const location = useLocation()
   const [searchParams] = useSearchParams()
 
@@ -245,40 +247,54 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               const parentActive = hasSubItems
                 ? location.pathname.startsWith(item.to)
                 : isItemActive(item.to, item.end)
+              const isDashboardItem = item.to === '/' && item.end
 
               return (
                 <div key={item.to}>
                   {/* mockup: .nav-item — gap:10px, padding: 8px 10px, border-radius: 8px, font-size: 13px, font-weight: 500 */}
-                  <NavLink
-                    to={item.to}
-                    end={item.end}
-                    onClick={onNavigate}
-                    className={`nav-item ${parentActive ? 'active' : ''}`}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '8px 10px', borderRadius: 8,
-                      cursor: 'pointer', transition: 'all 0.15s',
-                      fontSize: 13, fontWeight: parentActive ? 600 : 500,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {/* mockup: .icon-badge — 30×30, border-radius: 8px, font-size: 14px */}
-                    <span
-                      className="icon-badge"
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <NavLink
+                      to={item.to}
+                      end={item.end}
+                      onClick={onNavigate}
+                      className={`nav-item ${parentActive ? 'active' : ''}`}
                       style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 14, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 8,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                        fontSize: 13, fontWeight: parentActive ? 600 : 500,
+                        textDecoration: 'none',
+                        flex: 1,
                       }}
                     >
-                      {item.emoji}
-                    </span>
-                    <span style={{ flex: 1 }}>{item.label}</span>
-                    {/* mockup: .chevron */}
-                    {hasSubItems && (
-                      <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.3 }}>›</span>
+                      {/* mockup: .icon-badge — 30×30, border-radius: 8px, font-size: 14px */}
+                      <span
+                        className="icon-badge"
+                        style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 14, flexShrink: 0,
+                        }}
+                      >
+                        {item.emoji}
+                      </span>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {/* mockup: .chevron */}
+                      {hasSubItems && (
+                        <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.3 }}>›</span>
+                      )}
+                    </NavLink>
+                    {isDashboardItem && onOpenDashboardSettings && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onOpenDashboardSettings() }}
+                        className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                        style={{ padding: 6, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}
+                        title="Dashboard widget settings"
+                      >
+                        <Settings2 style={{ width: 14, height: 14 }} />
+                      </button>
                     )}
-                  </NavLink>
+                  </div>
 
                   {/* mockup: .sub-items — always visible, padding: 2px 6px 4px 42px */}
                   {hasSubItems && (
@@ -511,15 +527,20 @@ function SidebarFooter() {
 }
 
 function DesktopSidebar() {
+  const [dashSettingsOpen, setDashSettingsOpen] = useState(false)
+
   return (
-    /* mockup: .sidebar — width: 260px, background, border */
-    <aside className="hidden md:flex w-[260px] flex-col h-screen sticky top-0 sidebar-container">
-      <BrandLogo />
-      <SidebarNav />
-      <div style={{ flexShrink: 0 }}>
-        <SidebarFooter />
-      </div>
-    </aside>
+    <>
+      {/* mockup: .sidebar — width: 260px, background, border */}
+      <aside className="hidden md:flex w-[260px] flex-col h-screen sticky top-0 sidebar-container">
+        <BrandLogo />
+        <SidebarNav onOpenDashboardSettings={() => setDashSettingsOpen(true)} />
+        <div style={{ flexShrink: 0 }}>
+          <SidebarFooter />
+        </div>
+      </aside>
+      <DashboardSettingsDialog open={dashSettingsOpen} onClose={() => setDashSettingsOpen(false)} />
+    </>
   )
 }
 
@@ -576,6 +597,7 @@ function TopBar() {
 
 function MobileHeader() {
   const [open, setOpen] = useState(false)
+  const [dashSettingsOpen, setDashSettingsOpen] = useState(false)
   const location = useLocation()
   const page = pageTitles[location.pathname] ?? { title: 'NWT', subtitle: '' }
   const firstName = useFirstName()
@@ -595,27 +617,30 @@ function MobileHeader() {
   const ThemeIcon = themeMode === 'light' ? Sun : themeMode === 'dark' ? Moon : Monitor
 
   return (
-    <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
-      <div className="flex items-center gap-3 px-4 h-14">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[260px] p-0 sidebar-container">
-            <BrandLogo />
-            <SidebarNav onNavigate={() => setOpen(false)} />
-            <SidebarFooter />
-          </SheetContent>
-        </Sheet>
-        <h1 className="text-base font-semibold flex-1">{title}</h1>
-        <NotificationBell />
-        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setThemeMode(nextTheme())}>
-          <ThemeIcon className="h-4 w-4" />
-        </Button>
+    <>
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
+        <div className="flex items-center gap-3 px-4 h-14">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[260px] p-0 sidebar-container">
+              <BrandLogo />
+              <SidebarNav onNavigate={() => setOpen(false)} onOpenDashboardSettings={() => { setOpen(false); setDashSettingsOpen(true) }} />
+              <SidebarFooter />
+            </SheetContent>
+          </Sheet>
+          <h1 className="text-base font-semibold flex-1">{title}</h1>
+          <NotificationBell />
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setThemeMode(nextTheme())}>
+            <ThemeIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    </div>
+      <DashboardSettingsDialog open={dashSettingsOpen} onClose={() => setDashSettingsOpen(false)} />
+    </>
   )
 }
 
