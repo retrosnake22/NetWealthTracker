@@ -114,10 +114,10 @@ function fmtAmt(amount: number): string {
 /** Column header row */
 function ColumnHeaders() {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 mb-1">
+    <div className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 mb-1">
       <span />
-      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Monthly</span>
-      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Quarterly</span>
+      <span className="hidden md:block text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Monthly</span>
+      <span className="hidden md:block text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Quarterly</span>
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-right w-20">Yearly</span>
     </div>
   )
@@ -137,10 +137,10 @@ function PnLRow({ label, amountPA, indent, bold, muted, color }: {
   const colorClass = (val: number) => color ? color : val < 0 ? 'text-red-400' : bold ? '' : 'text-foreground'
 
   return (
-    <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
+    <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
       <span>{label}</span>
-      <span className={`tabular-nums text-right w-20 ${colorClass(monthly)}`}>{fmtAmt(monthly)}</span>
-      <span className={`tabular-nums text-right w-20 ${colorClass(quarterly)}`}>{fmtAmt(quarterly)}</span>
+      <span className={`hidden md:block tabular-nums text-right w-20 ${colorClass(monthly)}`}>{fmtAmt(monthly)}</span>
+      <span className={`hidden md:block tabular-nums text-right w-20 ${colorClass(quarterly)}`}>{fmtAmt(quarterly)}</span>
       <span className={`tabular-nums text-right w-20 ${colorClass(yearly)}`}>{fmtAmt(yearly)}</span>
     </div>
   )
@@ -154,10 +154,10 @@ function PercentRow({ label, value, indent, muted }: {
   muted?: boolean
 }) {
   return (
-    <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
+    <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center py-1 ${indent ? 'pl-4' : ''} ${muted ? 'text-muted-foreground text-sm' : ''}`}>
       <span>{label}</span>
-      <span className="w-20" />
-      <span className="w-20" />
+      <span className="hidden md:block w-20" />
+      <span className="hidden md:block w-20" />
       <span className="tabular-nums text-right w-20">{(value * 100).toFixed(0)}%</span>
     </div>
   )
@@ -203,7 +203,7 @@ export function PropertyPnL({ property, mortgage, offsetBalance = 0, grossSalary
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs md:text-sm">
             <div>
               <span className="text-muted-foreground mr-1">Monthly</span>
               <span className={`font-bold tabular-nums ${monthlyCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>

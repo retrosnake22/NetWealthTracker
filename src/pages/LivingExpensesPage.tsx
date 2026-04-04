@@ -334,7 +334,7 @@ export function LivingExpensesPage() {
       <div className="rounded-xl border-2 border-primary/20 dark:border-white/10 bg-gradient-to-r from-primary/5 to-transparent dark:from-white/[0.04] dark:to-transparent shadow-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground shrink-0">Tracking mode:</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant={budgetMode === 'estimate' ? 'default' : 'outline'}
@@ -378,7 +378,7 @@ export function LivingExpensesPage() {
           <div className="mt-3 pl-0 sm:pl-[108px] space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <span className="text-sm text-muted-foreground shrink-0">Use in calculations:</span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant={expenseCalcSource === 'budget' ? 'default' : 'outline'}
@@ -529,7 +529,7 @@ export function LivingExpensesPage() {
                       key={group.label}
                       className={`rounded-xl border border-border/60 dark:border-white/10 border-l-4 ${SECTION_BORDER_COLORS[group.label]} bg-white dark:bg-white/[0.04] shadow-sm overflow-hidden`}
                     >
-                      <div className="flex items-center justify-between px-5 py-4">
+                      <div className="flex items-center justify-between px-3 sm:px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="text-left">
                             <div className="flex items-center gap-2">
@@ -552,7 +552,7 @@ export function LivingExpensesPage() {
 
                       <div className="border-t border-border/50">
                         {/* Column headers — bold and prominent */}
-                        <div className="grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] px-5 py-2.5 border-b border-border/40 gap-2 pl-12 bg-muted/40">
+                        <div className="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_180px] px-3 sm:px-5 py-2.5 border-b border-border/40 gap-2 pl-4 sm:pl-12 bg-muted/40">
                           <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expense</span>
                           <span className="text-xs font-bold uppercase tracking-wider text-foreground/70 text-right">Monthly Budget</span>
                         </div>
@@ -567,7 +567,7 @@ export function LivingExpensesPage() {
                           return (
                             <div
                               key={cat}
-                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 transition-colors ${
+                              className={`grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_180px] items-center px-3 sm:px-5 py-2.5 gap-2 pl-4 sm:pl-12 transition-colors ${
                                 hasValue
                                   ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] hover:bg-emerald-100/80 dark:hover:bg-emerald-500/[0.12] border-l-2 border-l-emerald-500 dark:border-l-emerald-400'
                                   : 'hover:bg-muted/30 border-l-2 border-l-transparent'
@@ -579,7 +579,7 @@ export function LivingExpensesPage() {
                                 </span>
                               </div>
                               <div className="flex justify-end">
-                                <div className="w-[140px] sm:w-[160px]">
+                                <div className="w-[100px] sm:w-[160px]">
                                   <CurrencyInput
                                     value={value}
                                     onChange={(v) => handleValueChange(cat, v)}
@@ -599,7 +599,7 @@ export function LivingExpensesPage() {
                           return (
                             <div
                               key={b.id}
-                              className={`grid grid-cols-[1fr_160px] sm:grid-cols-[1fr_180px] items-center px-5 py-2.5 gap-2 pl-12 transition-colors ${
+                              className={`grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_180px] items-center px-3 sm:px-5 py-2.5 gap-2 pl-4 sm:pl-12 transition-colors ${
                                 hasCustomValue
                                   ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] hover:bg-emerald-100/80 dark:hover:bg-emerald-500/[0.12] border-l-2 border-l-emerald-500 dark:border-l-emerald-400'
                                   : 'hover:bg-muted/30 border-l-2 border-l-transparent'
@@ -613,7 +613,7 @@ export function LivingExpensesPage() {
                                 </Button>
                               </div>
                               <div className="flex justify-end">
-                                <div className="w-[140px] sm:w-[160px]">
+                                <div className="w-[100px] sm:w-[160px]">
                                   <CurrencyInput
                                     value={customVal}
                                     onChange={(v) => handleCustomValueChange(b.id, v)}

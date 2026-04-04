@@ -84,13 +84,12 @@ function SortableWidget({ id, children }: { id: string; children: React.ReactNod
                      text-muted-foreground/0 group-hover:text-muted-foreground/60
                      hover:!text-muted-foreground hover:bg-muted/50
                      transition-all cursor-grab active:cursor-grabbing
-                     touch-none md:opacity-0 md:group-hover:opacity-100
-                     opacity-40"
+                     touch-none hidden md:block opacity-0 md:group-hover:opacity-100"
           aria-label="Drag to reorder"
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className="pl-4 md:pl-0 md:group-hover:pl-4 transition-all">
+        <div className="pl-0 md:group-hover:pl-4 transition-all">
           {children}
         </div>
       </div>
