@@ -14,7 +14,8 @@ import { ProjectionsPage } from '@/pages/ProjectionsPage'
 import { WhatIfPage } from '@/pages/WhatIfPage'
 import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
-import ResetPasswordPage from '@/pages/ResetPasswordPage'
+// ResetPasswordPage no longer needed — OAuth-only auth
+// import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { loadFromCloud, createDebouncedSave, registerDebouncedCancel, registerDebouncedFlush, registerStoreUnsubscribe, setSyncPaused, syncController } from '@/lib/syncEngine'
 
@@ -122,22 +123,8 @@ function App() {
     )
   }
 
-  // Allow reset-password page even without session (Supabase handles the token via URL hash)
-  const isResetPassword = window.location.pathname === '/reset-password'
-
-  if (!session && !isResetPassword) {
+  if (!session) {
     return <LoginPage />
-  }
-
-  if (!session && isResetPassword) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="*" element={<LoginPage />} />
-        </Routes>
-      </BrowserRouter>
-    )
   }
 
   if (syncing) {
@@ -156,7 +143,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/setup" element={<SetupWizardPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
         <Route element={<AppLayout />}>
           <Route path="/" element={wizardComplete ? <DashboardPage /> : <Navigate to="/setup" replace />} />
           <Route path="/assets" element={<AssetsPage />} />
