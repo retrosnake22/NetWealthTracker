@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Receipt, ArrowUpRight } from 'lucide-react'
 import { useFinanceStore } from '@/stores/useFinanceStore'
 import { formatCurrency } from '@/lib/format'
+import { filterLivingBudgets } from '@/lib/calculations'
 import type { ExpenseCategory } from '@/types/models'
 
 const SUPER_CATEGORIES: { label: string; icon: string; categories: ExpenseCategory[] }[] = [
@@ -61,11 +62,12 @@ export function BudgetVsActualWidget() {
   const currentMonth = getCurrentMonth()
 
   const { groups, totalBudget, totalActual, overallLight, hasAnyData } = useMemo(() => {
+    // Use the same living-expense filter as the dashboard cashflow calculations
+    const livingBudgets = filterLivingBudgets(expenseBudgets)
+
     // Build budget lookup: category → monthly budget total
     const budgetByCategory = new Map<string, { id: string; amount: number }>()
-    for (const b of expenseBudgets) {
-      if (b.linkedPropertyId || b.linkedAssetId) continue
-      if (b.label.endsWith('Car Loan Repayment') || b.label.endsWith('Lease Payment')) continue
+    for (const b of livingBudgets) {
       const existing = budgetByCategory.get(b.category)
       budgetByCategory.set(b.category, {
         id: existing?.id ?? b.id,
@@ -74,15 +76,17 @@ export function BudgetVsActualWidget() {
     }
 
     // Build actuals lookup for current month: budgetId → actual amount
+    const livingBudgetIds = new Set(livingBudgets.map(b => b.id))
     const actualsByBudgetId = new Map<string, number>()
     for (const a of expenseActuals) {
       if (a.month !== currentMonth) continue
+      if (!livingBudgetIds.has(a.budgetId)) continue
       actualsByBudgetId.set(a.budgetId, (actualsByBudgetId.get(a.budgetId) ?? 0) + a.actualAmount)
     }
 
     // Build a budgetId → category map so we can aggregate actuals by category
     const budgetIdToCategory = new Map<string, string>()
-    for (const b of expenseBudgets) {
+    for (const b of livingBudgets) {
       budgetIdToCategory.set(b.id, b.category)
     }
 
@@ -124,7 +128,7 @@ export function BudgetVsActualWidget() {
     }).filter(g => g.budget > 0 || g.actual > 0)
 
     const overallLight = getTrafficLight(totalBudget, totalActual)
-    const hasAnyData = expenseBudgets.filter(b => !b.linkedPropertyId && !b.linkedAssetId).length > 0
+    const hasAnyData = livingBudgets.length > 0
 
     return { groups, totalBudget, totalActual, overallLight, hasAnyData }
   }, [expenseBudgets, expenseActuals, currentMonth])

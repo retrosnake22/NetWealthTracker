@@ -304,12 +304,38 @@ export const LIVING_EXPENSE_CATEGORIES = new Set([
   'hecs_repayment', 'tax', 'accounting_fees', 'other',
 ])
 
-function filterLivingBudgets(budgets: ExpenseBudget[]): ExpenseBudget[] {
-  return budgets.filter(b =>
-    LIVING_EXPENSE_CATEGORIES.has(b.category) &&
-    !b.linkedPropertyId &&
-    !b.linkedAssetId
-  )
+export function filterLivingBudgets(budgets: ExpenseBudget[]): ExpenseBudget[] {
+  // Standard category label lookup — must match CATEGORY_LABELS in LivingExpensesPage.tsx
+  const STANDARD_LABELS = new Set([
+    'Rent', 'Electricity', 'Water', 'Rates', 'Security', 'Home Improvements / Renovations',
+    'Repairs & Maintenance', 'Gardening', 'Home Insurance', 'Pet Insurance',
+    'Health Insurance', 'Car Insurance', 'Life Insurance', 'Other Insurance',
+    'Groceries', 'Household Goods', 'Transport', 'Fuel', 'Phone & Internet',
+    'Personal Care', 'Clothing', 'Medical', 'Pharmacy', 'Pet Costs', 'School Costs',
+    'Subscriptions', 'Entertainment', 'Dining Out', 'Health & Fitness', 'Education',
+    'Childcare', 'Gifts & Donations', 'HECS Repayment', 'Tax', 'Accounting Fees', 'Other',
+  ])
+
+  // Deduplicate: keep only the first entry per category for standard-labeled items.
+  // This matches how LivingExpensesPage builds its budgetByCategory map.
+  // Custom-labeled entries (user-created) are always included.
+  const seenCategories = new Set<string>()
+  const result: ExpenseBudget[] = []
+
+  for (const b of budgets) {
+    if (!LIVING_EXPENSE_CATEGORIES.has(b.category)) continue
+    if (b.linkedPropertyId || b.linkedAssetId) continue
+    if (b.label.endsWith('Car Loan Repayment') || b.label.endsWith('Lease Payment')) continue
+
+    const isStandard = STANDARD_LABELS.has(b.label)
+    if (isStandard) {
+      // Only keep the first standard entry per category
+      if (seenCategories.has(b.category)) continue
+      seenCategories.add(b.category)
+    }
+    result.push(b)
+  }
+  return result
 }
 
 /**
