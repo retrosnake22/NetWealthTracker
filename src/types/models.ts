@@ -176,6 +176,14 @@ export interface MonthlySnapshot {
   totalIncome: number
   totalExpenses: number
   cashflow: number
+  /** Deep copy of all input data at the time the snapshot was taken */
+  data?: {
+    assets: Asset[]
+    properties: Property[]
+    liabilities: Liability[]
+    incomes: IncomeItem[]
+    expenseBudgets: ExpenseBudget[]
+  }
 }
 
 export type GoalType = 'net_worth' | 'debt_reduction' | 'savings_target' | 'positive_cashflow' | 'custom'

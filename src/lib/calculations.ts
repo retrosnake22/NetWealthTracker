@@ -654,6 +654,14 @@ export function createNetWorthSnapshot(
     totalIncome: metrics.monthlyIncome,
     totalExpenses: metrics.monthlyExpenses,
     cashflow: metrics.monthlyCashflow,
+    // Deep copy all input data for historical record
+    data: {
+      assets: JSON.parse(JSON.stringify(assets)),
+      properties: JSON.parse(JSON.stringify(properties)),
+      liabilities: JSON.parse(JSON.stringify(liabilities)),
+      incomes: JSON.parse(JSON.stringify(incomes)),
+      expenseBudgets: JSON.parse(JSON.stringify(expenseBudgets)),
+    },
   }
 }
 

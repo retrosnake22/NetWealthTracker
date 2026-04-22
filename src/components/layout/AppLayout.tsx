@@ -54,6 +54,7 @@ const navSections: NavSection[] = [
     theme: 's-blue',
     items: [
       { to: '/', emoji: '📊', label: 'Dashboard', end: true },
+      { to: '/history', emoji: '📅', label: 'History' },
     ],
   },
   {
@@ -148,6 +149,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/expenses/living': { title: 'Living Expenses', subtitle: 'Budget and track daily spending' },
   '/projections': { title: 'Projections', subtitle: 'Model your future wealth' },
   '/what-if': { title: 'What if...?', subtitle: 'AI-powered financial scenarios' },
+  '/history': { title: 'History', subtitle: 'Monthly snapshots of your financial data' },
 }
 
 // ─── User profile hook ───

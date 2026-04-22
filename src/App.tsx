@@ -12,6 +12,7 @@ import { FixedExpensesPage } from '@/pages/FixedExpensesPage'
 import { LivingExpensesPage } from '@/pages/LivingExpensesPage'
 import { ProjectionsPage } from '@/pages/ProjectionsPage'
 import { WhatIfPage } from '@/pages/WhatIfPage'
+import { HistoryPage } from '@/pages/HistoryPage'
 import { SetupWizardPage } from '@/pages/SetupWizardPage'
 import LoginPage from '@/pages/LoginPage'
 // ResetPasswordPage no longer needed — OAuth-only auth
@@ -155,6 +156,7 @@ function App() {
           <Route path="/expenses/living" element={<LivingExpensesPage />} />
           <Route path="/projections" element={<ProjectionsPage />} />
           <Route path="/what-if" element={<WhatIfPage />} />
+          <Route path="/history" element={<HistoryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
