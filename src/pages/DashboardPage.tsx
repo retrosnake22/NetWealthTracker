@@ -109,7 +109,7 @@ function CashflowBar({ label, amount, max, colorClass, icon: Icon }: {
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${colorClass.includes('green') || colorClass.includes('blue') ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`} />
+          <Icon className={`h-4 w-4 ${colorClass.includes('green') || colorClass.includes('blue') || colorClass.includes('teal') ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`} />
           <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{label}</span>
         </div>
         <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-white">{formatCurrency(amount)}</span>
@@ -664,6 +664,9 @@ export function DashboardPage() {
               )}
               {metrics.propertyRunningCosts > 0 && (
                 <CashflowBar label="Property Costs" amount={metrics.propertyRunningCosts} max={cashflowMax} colorClass="bg-violet-400" icon={ArrowDownRight} />
+                )}
+                {negGearingBenefitPA > 0 && (
+                  <CashflowBar label="Neg. Gearing Benefit" amount={negGearingBenefitPA / 12} max={cashflowMax} colorClass="bg-teal-500" icon={TrendingUp} />
               )}
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
